@@ -102,6 +102,7 @@ OBJ_MODEL =                        \
 	rk4_misc.o                 \
 	rk4_stepper.o              \
 	rsys.o                     \
+	soil_bgc.o                 \
 	soil_coms.o                \
 	soil_respiration.o         \
 	stable_cohorts.o           \

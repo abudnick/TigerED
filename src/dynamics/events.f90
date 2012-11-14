@@ -554,7 +554,7 @@ subroutine event_fertilize(rval8)
               
               cpatch => csite%patch(ipa)
 
-              csite%mineralized_soil_N(ipa) = max(0.0,csite%mineralized_soil_N(ipa) + nh4 + no3)
+              csite%sbgc%miner_soil_N(ipa) = max(0.0,csite%sbgc%miner_soil_N(ipa) + nh4 + no3)
              
               !! update patch properties
               call update_patch_derived_props(csite, cpoly%lsl(isi), cpoly%met(isi)%prss,ipa)
@@ -730,17 +730,17 @@ subroutine event_till(rval8)
                  
                  pft = cpatch%pft(ico)                 
                  !! move biomass to debris/litter pools
-                 csite%fast_soil_C(ipa) = csite%fast_soil_C(ipa) + &
+                 csite%sbgc%fast_soil_C(ipa) = csite%sbgc%fast_soil_C(ipa) + &
                       f_labile(pft)*cpatch%balive(ico) + &
                       cpatch%bstorage(ico)
 
-                 csite%structural_soil_C(ipa) = csite%structural_soil_C(ipa) + &
+                 csite%sbgc%struct_soil_C(ipa) = csite%sbgc%struct_soil_C(ipa) + &
                       (1.0-f_labile(pft))*cpatch%balive(ico) + &
                       cpatch%bdead(ico) 
-                 csite%structural_soil_L(ipa) = csite%structural_soil_L(ipa) + &
+                 csite%sbgc%struct_soil_L(ipa) = csite%sbgc%struct_soil_L(ipa) + &
                       (1.0-f_labile(pft))*cpatch%balive(ico)* l2n_stem / c2n_stem(pft) + &
                       cpatch%bdead(ico)* l2n_stem / c2n_stem(pft)
-                 csite%fast_soil_N(ipa) = csite%fast_soil_N(ipa) &
+                 csite%sbgc%fast_soil_N(ipa) = csite%sbgc%fast_soil_N(ipa) &
                       + f_labile(pft)*cpatch%balive(ico)/c2n_leaf(pft) &
                       + cpatch%bstorage(ico)/c2n_storage
                  !! where does bdead's N go??

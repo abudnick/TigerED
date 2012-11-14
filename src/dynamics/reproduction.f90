@@ -44,6 +44,7 @@ subroutine reproduction(cgrid, month)
                                  , ed_biomass            & ! function
                                  , area_indices          ! ! subroutine
    use grid_coms          , only : nzg                   ! ! intent(in)
+   use pft_coms, only: c2p_recruit
    implicit none
    !----- Arguments -----------------------------------------------------------------------!
    type(edtype)     , target     :: cgrid
@@ -189,10 +190,12 @@ nafter = nafter + csite%repro(ipft,ipa)*csite%area(ipa)/c2n_recruit(ipft)
                      !     If we have reached this branch, we are in an agricultural       !
                      ! patch.  Send the seed litter to the soil pools for decomposition.   !
                      !---------------------------------------------------------------------!
-                     csite%fast_soil_N(ipa) = csite%fast_soil_N(ipa)                       &
+                     csite%sbgc%fast_soil_N(ipa) = csite%sbgc%fast_soil_N(ipa)                       &
                                             + csite%repro(ipft,ipa) / c2n_recruit(ipft)
-                     csite%fast_soil_C(ipa) = csite%fast_soil_C(ipa)                       &
+                     csite%sbgc%fast_soil_C(ipa) = csite%sbgc%fast_soil_C(ipa)                       &
                                             + csite%repro(ipft,ipa)
+                     csite%sbgc%fast_soil_P(ipa) = csite%sbgc%fast_soil_P(ipa)                       &
+                                            + csite%repro(ipft,ipa) / c2p_recruit(ipft)
                      csite%repro(ipft,ipa)  = 0.0
                   end if
                end if

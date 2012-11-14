@@ -105,20 +105,20 @@ plantP1=0.;plantP2=0.;soilP1=0.;soilP2=0.;totalP1=0.;totalP2=0.
             csite => cpoly%site(isi)
 
 
-            do ipa = 1, csite%npatches
+!            do ipa = 1, csite%npatches
 
-               cpatch => csite%patch(ipa)
+!               cpatch => csite%patch(ipa)
 
-               soilN1 = soilN1 + (csite%fast_soil_N(ipa) + csite%structural_soil_C(ipa)/150. + csite%mineralized_soil_N(ipa)) * csite%area(ipa)
+!               soilN1 = soilN1 + (csite%fast_soil_N(ipa) + csite%structural_soil_C(ipa)/150. + csite%mineralized_soil_N(ipa)) * csite%area(ipa)
                     
 
-               do ico = 1, cpatch%ncohorts
-                  plantN1 = plantN1 + csite%area(ipa) * cpatch%nplant(ico) * (cpatch%balive(ico)/c2n_leaf(cpatch%pft(ico)) + cpatch%bdead(ico)/150.)
-               enddo
-            enddo
+!               do ico = 1, cpatch%ncohorts
+!                  plantN1 = plantN1 + csite%area(ipa) * cpatch%nplant(ico) * (cpatch%balive(ico)/c2n_leaf(cpatch%pft(ico)) + cpatch%bdead(ico)/150.)
+!               enddo
+!            enddo
 
 !print*,'NITROGREN, INIT',soilN1,plantN1,soilN1+plantN1
-print*,'PHOSPHORUS, INIT',soilP1,plantP1,soilP1+plantP1
+!print*,'PHOSPHORUS, INIT',soilP1,plantP1,soilP1+plantP1
             !----- Store AGB, basal area profiles in memory. ------------------------------!
             call update_site_derived_props(cpoly, 1,isi)
             initial_agb(1:n_pft,1:n_dbh)        = cpoly%agb(1:n_pft,1:n_dbh,isi)
@@ -429,19 +429,19 @@ print*,'PHOSPHORUS, INIT',soilP1,plantP1,soilP1+plantP1
             deallocate(disturb_mask)
             !------------------------------------------------------------------------------!
 
-            do ipa = 1, csite%npatches
+!            do ipa = 1, csite%npatches
 
-               cpatch => csite%patch(ipa)
+!               cpatch => csite%patch(ipa)
 
-               soilN2 = soilN2 + (csite%fast_soil_N(ipa) + csite%structural_soil_C(ipa)/150. + csite%mineralized_soil_N(ipa)) * csite%area(ipa)
+!               soilN2 = soilN2 + (csite%fast_soil_N(ipa) + csite%structural_soil_C(ipa)/150. + csite%mineralized_soil_N(ipa)) * csite%area(ipa)
                     
 
-               do ico = 1, cpatch%ncohorts
-                  plantN2 = plantN2 + csite%area(ipa) * cpatch%nplant(ico) * (cpatch%balive(ico)/c2n_leaf(cpatch%pft(ico)) + cpatch%bdead(ico)/150.)
-               enddo
-            enddo
+!               do ico = 1, cpatch%ncohorts
+!                  plantN2 = plantN2 + csite%area(ipa) * cpatch%nplant(ico) * (cpatch%balive(ico)/c2n_leaf(cpatch%pft(ico)) + cpatch%bdead(ico)/150.)
+!               enddo
+!            enddo
 
-print*,'NITROGREN, FINA',soilN2,plantN2,soilN2+plantN2
+!print*,'NITROGREN, FINA',soilN2,plantN2,soilN2+plantN2
           
          end do siteloop
       end do polyloop
@@ -700,7 +700,7 @@ print*,'NITROGREN, FINA',soilN2,plantN2,soilN2+plantN2
       use consts_coms  , only : t3ple     ! ! intent(in)
       use grid_coms    , only : nzs       & ! intent(in)
                               , nzg       ! ! intent(in)
-
+      use soil_bgc, only: init_disturb_patch_sbgc
       implicit none
       !----- Arguments. -------------------------------------------------------------------!
       type(sitetype), target      :: csite
@@ -732,17 +732,8 @@ print*,'NITROGREN, FINA',soilN2,plantN2,soilN2+plantN2
       ! properties from the donor patches.                                                 !
       !------------------------------------------------------------------------------------!
       csite%age                        (np) = 0.0
-      csite%fast_soil_C                (np) = 0.0
-      csite%slow_soil_C                (np) = 0.0
-      csite%structural_soil_C          (np) = 0.0
-      csite%structural_soil_L          (np) = 0.0
-      csite%mineralized_soil_N         (np) = 0.0
-      csite%fast_soil_N                (np) = 0.0
 
-      csite%fast_soil_P(np) = 0.0
-      csite%struct_soil_P(np) = 0.0
-      csite%miner_soil_P(np) = 0.0
-      csite%slow_soil_P(np) = 0.0
+      call init_disturb_patch_sbgc(csite%sbgc,np)
 
       csite%sum_dgd                    (np) = 0.0
       csite%sum_chd                    (np) = 0.0
@@ -795,7 +786,7 @@ print*,'NITROGREN, FINA',soilN2,plantN2,soilN2+plantN2
                               , patchtype ! ! structure
       use ed_max_dims  , only : n_pft     ! ! intent(in)
       use grid_coms    , only : nzg       ! ! intent(in)
-
+      use soil_bgc, only: inc_patch_vars_sbgc
       implicit none
       !----- Arguments. -------------------------------------------------------------------!
       type(sitetype), target      :: csite
@@ -806,30 +797,7 @@ print*,'NITROGREN, FINA',soilN2,plantN2,soilN2+plantN2
       integer                     :: k
       !------------------------------------------------------------------------------------!
 
-      csite%fast_soil_C                (np) = csite%fast_soil_C                (np)        &
-                                            + csite%fast_soil_C                (cp)        &
-                                            * area_fac
-      csite%slow_soil_C                (np) = csite%slow_soil_C                (np)        &
-                                            + csite%slow_soil_C                (cp)        &
-                                            * area_fac
-      csite%structural_soil_C          (np) = csite%structural_soil_C          (np)        &
-                                            + csite%structural_soil_C          (cp)        &
-                                            * area_fac
-      csite%structural_soil_L          (np) = csite%structural_soil_L          (np)        &
-                                            + csite%structural_soil_L          (cp)        &
-                                            * area_fac
-      csite%mineralized_soil_N         (np) = csite%mineralized_soil_N         (np)        &
-                                            + csite%mineralized_soil_N         (cp)        &
-                                            * area_fac
-      csite%fast_soil_N                (np) = csite%fast_soil_N                (np)        &
-                                            + csite%fast_soil_N                (cp)        &
-                                            * area_fac
-
-      csite%fast_soil_P(np) = csite%fast_soil_P(np) + csite%fast_soil_P(cp) * area_fac
-      csite%struct_soil_P(np) = csite%struct_soil_P(np) + csite%struct_soil_P(cp) * area_fac
-      csite%miner_soil_P(np) = csite%miner_soil_P(np) + csite%miner_soil_P(cp) * area_fac
-      csite%slow_soil_P(np) = csite%slow_soil_P(np) + csite%slow_soil_P(cp) * area_fac
-
+      call inc_patch_vars_sbgc(csite%sbgc, np, cp, area_fac)
 
       csite%sum_dgd                    (np) = csite%sum_dgd                    (np)        &
                                             + csite%sum_dgd                    (cp)        &
@@ -1145,10 +1113,10 @@ print*,'NITROGREN, FINA',soilN2,plantN2,soilN2+plantN2
       integer                                       :: ico
       integer                                       :: ipft
       real                                          :: fast_litter, fast_litter_p
-      real                                          :: struct_litter, struct_litter_p
+      real                                          :: struct_litter, struct_litter_p, struct_litter_n
       real                                          :: struct_lignin
       real                                          :: fast_litter_n
-      real                                          :: struct_cohort, struct_cohort_p
+      real                                          :: struct_cohort, struct_cohort_n, struct_cohort_p
       !------------------------------------------------------------------------------------!
 
       !---- Initialise the non-scaled litter pools. ---------------------------------------!
@@ -1157,6 +1125,7 @@ print*,'NITROGREN, FINA',soilN2,plantN2,soilN2+plantN2
       struct_lignin = 0.0
       fast_litter_n = 0.0
       fast_litter_p = 0.0
+      struct_litter_n = 0.0
       struct_litter_p = 0.0
 
       !------------------------------------------------------------------------------------!
@@ -1191,6 +1160,11 @@ print*,'NITROGREN, FINA',soilN2,plantN2,soilN2+plantN2
                        * ( (1. - loss_fraction ) * cpatch%bdead(ico)                       &
                          + (1. - f_labile(ipft)) * cpatch%balive(ico) )
 
+         struct_cohort_n = cpatch%nplant(ico)                                                &
+                       * (1. - survivorship(q,poly_dest_type,mindbh_harvest,csite,cp,ico)) &
+                       * ( (1. - loss_fraction ) * cpatch%bdead(ico)                       &
+                         + (1. - f_labile(ipft)) * cpatch%balive(ico) ) / c2n_stem(ipft)
+
          struct_cohort_p = cpatch%nplant(ico)                                                &
                        * (1. - survivorship(q,poly_dest_type,mindbh_harvest,csite,cp,ico)) &
                        * ( (1. - loss_fraction ) * cpatch%bdead(ico)                       &
@@ -1198,17 +1172,20 @@ print*,'NITROGREN, FINA',soilN2,plantN2,soilN2+plantN2
 
          struct_litter = struct_litter + struct_cohort
          struct_litter_p = struct_litter_p + struct_cohort_p
+         struct_litter_n = struct_litter_n + struct_cohort_n
          struct_lignin = struct_lignin + struct_cohort * l2n_stem / c2n_stem(ipft)
       end do
 
       !----- Load disturbance litter directly into carbon and N pools. --------------------!
-      csite%fast_soil_C(np)       = csite%fast_soil_C(np)       + fast_litter   * area_fac
-      csite%structural_soil_C(np) = csite%structural_soil_C(np) + struct_litter * area_fac
-      csite%structural_soil_L(np) = csite%structural_soil_L(np) + struct_lignin * area_fac
-      csite%fast_soil_N(np)       = csite%fast_soil_N(np)       + fast_litter_n * area_fac
+      csite%sbgc%fast_soil_C(np) = csite%sbgc%fast_soil_C(np) + fast_litter   * area_fac
+      csite%sbgc%struct_soil_C(np) = csite%sbgc%struct_soil_C(np) + struct_litter * area_fac
+      csite%sbgc%struct_soil_L(np) = csite%sbgc%struct_soil_L(np) + struct_lignin * area_fac
 
-      csite%fast_soil_P(np)       = csite%fast_soil_P(np)       + fast_litter_p * area_fac
-      csite%struct_soil_P(np)       = csite%struct_soil_P(np)       + struct_litter_p * area_fac
+      csite%sbgc%fast_soil_N(np) = csite%sbgc%fast_soil_N(np) + fast_litter_n * area_fac
+      csite%sbgc%struct_soil_N(np) = csite%sbgc%struct_soil_N(np) + struct_litter_n * area_fac
+
+      csite%sbgc%fast_soil_P(np) = csite%sbgc%fast_soil_P(np) + fast_litter_p * area_fac
+      csite%sbgc%struct_soil_P(np) = csite%sbgc%struct_soil_P(np) + struct_litter_p * area_fac
 
       return
    end subroutine accum_dist_litt

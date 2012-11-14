@@ -50,6 +50,7 @@ subroutine read_ed10_ed20_history_file
    use fuse_fiss_utils, only : sort_cohorts        & ! subroutine
                              , sort_patches        ! ! subroutine
    use disturb_coms   , only : min_new_patch_area  ! ! intent(in)
+   use pft_coms, only: c2n_slow, c2n_structural
    implicit none
 
    !----- Local constants. ----------------------------------------------------------------!
@@ -428,12 +429,14 @@ subroutine read_ed10_ed20_history_file
                      csite%dist_type         (ip2) = trk (ip) + 1
                      csite%age               (ip2) = age (ip)
                      csite%area              (ip2) = area(ip)
-                     csite%fast_soil_C       (ip2) = fsc (ip)
-                     csite%slow_soil_C       (ip2) = ssc (ip)
-                     csite%structural_soil_C (ip2) = stsc(ip)
-                     csite%structural_soil_L (ip2) = stsl(ip)
-                     csite%mineralized_soil_N(ip2) = msn (ip)
-                     csite%fast_soil_N       (ip2) = fsn (ip)
+                     csite%sbgc%fast_soil_C       (ip2) = fsc (ip)
+                     csite%sbgc%slow_soil_C       (ip2) = ssc (ip)
+                     csite%sbgc%struct_soil_C (ip2) = stsc(ip)
+                     csite%sbgc%struct_soil_L (ip2) = stsl(ip)
+                     csite%sbgc%miner_soil_N(ip2) = msn (ip)
+                     csite%sbgc%fast_soil_N       (ip2) = fsn (ip)
+                     csite%sbgc%slow_soil_N       (ip2) = ssc (ip) / c2n_slow
+                     csite%sbgc%struct_soil_N (ip2) = stsc(ip) / c2n_structural
                      csite%pname             (ip2) = trim(pname(ip))
                      csite%sum_dgd           (ip2) = 0.0
                      csite%sum_chd           (ip2) = 0.0
@@ -459,22 +462,24 @@ subroutine read_ed10_ed20_history_file
                   csite%dist_type         (ip) = trk (ip) + 1
                   csite%age               (ip) = age (ip)
                   csite%area              (ip) = area(ip)
-                  csite%fast_soil_C       (ip) = fsc (ip)
-                  csite%slow_soil_C       (ip) = ssc (ip)
-                  csite%structural_soil_C (ip) = stsc(ip)
-                  csite%structural_soil_L (ip) = stsl(ip)
-                  csite%mineralized_soil_N(ip) = msn (ip)
-                  csite%fast_soil_N       (ip) = fsn (ip)
+                  csite%sbgc%fast_soil_C       (ip) = fsc (ip)
+                  csite%sbgc%slow_soil_C       (ip) = ssc (ip)
+                  csite%sbgc%struct_soil_C (ip) = stsc(ip)
+                  csite%sbgc%struct_soil_L (ip) = stsl(ip)
+                  csite%sbgc%miner_soil_N(ip) = msn (ip)
+                  csite%sbgc%fast_soil_N       (ip) = fsn (ip)
+                  csite%sbgc%slow_soil_N       (ip) = ssc (ip)/c2n_slow
+                  csite%sbgc%struct_soil_N       (ip) = stsc (ip)/c2n_structural
                   csite%pname             (ip) = trim(pname(ip))
                   csite%sum_dgd           (ip) = 0.0+tiny(1.)
                   csite%sum_chd           (ip) = 0.0+tiny(1.)
                   csite%plantation        (ip) = 0
                   csite%cohort_count      (ip) = 0
 
-                  csite%fast_soil_P(ip) = 1.0e-2
-                  csite%struct_soil_P(ip) = 1.0e-2
-                  csite%miner_soil_P(ip) = 1.0e-2
-                  csite%slow_soil_P(ip) = 1.0e-2
+                  csite%sbgc%fast_soil_P(ip) = 1.0e-2
+                  csite%sbgc%struct_soil_P(ip) = 1.0e-2
+                  csite%sbgc%miner_soil_P(ip) = 1.0e-2
+                  csite%sbgc%slow_soil_P(ip) = 1.0e-2
                   
                end do
 

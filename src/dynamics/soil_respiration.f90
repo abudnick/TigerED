@@ -163,11 +163,11 @@ subroutine resp_f_decomp(csite,ipa,Lc)
    !---------------------------------------------------------------------------------------!
 
  
-   if (csite%structural_soil_C(ipa) > 0.0) then
-      if (csite%structural_soil_L(ipa) == csite%structural_soil_C(ipa)) then
+   if (csite%sbgc%struct_soil_C(ipa) > 0.0) then
+      if (csite%sbgc%struct_soil_L(ipa) == csite%sbgc%struct_soil_C(ipa)) then
          Lc = 0.049787 ! = exp(-3.0)
       else
-         Lc = exp(-3.0 * csite%structural_soil_L(ipa)/csite%structural_soil_C(ipa))
+         Lc = exp(-3.0 * csite%sbgc%struct_soil_L(ipa)/csite%sbgc%struct_soil_C(ipa))
       end if
    else
       Lc=0.0
@@ -175,12 +175,12 @@ subroutine resp_f_decomp(csite,ipa,Lc)
    
    if (n_decomp_lim == 1) then
       N_immobilization_demand = csite%A_decomp(ipa) * Lc * K1                              &
-                              * csite%structural_soil_C(ipa)                               &
+                              * csite%sbgc%struct_soil_C(ipa)                               &
                               * ((1.0 - r_stsc) / c2n_slow - 1.0 / c2n_structural)
       
-      csite%f_decomp(ipa)     = N_immobil_supply_scale * csite%mineralized_soil_N(ipa)     &
+      csite%f_decomp(ipa)     = N_immobil_supply_scale * csite%sbgc%miner_soil_N(ipa)     &
                               / ( N_immobilization_demand                                  &
-                                + N_immobil_supply_scale  * csite%mineralized_soil_N(ipa))
+                                + N_immobil_supply_scale  * csite%sbgc%miner_soil_N(ipa))
    else
       !----- Option for no plant N limitation. --------------------------------------------!
       csite%f_decomp(ipa)     = 1.0
@@ -226,10 +226,10 @@ subroutine resp_rh(csite,ipa,Lc)
 
 
    !----- The following variables have units of [kgC/m2/day]. -----------------------------!
-   fast_C_loss       = csite%A_decomp(ipa) * K2 * csite%fast_soil_C(ipa)
-   structural_C_loss = csite%A_decomp(ipa) * Lc * K1 * csite%structural_soil_C(ipa)        &
+   fast_C_loss       = csite%A_decomp(ipa) * K2 * csite%sbgc%fast_soil_C(ipa)
+   structural_C_loss = csite%A_decomp(ipa) * Lc * K1 * csite%sbgc%struct_soil_C(ipa)        &
                      * csite%f_decomp(ipa)
-   slow_C_loss       = csite%A_decomp(ipa) * K3 * csite%slow_soil_C(ipa)
+   slow_C_loss       = csite%A_decomp(ipa) * K3 * csite%sbgc%slow_soil_C(ipa)
 
    !----- The following variables have units of [umol_CO2/m2/s]. --------------------------!
    csite%rh(ipa)     = kgCday_2_umols * ( r_fsc * fast_C_loss + r_stsc * structural_C_loss &
@@ -277,7 +277,8 @@ subroutine update_C_and_N_pools(cgrid)
    real                        :: structural_C_loss
    real                        :: structural_L_loss
    real                        :: slow_C_input
-   real                        :: slow_C_loss, fast_P_loss, struct_P_loss
+   real                        :: slow_C_loss, fast_P_loss, struct_P_loss, slow_N_loss
+   real :: struct_N_loss, slow_N_input
    real :: miner2slow_P_xfer, miner_P_input
    real, parameter :: miner2slow_P_rate = 1./365.  ! Units: 1/day
    real, parameter :: miner2slow_P_eq = 10.  ! 10x as much mineralized P as slow P in equilibrium.
@@ -293,98 +294,101 @@ subroutine update_C_and_N_pools(cgrid)
 
          patchloop: do ipa = 1,csite%npatches
 
-            if (csite%structural_soil_C(ipa) > 0.0) then
-               if (csite%structural_soil_L(ipa) == csite%structural_soil_C(ipa)) then
+            if (csite%sbgc%struct_soil_C(ipa) > 0.0) then
+               if (csite%sbgc%struct_soil_L(ipa) == csite%sbgc%struct_soil_C(ipa)) then
                   Lc = 0.049787 ! = exp(-3.0)
                else
-                  Lc = exp( -3.0 * csite%structural_soil_L(ipa)                            &
-                          /  csite%structural_soil_C(ipa))
+                  Lc = exp( -3.0 * csite%sbgc%struct_soil_L(ipa)                            &
+                          /  csite%sbgc%struct_soil_C(ipa))
                end if
             else
                Lc=0.0
             end if
       
             !----- Fast pools. ------------------------------------------------------------!
-            fast_C_loss = csite%today_A_decomp(ipa) * K2 * csite%fast_soil_C(ipa)
-            fast_N_loss = csite%today_A_decomp(ipa) * K2 * csite%fast_soil_N(ipa)
-
-            fast_P_loss = csite%today_A_decomp(ipa) * K2 * csite%fast_soil_P(ipa)
+            fast_C_loss = csite%today_A_decomp(ipa) * K2 * csite%sbgc%fast_soil_C(ipa)
+            fast_N_loss = csite%today_A_decomp(ipa) * K2 * csite%sbgc%fast_soil_N(ipa)
+            fast_P_loss = csite%today_A_decomp(ipa) * K2 * csite%sbgc%fast_soil_P(ipa)
 
             !----- Structural pools. ------------------------------------------------------!
             structural_C_loss = csite%today_Af_decomp(ipa) * Lc * K1                       &
-                              * csite%structural_soil_C(ipa)
+                              * csite%sbgc%struct_soil_C(ipa)
             structural_L_loss = csite%today_Af_decomp(ipa) * Lc * K1                       &
-                              * csite%structural_soil_L(ipa)
-
-            struct_P_loss = csite%today_Af_decomp(ipa) * Lc * K1 * csite%struct_soil_P(ipa)
+                              * csite%sbgc%struct_soil_L(ipa)
+            struct_N_loss = csite%today_Af_decomp(ipa) * Lc * K1 *   &
+                 csite%sbgc%struct_soil_N(ipa)
+            struct_P_loss = csite%today_Af_decomp(ipa) * Lc * K1 *   &
+                 csite%sbgc%struct_soil_P(ipa)
 
             !----- Slow pools. ------------------------------------------------------------!
             slow_C_input = (1.0 - r_stsc) * structural_C_loss
-            slow_C_loss  = csite%today_A_decomp(ipa) * K3 * csite%slow_soil_C(ipa)
+            slow_C_loss  = csite%today_A_decomp(ipa) * K3 * csite%sbgc%slow_soil_C(ipa)
+            slow_N_input = (1.0 - r_stsc) * struct_N_loss
+            slow_N_loss  = csite%today_A_decomp(ipa) * K3 * csite%sbgc%slow_soil_N(ipa)
 
-            miner2slow_P_xfer = miner2slow_P_rate * (csite%miner_soil_P(ipa) - csite%slow_soil_P(ipa) * miner2slow_P_eq)
+            miner2slow_P_xfer = miner2slow_P_rate * (csite%sbgc%miner_soil_P(ipa) -   &
+                 csite%sbgc%slow_soil_P(ipa) * miner2slow_P_eq)
 
             !----- Mineralized pool. ------------------------------------------------------!
-            csite%mineralized_N_input(ipa) = fast_N_loss + slow_C_loss / c2n_slow
-            csite%mineralized_N_loss(ipa)  = csite%total_plant_nitrogen_uptake(ipa)             &
-                                      + csite%today_Af_decomp(ipa) * Lc * K1               &
-                                      * csite%structural_soil_C(ipa)                       &
-                                      * ( (1.0 - r_stsc) / c2n_slow - 1.0 / c2n_structural)
+            csite%mineralized_N_input(ipa) = fast_N_loss + slow_N_loss +   &
+                 r_stsc * struct_N_loss
+            csite%mineralized_N_loss(ipa)  = csite%total_plant_nitrogen_uptake(ipa)
 
-!            miner_P_input = fast_P_loss + struct_P_loss
             miner_P_input = fast_P_loss + struct_P_loss - csite%total_plant_P_uptake(ipa)
             !------------------------------------------------------------------------------!
             !      All carbon fluxes have units kgC/m2/day, and we are updating on the     !
             ! daily time step.                                                             !
             !------------------------------------------------------------------------------!
-            csite%fast_soil_C(ipa)       = csite%fast_soil_C(ipa) + csite%fsc_in(ipa)      &
+            csite%sbgc%fast_soil_C(ipa) = csite%sbgc%fast_soil_C(ipa) + csite%fsc_in(ipa)   &
                                          - fast_C_loss
-            csite%structural_soil_C(ipa) = csite%structural_soil_C(ipa)                    &
+            csite%sbgc%struct_soil_C(ipa) = csite%sbgc%struct_soil_C(ipa)                  &
                                          + csite%ssc_in(ipa) - structural_C_loss
-            csite%structural_soil_L(ipa) = csite%structural_soil_L(ipa)                    &
+            csite%sbgc%struct_soil_L(ipa) = csite%sbgc%struct_soil_L(ipa)                    &
                                          + csite%ssl_in(ipa) - structural_L_loss
-            csite%slow_soil_C(ipa)       = csite%slow_soil_C(ipa) + slow_C_input           &
+            csite%sbgc%slow_soil_C(ipa) = csite%sbgc%slow_soil_C(ipa) + slow_C_input      &
                                          - slow_C_loss
 
             !------------------------------------------------------------------------------!
             !      All nitrogen fluxes have units kgN/m2/day, and we are updating on the   !
             ! daily time step.                                                             !
             !------------------------------------------------------------------------------!
-            csite%fast_soil_N(ipa)        = csite%fast_soil_N(ipa) + csite%fsn_in(ipa)     &
+            csite%sbgc%fast_soil_N(ipa) = csite%sbgc%fast_soil_N(ipa) + csite%fsn_in(ipa)  &
                                           - fast_N_loss
-            csite%mineralized_soil_N(ipa) = csite%mineralized_soil_N(ipa)                  &
+            csite%sbgc%miner_soil_N(ipa) = csite%sbgc%miner_soil_N(ipa)                  &
                                           + csite%mineralized_N_input(ipa)                 &
                                           - csite%mineralized_N_loss(ipa)
+            csite%sbgc%slow_soil_N(ipa) = csite%sbgc%slow_soil_N(ipa) + slow_N_input -  &
+                 slow_N_loss
+            csite%sbgc%struct_soil_N(ipa) = csite%sbgc%struct_soil_N(ipa) +   &
+                 csite%ssc_in(ipa) / c2n_structural - struct_N_loss
 
             !------------------------------------------------------------------------------!
             !      All phosphorus fluxes have units kgP/m2/day, and we are updating on the   !
             ! daily time step.                                                             !
             !------------------------------------------------------------------------------!
-!print*,csite%fast_soil_P(ipa),csite%struct_soil_P(ipa),csite%miner_soil_P(ipa),csite%slow_soil_P(ipa)
-            csite%fast_soil_P(ipa) = csite%fast_soil_P(ipa)+ csite%fsp_in(ipa) - fast_P_loss
-            csite%struct_soil_P(ipa) = csite%struct_soil_P(ipa) + csite%stsp_in(ipa) - struct_P_loss
-            csite%miner_soil_P(ipa) = csite%miner_soil_P(ipa) + miner_P_input - miner2slow_P_xfer
-            csite%slow_soil_P(ipa) = csite%slow_soil_P(ipa) + miner2slow_P_xfer
-!            csite%fast_soil_P(ipa) = csite%fast_soil_P(ipa) - fast_P_loss
-!            csite%struct_soil_P(ipa) = csite%struct_soil_P(ipa) - struct_P_loss
-!            csite%miner_soil_P(ipa) = csite%miner_soil_P(ipa) + miner_P_input - miner2slow_P_xfer
-!            csite%slow_soil_P(ipa) = csite%slow_soil_P(ipa) + miner2slow_P_xfer
+            csite%sbgc%fast_soil_P(ipa) = csite%sbgc%fast_soil_P(ipa) + csite%fsp_in(ipa)  &
+                 - fast_P_loss
+            csite%sbgc%struct_soil_P(ipa) = csite%sbgc%struct_soil_P(ipa)    &
+                 + csite%stsp_in(ipa) - struct_P_loss
+            csite%sbgc%miner_soil_P(ipa) = csite%sbgc%miner_soil_P(ipa) +   &
+                 miner_P_input - miner2slow_P_xfer
+            csite%sbgc%slow_soil_P(ipa) = csite%sbgc%slow_soil_P(ipa) + miner2slow_P_xfer
 
-!print*,csite%fast_soil_P(ipa),csite%struct_soil_P(ipa),csite%miner_soil_P(ipa),csite%slow_soil_P(ipa)
             !------------------------------------------------------------------------------!
             !      Force all pools to be either zero or positive.                          !
             !------------------------------------------------------------------------------!
-            csite%fast_soil_C(ipa)        = max(0.0,csite%fast_soil_C(ipa))
-            csite%structural_soil_C(ipa)  = max(0.0,csite%structural_soil_C(ipa))
-            csite%structural_soil_L(ipa)  = max(0.0,csite%structural_soil_L(ipa))
-            csite%slow_soil_C(ipa)        = max(0.0,csite%slow_soil_C(ipa))
-            csite%fast_soil_N(ipa)        = max(0.0,csite%fast_soil_N(ipa))
-            csite%mineralized_soil_N(ipa) = max(0.0,csite%mineralized_soil_N(ipa))
-
-            csite%fast_soil_P(ipa) = max(0.0, csite%fast_soil_P(ipa))
-            csite%struct_soil_P(ipa) = max(0.0, csite%struct_soil_P(ipa))
-            csite%miner_soil_P(ipa) = max(0.0, csite%miner_soil_P(ipa))
-            csite%slow_soil_P(ipa) = max(0.0, csite%slow_soil_P(ipa))
+            csite%sbgc%fast_soil_C(ipa)        = max(0.0,csite%sbgc%fast_soil_C(ipa))
+            csite%sbgc%struct_soil_C(ipa)  = max(0.0,csite%sbgc%struct_soil_C(ipa))
+            csite%sbgc%struct_soil_L(ipa)  = max(0.0,csite%sbgc%struct_soil_L(ipa))
+            csite%sbgc%slow_soil_C(ipa)        = max(0.0,csite%sbgc%slow_soil_C(ipa))
+            csite%sbgc%fast_soil_N(ipa)        = max(0.0,csite%sbgc%fast_soil_N(ipa))
+            csite%sbgc%struct_soil_N(ipa)        = max(0.0,csite%sbgc%struct_soil_N(ipa))
+            csite%sbgc%slow_soil_N(ipa)        = max(0.0,csite%sbgc%slow_soil_N(ipa))
+            csite%sbgc%miner_soil_N(ipa) = max(0.0,csite%sbgc%miner_soil_N(ipa))
+            csite%sbgc%fast_soil_P(ipa) = max(0.0, csite%sbgc%fast_soil_P(ipa))
+            csite%sbgc%struct_soil_P(ipa) = max(0.0, csite%sbgc%struct_soil_P(ipa))
+            csite%sbgc%miner_soil_P(ipa) = max(0.0, csite%sbgc%miner_soil_P(ipa))
+            csite%sbgc%slow_soil_P(ipa) = max(0.0, csite%sbgc%slow_soil_P(ipa))
             
          end do patchloop
       end do siteloop

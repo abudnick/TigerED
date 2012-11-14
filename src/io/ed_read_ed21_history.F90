@@ -56,7 +56,7 @@ subroutine read_ed21_history_file
                              , dbh2bd                  & ! function
                              , dbh2bl                  ! ! function
    use fuse_fiss_utils, only : terminate_cohorts       ! ! subroutine
-
+   use soil_bgc, only: read_ed21_history_sbgc
    implicit none
 #if USE_HDF5
 
@@ -479,27 +479,7 @@ subroutine read_ed21_history_file
                call hdf_getslab_r(csite%sum_chd   ,'SUM_CHD '   ,dsetrank,iparallel,.true.)
                call hdf_getslab_i(csite%plantation,'PLANTATION ',dsetrank,iparallel,.true.)
 
-               call hdf_getslab_r(csite%fast_soil_C       ,'FAST_SOIL_C '                  &
-                                 ,dsetrank,iparallel,.true.)
-               call hdf_getslab_r(csite%slow_soil_C       ,'SLOW_SOIL_C '                  &
-                                 ,dsetrank,iparallel,.true.)
-               call hdf_getslab_r(csite%fast_soil_N       ,'FAST_SOIL_N '                  &
-                                 ,dsetrank,iparallel,.true.)
-               call hdf_getslab_r(csite%structural_soil_C ,'STRUCTURAL_SOIL_C '            &
-                                 ,dsetrank,iparallel,.true.)
-               call hdf_getslab_r(csite%structural_soil_L ,'STRUCTURAL_SOIL_L '            &
-                                 ,dsetrank,iparallel,.true.)
-               call hdf_getslab_r(csite%mineralized_soil_N,'MINERALIZED_SOIL_N '           &
-                                 ,dsetrank,iparallel,.true.)
-
-               call hdf_getslab_r(csite%fast_soil_P,'FAST_SOIL_P '           &
-                                 ,dsetrank,iparallel,.true.)
-               call hdf_getslab_r(csite%struct_soil_P,'STRUCT_SOIL_P '           &
-                                 ,dsetrank,iparallel,.true.)
-               call hdf_getslab_r(csite%miner_soil_P,'MINER_SOIL_P '           &
-                                 ,dsetrank,iparallel,.true.)
-               call hdf_getslab_r(csite%slow_soil_P,'SLOW_SOIL_P '           &
-                                 ,dsetrank,iparallel,.true.)
+               call read_ed21_history_sbgc(csite%sbgc,dsetrank,iparallel)
 
 
                !---------------------------------------------------------------------------!
@@ -856,6 +836,7 @@ subroutine read_ed21_history_unstruct
                              , lu_rescale_file         & ! intent(in)
                              , min_new_patch_area      ! ! intent(in)
    use soil_coms      , only : soil                    ! ! intent(in)
+   use soil_bgc, only: read_ed21_history_unstr_sbgc
 
    implicit none
 
@@ -1505,29 +1486,7 @@ subroutine read_ed21_history_unstruct
                                     ,dsetrank,iparallel,.true.)
                   call hdf_getslab_i(csite%plantation        ,'PLANTATION '                &
                                     ,dsetrank,iparallel,.true.)
-                  call hdf_getslab_r(csite%fast_soil_C       ,'FAST_SOIL_C '               &
-                                    ,dsetrank,iparallel,.true.)
-                  call hdf_getslab_r(csite%slow_soil_C       ,'SLOW_SOIL_C '               &
-                                    ,dsetrank,iparallel,.true.)
-                  call hdf_getslab_r(csite%fast_soil_N       ,'FAST_SOIL_N '               &
-                                    ,dsetrank,iparallel,.true.)
-                  call hdf_getslab_r(csite%structural_soil_C ,'STRUCTURAL_SOIL_C '         &
-                                    ,dsetrank,iparallel,.true.)
-                  call hdf_getslab_r(csite%structural_soil_L ,'STRUCTURAL_SOIL_L '         &
-                                    ,dsetrank,iparallel,.true.)
-                  call hdf_getslab_r(csite%mineralized_soil_N,'MINERALIZED_SOIL_N '        &
-                                    ,dsetrank,iparallel,.true.)
 
-
-
-                  call hdf_getslab_r(csite%fast_soil_P,'FAST_SOIL_P '        &
-                                    ,dsetrank,iparallel,.true.)
-                  call hdf_getslab_r(csite%struct_soil_P,'STRUCT_SOIL_P '        &
-                                    ,dsetrank,iparallel,.true.)
-                  call hdf_getslab_r(csite%miner_soil_P,'MINER_SOIL_P '        &
-                                    ,dsetrank,iparallel,.true.)
-                  call hdf_getslab_r(csite%slow_soil_P,'SLOW_SOIL_P '        &
-                                    ,dsetrank,iparallel,.true.)
 
                   !------------------------------------------------------------------------!
                   !     Check whether area should be re-scaled.                            !

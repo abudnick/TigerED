@@ -694,6 +694,7 @@ subroutine norm_harv_patch(csite,newp)
    use ed_max_dims   , only : n_pft               ! ! intent(in)
    use grid_coms     , only : nzg                 & ! intent(in)
                             , nzs                 ! ! intent(in)
+   use soil_bgc, only: norm_harv_patch_sbgc
    implicit none
    !----- Arguments -----------------------------------------------------------------------!
    type(sitetype), target     :: csite
@@ -711,19 +712,9 @@ subroutine norm_harv_patch(csite,newp)
       area_fac = 1.0 / csite%area(newp)
    end if
 
-   csite%fast_soil_C(newp)                 = csite%fast_soil_C(newp)         * area_fac
-   csite%slow_soil_C(newp)                 = csite%slow_soil_C(newp)         * area_fac
-   csite%structural_soil_C(newp)           = csite%structural_soil_C(newp)   * area_fac
-   csite%structural_soil_L(newp)           = csite%structural_soil_L(newp)   * area_fac
-   csite%mineralized_soil_N(newp)          = csite%mineralized_soil_N(newp)  * area_fac
-
-   csite%fast_soil_P(newp) = csite%fast_soil_P(newp) * area_fac
-   csite%struct_soil_P(newp) = csite%struct_soil_P(newp) * area_fac
-   csite%miner_soil_P(newp) = csite%miner_soil_P(newp) * area_fac
-   csite%slow_soil_P(newp) = csite%slow_soil_P(newp) * area_fac
+   call norm_harv_patch_sbgc(csite%sbgc, newp, area_fac)
 
 
-   csite%fast_soil_N(newp)                 = csite%fast_soil_N(newp)         * area_fac
    csite%sum_dgd(newp)                     = csite%sum_dgd(newp)             * area_fac
    csite%sum_chd(newp)                     = csite%sum_chd(newp)             * area_fac
    csite%can_theta(newp)                   = csite%can_theta(newp)           * area_fac

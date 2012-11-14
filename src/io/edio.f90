@@ -498,16 +498,16 @@ subroutine spatial_averages
                                            * site_area_i
 
             !----- Extra variables for NACP intercomparision (MCD) ------------------------!
-            cpoly%avg_fsc(isi)          = sum(csite%fast_soil_C        * csite%area )      &
-                                        * site_area_i
-            cpoly%avg_ssc(isi)          = sum(csite%slow_soil_C        * csite%area )      &
-                                        * site_area_i
-            cpoly%avg_stsc(isi)         = sum(csite%structural_soil_C  * csite%area )      &
-                                        * site_area_i
-            cpoly%avg_fsn(isi)          = sum(csite%fast_soil_N        * csite%area )      &
-                                        * site_area_i
-            cpoly%avg_msn(isi)          = sum(csite%mineralized_soil_N * csite%area )      &
-                                        * site_area_i
+!            cpoly%avg_fsc(isi)          = sum(csite%fast_soil_C        * csite%area )      &
+!                                        * site_area_i
+!            cpoly%avg_ssc(isi)          = sum(csite%slow_soil_C        * csite%area )      &
+!                                        * site_area_i
+!            cpoly%avg_stsc(isi)         = sum(csite%structural_soil_C  * csite%area )      &
+!                                        * site_area_i
+!            cpoly%avg_fsn(isi)          = sum(csite%fast_soil_N        * csite%area )      &
+!                                        * site_area_i
+!            cpoly%avg_msn(isi)          = sum(csite%mineralized_soil_N * csite%area )      &
+!                                        * site_area_i
 
             !----- Available water. -------------------------------------------------------!
             cpoly%avg_available_water(isi) = sum(csite%avg_available_water * csite%area)   &

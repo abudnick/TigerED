@@ -38,19 +38,24 @@ use pft_coms, only: c2n_leaf, c2n_storage, c2n_recruit, c2n_stem, c2p_alive, c2p
    integer     , external     :: julday
    !---------------------------------------------------------------------------------------!
 
-real :: oldpn, oldsn, newpn, newsn, oldtn, newtn
 type(polygontype), pointer :: cpoly
 type(sitetype), pointer :: csite
 type(patchtype),pointer :: cpatch
 integer :: ipy, isi, ipa, ico
 real :: new_soil_P, new_plant_P, old_soil_P, old_plant_P
+real :: new_soil_N, new_plant_N, old_soil_N, old_plant_N
 
-oldpn=0.;oldtn=0.;oldsn=0.;newpn=0.;newsn=0.;newtn=0.
 
    old_soil_P = 0.
    old_plant_P = 0.
    new_soil_P = 0.
    new_plant_P = 0.
+
+   old_soil_N = 0.
+   old_plant_N = 0.
+   new_soil_N = 0.
+   new_plant_N = 0.
+
    !----- Find the day of year. -----------------------------------------------------------!
    doy = julday(current_time%month, current_time%date, current_time%year)
   
@@ -76,11 +81,11 @@ oldpn=0.;oldtn=0.;oldsn=0.;newpn=0.;newsn=0.;newtn=0.
          do isi=1,cpoly%nsites
             csite => cpoly%site(isi)
             do ipa=1,csite%npatches
-               oldsn = oldsn + (csite%slow_soil_C(ipa)/10.+csite%fast_soil_N(ipa) + csite%structural_soil_C(ipa)/150. + csite%mineralized_soil_N(ipa)) * csite%area(ipa)
+               old_soil_N = old_soil_N + (csite%sbgc%slow_soil_N(ipa)+csite%sbgc%fast_soil_N(ipa) + csite%sbgc%struct_soil_N(ipa) + csite%sbgc%miner_soil_N(ipa)) * csite%area(ipa)
                cpatch => csite%patch(ipa)
-               oldpn = oldpn + csite%area(ipa) * (csite%repro(1,ipa)/c2n_recruit(1)+csite%repro(2,ipa)/c2n_recruit(2)+csite%repro(3,ipa)/c2n_recruit(3)+csite%repro(4,ipa)/c2n_recruit(4))
+               old_plant_N = old_plant_N + csite%area(ipa) * (csite%repro(1,ipa)/c2n_recruit(1)+csite%repro(2,ipa)/c2n_recruit(2)+csite%repro(3,ipa)/c2n_recruit(3)+csite%repro(4,ipa)/c2n_recruit(4))
                do ico=1,cpatch%ncohorts
-                  oldpn = oldpn + csite%area(ipa) * cpatch%nplant(ico) * (cpatch%balive(ico)/c2n_leaf(cpatch%pft(ico)) + cpatch%bdead(ico)/c2n_stem(cpatch%pft(ico))+cpatch%bstorage(ico)/c2n_storage)
+                  old_plant_N = old_plant_N + csite%area(ipa) * cpatch%nplant(ico) * (cpatch%balive(ico)/c2n_leaf(cpatch%pft(ico)) + cpatch%bdead(ico)/c2n_stem(cpatch%pft(ico))+cpatch%bstorage(ico)/c2n_storage)
                enddo
             enddo
          enddo
@@ -92,7 +97,7 @@ oldpn=0.;oldtn=0.;oldsn=0.;newpn=0.;newsn=0.;newtn=0.
          do isi=1,cpoly%nsites
             csite => cpoly%site(isi)
             do ipa=1,csite%npatches
-               old_soil_P = old_soil_P + (csite%slow_soil_P(ipa)+csite%fast_soil_P(ipa) + csite%struct_soil_P(ipa) + csite%miner_soil_P(ipa)) * csite%area(ipa)
+               old_soil_P = old_soil_P + (csite%sbgc%slow_soil_P(ipa)+csite%sbgc%fast_soil_P(ipa) + csite%sbgc%struct_soil_P(ipa) + csite%sbgc%miner_soil_P(ipa)) * csite%area(ipa)
                cpatch => csite%patch(ipa)
                old_plant_P = old_plant_P + csite%area(ipa) * (csite%repro(1,ipa)/c2p_recruit(1)+csite%repro(2,ipa)/c2p_recruit(2)+csite%repro(3,ipa)/c2p_recruit(3)+csite%repro(4,ipa)/c2p_recruit(4))
                do ico=1,cpatch%ncohorts
@@ -101,7 +106,8 @@ oldpn=0.;oldtn=0.;oldsn=0.;newpn=0.;newsn=0.;newtn=0.
             enddo
          enddo
       enddo
-print*,'DP, INITIAL',old_soil_P,old_plant_P,old_soil_P+old_plant_P
+!print*,'DN, INITIAL',old_soil_N,old_plant_N,old_soil_N+old_plant_N
+!print*,'DP, INITIAL',old_soil_P,old_plant_P,old_soil_P+old_plant_P
 
       !------------------------------------------------------------------------------------!
       !     The following block corresponds to the daily time-step.                        !
@@ -156,20 +162,20 @@ print*,'DP, INITIAL',old_soil_P,old_plant_P,old_soil_P+old_plant_P
       !------------------------------------------------------------------------------------!
 
       ! Nitrogen budgets
-!      do ipy=1,cgrid%npolygons
-!         cpoly => cgrid%polygon(ipy)
-!         do isi=1,cpoly%nsites
-!            csite => cpoly%site(isi)
-!            do ipa=1,csite%npatches
-!               newsn = newsn + (csite%slow_soil_C(ipa)/10.+csite%fast_soil_N(ipa) + csite%structural_soil_C(ipa)/150. + csite%mineralized_soil_N(ipa)) * csite%area(ipa)
-!               cpatch => csite%patch(ipa)
-!               newpn = newpn + csite%area(ipa) * (csite%repro(1,ipa)/c2n_recruit(1)+csite%repro(2,ipa)/c2n_recruit(2)+csite%repro(3,ipa)/c2n_recruit(3)+csite%repro(4,ipa)/c2n_recruit(4))
-!               do ico=1,cpatch%ncohorts
-!                  newpn = newpn + csite%area(ipa) * cpatch%nplant(ico) * (cpatch%balive(ico)/c2n_leaf(cpatch%pft(ico)) + cpatch%bdead(ico)/c2n_stem(cpatch%pft(ico))+cpatch%bstorage(ico)/c2n_storage)
-!               enddo
-!            enddo
-!         enddo
-!      enddo
+      do ipy=1,cgrid%npolygons
+         cpoly => cgrid%polygon(ipy)
+         do isi=1,cpoly%nsites
+            csite => cpoly%site(isi)
+            do ipa=1,csite%npatches
+               new_soil_N = new_soil_N + (csite%sbgc%slow_soil_N(ipa)+csite%sbgc%fast_soil_N(ipa) + csite%sbgc%struct_soil_N(ipa) + csite%sbgc%miner_soil_N(ipa)) * csite%area(ipa)
+               cpatch => csite%patch(ipa)
+               new_plant_N = new_plant_N + csite%area(ipa) * (csite%repro(1,ipa)/c2n_recruit(1)+csite%repro(2,ipa)/c2n_recruit(2)+csite%repro(3,ipa)/c2n_recruit(3)+csite%repro(4,ipa)/c2n_recruit(4))
+               do ico=1,cpatch%ncohorts
+                  new_plant_N = new_plant_N + csite%area(ipa) * cpatch%nplant(ico) * (cpatch%balive(ico)/c2n_leaf(cpatch%pft(ico)) + cpatch%bdead(ico)/c2n_stem(cpatch%pft(ico))+cpatch%bstorage(ico)/c2n_storage)
+               enddo
+            enddo
+         enddo
+      enddo
 
       ! Phosphorus budgets
       do ipy=1,cgrid%npolygons
@@ -177,7 +183,7 @@ print*,'DP, INITIAL',old_soil_P,old_plant_P,old_soil_P+old_plant_P
          do isi=1,cpoly%nsites
             csite => cpoly%site(isi)
             do ipa=1,csite%npatches
-               new_soil_P = new_soil_P + (csite%slow_soil_P(ipa) + csite%fast_soil_P(ipa) + csite%struct_soil_P(ipa) + csite%miner_soil_P(ipa)) * csite%area(ipa)
+               new_soil_P = new_soil_P + (csite%sbgc%slow_soil_P(ipa) + csite%sbgc%fast_soil_P(ipa) + csite%sbgc%struct_soil_P(ipa) + csite%sbgc%miner_soil_P(ipa)) * csite%area(ipa)
                cpatch => csite%patch(ipa)
                new_plant_P = new_plant_P + csite%area(ipa) * (csite%repro(1,ipa)/c2p_recruit(1)+csite%repro(2,ipa)/c2p_recruit(2)+csite%repro(3,ipa)/c2p_recruit(3)+csite%repro(4,ipa)/c2p_recruit(4))
                do ico=1,cpatch%ncohorts
@@ -186,9 +192,8 @@ print*,'DP, INITIAL',old_soil_P,old_plant_P,old_soil_P+old_plant_P
             enddo
          enddo
       enddo
-print*,'DP, FINAL',new_soil_P,new_plant_P,new_soil_P+new_plant_P
-!print*,csite%fast_soil_P(1),csite%struct_soil_P(1),csite%miner_soil_P(1),csite%slow_soil_P(1)
-
+!print*,'DN, FINAL',new_soil_N,new_plant_N,new_soil_N+new_plant_N
+!print*,'DP, FINAL',new_soil_P,new_plant_P,new_soil_P+new_plant_P
 
          !----- This is actually the yearly time-step, apply the disturbances. ------------!
          if (new_month .and. new_year) then

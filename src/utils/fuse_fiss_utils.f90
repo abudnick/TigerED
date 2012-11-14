@@ -2997,6 +2997,7 @@ module fuse_fiss_utils
                                     , idoutput              & ! intent(in)
                                     , imoutput              & ! intent(in)
                                     , ndcycle               ! ! intent(in)
+      use soil_bgc, only: fuse_2_patches_sbgc
       implicit none
       !----- Arguments --------------------------------------------------------------------!
       type(sitetype)         , target      :: csite             ! Current site
@@ -3042,51 +3043,9 @@ module fuse_fiss_utils
                                      ( csite%age(donp)                * csite%area(donp)   &
                                      + csite%age(recp)                * csite%area(recp) )
 
-      csite%fast_soil_C(recp)        = newareai *                                          &
-                                     ( csite%fast_soil_C(donp)        * csite%area(donp)   &
-                                     + csite%fast_soil_C(recp)        * csite%area(recp) )
+      call fuse_2_patches_sbgc(csite%sbgc, recp, donp, newareai, csite%area(donp), &
+           csite%area(recp))
 
-      csite%slow_soil_C(recp)        = newareai *                                          &
-                                     ( csite%slow_soil_C(donp)        * csite%area(donp)   &
-                                     + csite%slow_soil_C(recp)        * csite%area(recp) )
-
-      csite%structural_soil_C(recp)  = newareai *                                          &
-                                     ( csite%structural_soil_C(donp)  * csite%area(donp)   &
-                                     + csite%structural_soil_C(recp)  * csite%area(recp) )
-                                     
-
-      csite%structural_soil_L(recp)  = newareai *                                          &
-                                     ( csite%structural_soil_L(donp)  * csite%area(donp)   &
-                                     + csite%structural_soil_L(recp)  * csite%area(recp) )
-                                     
-
-      csite%mineralized_soil_N(recp) = newareai *                                          &
-                                     ( csite%mineralized_soil_N(donp) * csite%area(donp)   &
-                                     + csite%mineralized_soil_N(recp) * csite%area(recp) )
-
-
-
-
-      csite%fast_soil_P(recp) = newareai *                                          &
-                                     ( csite%fast_soil_P(donp) * csite%area(donp)   &
-                                     + csite%fast_soil_P(recp) * csite%area(recp) )
-      csite%struct_soil_P(recp) = newareai *                                          &
-                                     ( csite%struct_soil_P(donp) * csite%area(donp)   &
-                                     + csite%struct_soil_P(recp) * csite%area(recp) )
-      csite%miner_soil_P(recp) = newareai *                                          &
-                                     ( csite%miner_soil_P(donp) * csite%area(donp)   &
-                                     + csite%miner_soil_P(recp) * csite%area(recp) )
-      csite%slow_soil_P(recp) = newareai *                                          &
-                                     ( csite%slow_soil_P(donp) * csite%area(donp)   &
-                                     + csite%slow_soil_P(recp) * csite%area(recp) )
-
-
-
-
-
-      csite%fast_soil_N(recp)        = newareai *                                          &
-                                     ( csite%fast_soil_N(donp)        * csite%area(donp)   &
-                                     + csite%fast_soil_N(recp)        * csite%area(recp) )
 
       csite%sum_dgd(recp)            = newareai *                                          &
                                      ( csite%sum_dgd(donp)            * csite%area(donp)   &

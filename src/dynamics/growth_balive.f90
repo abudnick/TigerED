@@ -36,7 +36,7 @@ module growth_balive
                                  , ed_biomass             ! ! function
       use mortality       , only : mortality_rates        ! ! subroutine
       use phenology_coms  , only : theta_crit             ! ! intent(in)
-      use pft_coms, only: c2p_storage
+      use pft_coms, only: c2p_storage, c2p_alive, c2p_dead,c2p_recruit
       implicit none
       !----- Arguments. -------------------------------------------------------------------!
       type(edtype)     , target     :: cgrid
@@ -67,8 +67,14 @@ module growth_balive
       real :: P_uptake
       real                          :: N_uptake_pot
       real                          :: temp_dep
+real :: new_soil_P, new_plant_P, old_soil_P, old_plant_P
       !------------------------------------------------------------------------------------!
 
+
+   old_soil_P = 0.
+   old_plant_P = 0.
+   new_soil_P = 0.
+   new_plant_P = 0.
 
       do ipy = 1,cgrid%npolygons
          cpoly => cgrid%polygon(ipy)
@@ -83,11 +89,18 @@ module growth_balive
                csite%total_plant_nitrogen_uptake(ipa) = 0.0
                csite%total_plant_P_uptake(ipa) = 0.0
 
+! Phosphorus budgets
+old_soil_P = old_soil_P + (csite%sbgc%slow_soil_P(ipa)+csite%sbgc%fast_soil_P(ipa) + csite%sbgc%struct_soil_P(ipa) + csite%sbgc%miner_soil_P(ipa)) * csite%area(ipa)
+old_plant_P = old_plant_P + csite%area(ipa) * (csite%repro(1,ipa)/c2p_recruit(1)+csite%repro(2,ipa)/c2p_recruit(2)+csite%repro(3,ipa)/c2p_recruit(3)+csite%repro(4,ipa)/c2p_recruit(4))
+
                !----- Loop over cohorts. --------------------------------------------------!
                do ico = 1,cpatch%ncohorts
 
                   !----- Alias for current PFT. -------------------------------------------!
                   ipft = cpatch%pft(ico)
+
+! Phosphorus budgets
+old_plant_P = old_plant_P + csite%area(ipa) * cpatch%nplant(ico) * (cpatch%balive(ico)/c2p_alive(cpatch%pft(ico)) + cpatch%bdead(ico)/c2p_dead(cpatch%pft(ico))+cpatch%bstorage(ico)/c2p_storage(cpatch%pft(ico)))
 
                   !----- Update the elongation factor. ------------------------------------!
                   select case (phenology(ipft))
@@ -99,11 +112,6 @@ module growth_balive
 
                   end select
 
-
-                  !----- Initialize cohort nitrogen uptake. -------------------------------!
-                  nitrogen_uptake = 0.0
-                  N_uptake_pot    = 0.0
-                  P_uptake = 0.
 
                   !----- Set allocation factors. ------------------------------------------!
                   salloc  = 1.0 + qsw(ipft) * cpatch%hite(ico) + q(ipft)
@@ -133,7 +141,7 @@ module growth_balive
                                         - cpatch%root_maintenance(ico)
 
                   !------------------------------------------------------------------------!
-                  !    Storage respriation/turnover_rate.                                  !
+                  !    Storage respiration/turnover_rate.                                  !
                   !    Calculate in same way as leaf and root turnover in kgC/plant/year.  !
                   !------------------------------------------------------------------------!
 
@@ -199,7 +207,7 @@ module growth_balive
                   !------------------------------------------------------------------------!
                   balive_in = cpatch%balive(ico)
                   call alloc_plant_c_balance(csite,ipa,ico,salloc,salloci,carbon_balance   &
-                                            ,nitrogen_uptake, P_uptake                               &
+                                            ,nitrogen_uptake, P_uptake                 &
                                             ,cpoly%green_leaf_factor(ipft,isi))
                   !------------------------------------------------------------------------!
 
@@ -225,6 +233,7 @@ module growth_balive
                   csite%total_plant_nitrogen_uptake(ipa) =                                 &
                                        csite%total_plant_nitrogen_uptake(ipa)              &
                                      + nitrogen_uptake * cpatch%nplant(ico)
+
                   !------------------------------------------------------------------------!
                   !------------------------------------------------------------------------!
                   !  Increment the [kgP/m2] taken up during previous day.                  !
@@ -234,14 +243,12 @@ module growth_balive
                                      + P_uptake * cpatch%nplant(ico)
                   !------------------------------------------------------------------------!
 
-
-
                   !----- Calculate plant N limitation factor. -----------------------------!
                   if (n_plant_lim == 0 .or. N_uptake_pot <= 0.0) then
                      cpatch%fsn(ico) = 1.0
                   else
                      nitrogen_supply = plant_N_supply_scale * cpatch%broot(ico)            &
-                                     * csite%mineralized_soil_N(ipa)
+                                     * csite%sbgc%miner_soil_N(ipa)
                      cpatch%fsn(ico) = nitrogen_supply                                     &
                                      / (nitrogen_supply + N_uptake_pot)
                   end if
@@ -284,6 +291,8 @@ module growth_balive
                   !----- Update the stability status. -------------------------------------!
                   call is_resolvable(csite,ipa,ico,cpoly%green_leaf_factor(:,isi))
                   !------------------------------------------------------------------------!
+! Phosphorus budgets
+new_plant_P = new_plant_P + csite%area(ipa) * cpatch%nplant(ico) * (cpatch%balive(ico)/c2p_alive(cpatch%pft(ico)) + cpatch%bdead(ico)/c2p_dead(cpatch%pft(ico))+cpatch%bstorage(ico)/c2p_storage(cpatch%pft(ico)))
                end do
                
                !----- Update litter. ------------------------------------------------------!
@@ -297,9 +306,14 @@ module growth_balive
 
                !----- It's a new day, reset average daily temperature. --------------------!
                csite%avg_daily_temp(ipa) = 0.0 
+! Phosphorus budgets
+new_soil_P = new_soil_P + (csite%sbgc%slow_soil_P(ipa)+csite%sbgc%fast_soil_P(ipa) + csite%sbgc%struct_soil_P(ipa) + csite%sbgc%miner_soil_P(ipa) + csite%fsp_in(ipa) + csite%stsp_in(ipa) - csite%total_plant_P_uptake(ipa)) * csite%area(ipa)
+new_plant_P = new_plant_P + csite%area(ipa) * (csite%repro(1,ipa)/c2p_recruit(1)+csite%repro(2,ipa)/c2p_recruit(2)+csite%repro(3,ipa)/c2p_recruit(3)+csite%repro(4,ipa)/c2p_recruit(4))
             end do
          end do
       end do
+!print*,old_soil_P, old_plant_P, old_soil_P+old_plant_P
+!print*,new_soil_P, new_plant_P, new_soil_P+new_plant_P
 
       return
    end subroutine dbalive_dt
@@ -471,7 +485,7 @@ module growth_balive
                      cpatch%fsn(ico) = 1.0
                   else
                      nitrogen_supply = plant_N_supply_scale * br                           &
-                                     * csite%mineralized_soil_N(ipa)
+                                     * csite%sbgc%miner_soil_N(ipa)
                      cpatch%fsn(ico) = nitrogen_supply / (nitrogen_supply + N_uptake_pot)
                   end if
                   
@@ -732,9 +746,6 @@ module growth_balive
 
 
 
-
-
-
    !=======================================================================================!
    !=======================================================================================!
    subroutine alloc_plant_c_balance(csite,ipa,ico,salloc,salloci,carbon_balance            &
@@ -783,11 +794,69 @@ module growth_balive
       real                           :: bl
       logical                        :: on_allometry
       logical                        :: time_to_flush
+      real :: balive_target, storage2alive, desired_carbon
       !------------------------------------------------------------------------------------!
 
       cpatch => csite%patch(ipa)
       
       ipft = cpatch%pft(ico) 
+
+      ! First, have the daily carbon balance transit through storage.  Adjust N, P as necessary.
+      cpatch%bstorage(ico) = cpatch%bstorage(ico) + carbon_balance
+      nitrogen_uptake = carbon_balance / c2n_storage
+      P_uptake = carbon_balance / c2p_storage(ipft)
+
+      ! Null assumption is that everything that is in storage stays in storage.
+      storage2alive = 0.0
+
+      ! However, f there is carbon and leaves want to grow, let them grow.
+      if(cpatch%bstorage(ico) > 0. .and. cpatch%phenology_status(ico) == 1)then
+
+         !  Maximum bleaf that the allometric relationship would allow.  
+         bl_max     = dbh2bl(cpatch%dbh(ico),ipft) * green_leaf_factor
+         balive_target = bl_max * (green_leaf_factor + q(ipft) + qsw(ipft) * cpatch%hite(ico))
+         
+         desired_carbon = balive_target - cpatch%balive(ico)
+
+         if(cpatch%bstorage(ico) >= desired_carbon)then
+            storage2alive = desired_carbon
+            cpatch%phenology_status(ico) = 0
+         else
+            storage2alive = cpatch%bstorage(ico)
+         endif
+
+         ! This process is going to require some additional nutrients.
+         nitrogen_uptake = nitrogen_uptake + storage2alive * (1./c2n_leaf(ipft) - 1./c2n_storage)
+         P_uptake = P_uptake + storage2alive * (1./c2p_alive(ipft) - 1./c2p_storage(ipft))
+      endif
+
+      ! If plants have negative storage, take from balive.
+      if(cpatch%bstorage(ico) < 0.)then
+         storage2alive = cpatch%bstorage(ico)
+         if(cpatch%phenology_status(ico) == 0)cpatch%phenology_status(ico) = 1
+
+         ! This process implies the loss of some additional nutrients.
+         csite%fsp_in(ipa) = csite%fsp_in(ipa) - cpatch%nplant(ico) *   &
+              storage2alive * (1./c2p_alive(ipft) - 1./c2p_storage(ipft))
+         csite%fsn_in(ipa) = csite%fsn_in(ipa) - cpatch%nplant(ico) *   &
+              storage2alive * (1./c2n_leaf(ipft) - 1./c2n_storage)
+
+      endif
+
+      cpatch%bstorage(ico) = cpatch%bstorage(ico) - storage2alive
+      cpatch%balive(ico) = cpatch%balive(ico) + storage2alive
+      
+      cpatch%bleaf(ico)    = green_leaf_factor * cpatch%balive(ico) / (1.0 + q(ipft)   &
+           + qsw(ipft) * cpatch%hite(ico))
+      cpatch%broot(ico)    = q(ipft) * cpatch%balive(ico) / (1.0 + q(ipft)   &
+           + qsw(ipft) * cpatch%hite(ico))
+      cpatch%bsapwood(ico) = qsw(ipft) * cpatch%hite(ico) * cpatch%balive(ico) /  &
+           (1.0 + q(ipft) + qsw(ipft) * cpatch%hite(ico))
+      
+
+
+if(.false.)then
+!!  All of this stuff if very difficult to understand.  Don't need it.
 
       !------------------------------------------------------------------------------------!
       !      When plants transit from dormancy to leaf flushing, it is possible that       !
@@ -1037,6 +1106,7 @@ module growth_balive
          cpatch%today_nppdaily(ico)   = carbon_balance * cpatch%nplant(ico)
       end if
 
+endif
       return
    end subroutine alloc_plant_c_balance
    !=======================================================================================!
@@ -1165,6 +1235,7 @@ module growth_balive
          csite%ssc_in(ipa) = csite%ssc_in(ipa) + plant_litter_s
          csite%ssl_in(ipa) = csite%ssl_in(ipa) + plant_litter_s * l2n_stem / c2n_stem(ipft)
       end do
+
       return
    end subroutine litter
    !=======================================================================================!

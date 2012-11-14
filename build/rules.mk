@@ -463,6 +463,11 @@ rsys.o: $(ED_UTILS)/rsys.F90
 	$(FPP_COMMAND) $(<F:.F90=.F90)
 	rm -f $(<F:.F90=.F90)
 
+soil_bgc.o : $(ED_MEMORY)/soil_bgc.f90
+	cp -f $< $(<F:.f90=.f90)
+	$(F90_COMMAND) $(<F:.f90=.f90)
+	rm -f $(<F:.f90=.f90)
+
 soil_coms.o : $(ED_MEMORY)/soil_coms.F90
 	cp -f $< $(<F:.F90=.F90)
 	$(FPP_COMMAND) $(<F:.F90=.F90)

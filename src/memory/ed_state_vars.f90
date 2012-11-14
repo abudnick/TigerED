@@ -14,6 +14,7 @@ module ed_state_vars
   use fusion_fission_coms, only: ff_nhgt,hgt_class
   use phenology_coms, only: prescribed_phen
   use ed_misc_coms, only: idoutput, imoutput, iqoutput, ndcycle
+  use soil_bgc, only: sbgc_vars
 
   implicit none
 !============================================================================!
@@ -556,39 +557,6 @@ module ed_state_vars
      ! Fractional area of the patch (considers lai weighting)
      real, pointer,dimension(:) :: laiarea
 
-     ! Soil carbon concentration, fast pool (kg/m2)
-     real , pointer,dimension(:) :: fast_soil_C 
-
-     ! Soil carbon concentration, slow pool (kg/m2)
-     real , pointer,dimension(:) :: slow_soil_C 
-
-     ! Soil carbon concentration, structural pool (kg/m2)
-     real , pointer,dimension(:) :: structural_soil_C
-
-     ! Soil lignin concentration, structural pool (kg/m2)
-     real , pointer,dimension(:) :: structural_soil_L
-
-     ! Soil nitrogen concentration, mineralized pool (kg/m2)
-     real , pointer,dimension(:) :: mineralized_soil_N  
-
-
-     ! Soil phosphorus concentration, fast pool (kgP/m2)
-     real , pointer,dimension(:) :: fast_soil_P  
-     ! Soil phosphorus concentration, structural pool (kgP/m2)
-     real , pointer,dimension(:) :: struct_soil_P  
-     ! Soil phosphorus concentration, mineralized pool (kgP/m2)
-     real , pointer,dimension(:) :: miner_soil_P 
-     ! Soil phosphorus concentration, slow pool (kgP/m2)
-     real , pointer,dimension(:) :: slow_soil_P 
-
-
-
-
-
-
-     ! Soil nitrogen concentration, fast pool (kg/m2)
-     real , pointer,dimension(:) :: fast_soil_N 
-
      ! Number of degree days
      ! Degree days --- sum of daily average temperatures above 278.15 K 
      real , pointer,dimension(:) :: sum_dgd
@@ -873,6 +841,7 @@ module ed_state_vars
      ! Plant nitrogen update summed over all cohorts [kgN/m2/day]
      real , pointer,dimension(:) :: total_plant_nitrogen_uptake
 
+     type(sbgc_vars) :: sbgc
 
      ! Plant phosphorus update summed over all cohorts [kgP/m2/day]
      real , pointer,dimension(:) :: total_plant_P_uptake
@@ -2962,6 +2931,7 @@ contains
 !============================================================================!
   subroutine allocate_sitetype(csite,npatches)
 
+    use soil_bgc, only: allocate_sitetype_sbgc
     implicit none
 
     integer :: npatches,ipa
@@ -2985,19 +2955,9 @@ contains
     allocate(csite%age(npatches))
     allocate(csite%area(npatches))
     allocate(csite%laiarea(npatches))
-    allocate(csite%fast_soil_C(npatches))
-    allocate(csite%slow_soil_C(npatches))
-    allocate(csite%structural_soil_C(npatches))
-    allocate(csite%structural_soil_L(npatches))
-    allocate(csite%mineralized_soil_N(npatches))
 
-    allocate(csite%fast_soil_P(npatches))
-    allocate(csite%struct_soil_P(npatches))
-    allocate(csite%miner_soil_P(npatches))
-    allocate(csite%slow_soil_P(npatches))
+    call allocate_sitetype_sbgc(csite%sbgc, npatches)
 
-
-    allocate(csite%fast_soil_N(npatches))
     allocate(csite%sum_dgd(npatches))
     allocate(csite%sum_chd(npatches))
     allocate(csite%plantation(npatches))
@@ -4173,18 +4133,7 @@ contains
     nullify(csite%age)
     nullify(csite%area)
     nullify(csite%laiarea)
-    nullify(csite%fast_soil_C)
-    nullify(csite%slow_soil_C)
-    nullify(csite%structural_soil_C)
-    nullify(csite%structural_soil_L)
-    nullify(csite%mineralized_soil_N)
 
-    nullify(csite%fast_soil_P)
-    nullify(csite%struct_soil_P)
-    nullify(csite%miner_soil_P)
-    nullify(csite%slow_soil_P)
-
-    nullify(csite%fast_soil_N)
     nullify(csite%pname)
     nullify(csite%sum_dgd)
     nullify(csite%sum_chd)
@@ -5339,7 +5288,7 @@ contains
 !============================================================================!
 !============================================================================!
   subroutine deallocate_sitetype(csite)
-
+    use soil_bgc, only: deallocate_sitetype_sbgc
     implicit none
 
     type(sitetype),target :: csite
@@ -5352,21 +5301,10 @@ contains
     if(associated(csite%age                          )) deallocate(csite%age                          )
     if(associated(csite%area                         )) deallocate(csite%area                         )
     if(associated(csite%laiarea                      )) deallocate(csite%laiarea                      )
-    if(associated(csite%fast_soil_C                  )) deallocate(csite%fast_soil_C                  )
-    if(associated(csite%slow_soil_C                  )) deallocate(csite%slow_soil_C                  )
-    if(associated(csite%structural_soil_C            )) deallocate(csite%structural_soil_C            )
-    if(associated(csite%structural_soil_L            )) deallocate(csite%structural_soil_L            )
-    if(associated(csite%mineralized_soil_N           )) deallocate(csite%mineralized_soil_N           )
+
+    if(allocated(csite%sbgc%fast_soil_C))call deallocate_sitetype_sbgc(csite%sbgc)
 
 
-    if(associated(csite%fast_soil_P)) deallocate(csite%fast_soil_P)
-    if(associated(csite%struct_soil_P)) deallocate(csite%struct_soil_P)
-    if(associated(csite%miner_soil_P)) deallocate(csite%miner_soil_P)
-    if(associated(csite%slow_soil_P)) deallocate(csite%slow_soil_P)
-
-
-
-    if(associated(csite%fast_soil_N                  )) deallocate(csite%fast_soil_N                  )
     if(associated(csite%pname                        )) deallocate(csite%pname                        )
     if(associated(csite%sum_dgd                      )) deallocate(csite%sum_dgd                      )
     if(associated(csite%sum_chd                      )) deallocate(csite%sum_chd                      )
@@ -5838,6 +5776,9 @@ contains
    !             allocated, so this should be never used in a previously allocated patch.  !
    !---------------------------------------------------------------------------------------!
    subroutine copy_sitetype(isite,osite,ipaa,ipaz,opaa,opaz)
+
+     use soil_bgc, only: copy_sitetype_sbgc
+
       implicit none
       !----- Arguments. -------------------------------------------------------------------!
       type(sitetype)  , target     :: isite ! Input  (donor) site
@@ -5886,22 +5827,9 @@ contains
          osite%dist_type(opa)                   = isite%dist_type(ipa)
          osite%age(opa)                         = isite%age(ipa)
          osite%area(opa)                        = isite%area(ipa)
-         osite%fast_soil_C(opa)                 = isite%fast_soil_C(ipa)
-         osite%slow_soil_C(opa)                 = isite%slow_soil_C(ipa)
-         osite%structural_soil_C(opa)           = isite%structural_soil_C(ipa)
-         osite%structural_soil_L(opa)           = isite%structural_soil_L(ipa)
-         osite%mineralized_soil_N(opa)          = isite%mineralized_soil_N(ipa)
 
+         call copy_sitetype_sbgc(osite%sbgc, isite%sbgc, opa, ipa)
 
-         osite%fast_soil_P(opa) = isite%fast_soil_P(ipa)
-         osite%struct_soil_P(opa) = isite%struct_soil_P(ipa)
-         osite%miner_soil_P(opa) = isite%miner_soil_P(ipa)
-         osite%slow_soil_P(opa) = isite%slow_soil_P(ipa)
-
-
-
-
-         osite%fast_soil_N(opa)                 = isite%fast_soil_N(ipa)
          osite%sum_dgd(opa)                     = isite%sum_dgd(ipa)
          osite%sum_chd(opa)                     = isite%sum_chd(ipa)
          osite%plantation(opa)                  = isite%plantation(ipa)
@@ -6206,7 +6134,7 @@ contains
     ! IS BECAUSE THE LENGTHS OF THESE VECTORS ARE BASED ON THE
     ! DONOR PATH'S VECTOR SIZES.  DO NOT USE PRE-ALLOCATED
     ! RECIPIENTS
-
+    use soil_bgc, only: copy_sitetype_mask_sbgc
     implicit none
 
     type(sitetype),target :: sitein,siteout
@@ -6230,22 +6158,9 @@ contains
     siteout%dist_type(1:inc)            = pack(sitein%dist_type,logmask)
     siteout%age(1:inc)                  = pack(sitein%age,logmask)
     siteout%area(1:inc)                 = pack(sitein%area,logmask)
-    siteout%fast_soil_C(1:inc)          = pack(sitein%fast_soil_C,logmask)
-    siteout%slow_soil_C(1:inc)          = pack(sitein%slow_soil_C,logmask)
-    siteout%structural_soil_C(1:inc)    = pack(sitein%structural_soil_C,logmask)
-    siteout%structural_soil_L(1:inc)    = pack(sitein%structural_soil_L,logmask)
-    siteout%mineralized_soil_N(1:inc)   = pack(sitein%mineralized_soil_N,logmask)
 
+    call copy_sitetype_mask_sbgc(masksz, logmask, siteout%sbgc, sitein%sbgc)
 
-
-    siteout%fast_soil_P(1:inc) = pack(sitein%fast_soil_P,logmask)
-    siteout%struct_soil_P(1:inc) = pack(sitein%struct_soil_P,logmask)
-    siteout%miner_soil_P(1:inc) = pack(sitein%miner_soil_P,logmask)
-    siteout%slow_soil_P(1:inc) = pack(sitein%slow_soil_P,logmask)
-
-
-
-    siteout%fast_soil_N(1:inc)          = pack(sitein%fast_soil_N,logmask)
     siteout%sum_dgd(1:inc)              = pack(sitein%sum_dgd,logmask)
     siteout%sum_chd(1:inc)              = pack(sitein%sum_chd,logmask)
     siteout%plantation(1:inc)           = pack(sitein%plantation,logmask)
@@ -11879,7 +11794,7 @@ contains
    ! -level).                                                                              !
    !---------------------------------------------------------------------------------------!
    subroutine filltab_sitetype(igr,ipy,isi,init)
-
+     use soil_bgc, only: filltab_sitetype_sbgc
       use ed_var_tables, only : vtable_edio_r  & ! sub-routine
                               , vtable_edio_i  & ! sub-routine
                               , metadata_edio  ! ! sub-routine
@@ -11988,83 +11903,6 @@ contains
            var_len,var_len_global,max_ptrs,'AREA :31:hist:anal:dail:mont:dcyc:year') 
          call metadata_edio(nvar,igr,'No metadata available','[NA]','NA') 
       end if
-
-      if (associated(csite%fast_soil_C)) then
-         nvar=nvar+1
-           call vtable_edio_r(npts,csite%fast_soil_C,nvar,igr,init,csite%paglob_id, &
-           var_len,var_len_global,max_ptrs,'FAST_SOIL_C :31:hist:year') 
-         call metadata_edio(nvar,igr,'No metadata available','[NA]','NA') 
-      end if
-
-      if (associated(csite%slow_soil_C)) then
-         nvar=nvar+1
-           call vtable_edio_r(npts,csite%slow_soil_C,nvar,igr,init,csite%paglob_id, &
-           var_len,var_len_global,max_ptrs,'SLOW_SOIL_C :31:hist:year') 
-         call metadata_edio(nvar,igr,'No metadata available','[NA]','NA') 
-      end if
-
-      if (associated(csite%structural_soil_C)) then
-         nvar=nvar+1
-           call vtable_edio_r(npts,csite%structural_soil_C,nvar,igr,init,csite%paglob_id, &
-           var_len,var_len_global,max_ptrs,'STRUCTURAL_SOIL_C :31:hist:year') 
-         call metadata_edio(nvar,igr,'No metadata available','[NA]','NA') 
-      end if
-
-      if (associated(csite%structural_soil_L)) then
-         nvar=nvar+1
-           call vtable_edio_r(npts,csite%structural_soil_L,nvar,igr,init,csite%paglob_id, &
-           var_len,var_len_global,max_ptrs,'STRUCTURAL_SOIL_L :31:hist:year') 
-         call metadata_edio(nvar,igr,'No metadata available','[NA]','NA') 
-      end if
-
-      if (associated(csite%mineralized_soil_N)) then
-         nvar=nvar+1
-           call vtable_edio_r(npts,csite%mineralized_soil_N,nvar,igr,init,csite%paglob_id, &
-           var_len,var_len_global,max_ptrs,'MINERALIZED_SOIL_N :31:hist:year') 
-         call metadata_edio(nvar,igr,'No metadata available','[NA]','NA') 
-      end if
-
-
-
-
-      if (associated(csite%fast_soil_P)) then
-         nvar=nvar+1
-           call vtable_edio_r(npts,csite%fast_soil_P,nvar,igr,init,csite%paglob_id, &
-           var_len,var_len_global,max_ptrs,'FAST_SOIL_P :31:hist:year') 
-         call metadata_edio(nvar,igr,'No metadata available','[NA]','NA') 
-      end if
-      if (associated(csite%struct_soil_P)) then
-         nvar=nvar+1
-           call vtable_edio_r(npts,csite%struct_soil_P,nvar,igr,init,csite%paglob_id, &
-           var_len,var_len_global,max_ptrs,'STRUCT_SOIL_P :31:hist:year') 
-         call metadata_edio(nvar,igr,'No metadata available','[NA]','NA') 
-      end if
-      if (associated(csite%miner_soil_P)) then
-         nvar=nvar+1
-           call vtable_edio_r(npts,csite%miner_soil_P,nvar,igr,init,csite%paglob_id, &
-           var_len,var_len_global,max_ptrs,'MINER_SOIL_P :31:hist:year') 
-         call metadata_edio(nvar,igr,'No metadata available','[NA]','NA') 
-      end if
-      if (associated(csite%slow_soil_P)) then
-         nvar=nvar+1
-           call vtable_edio_r(npts,csite%slow_soil_P,nvar,igr,init,csite%paglob_id, &
-           var_len,var_len_global,max_ptrs,'SLOW_SOIL_P :31:hist:year') 
-         call metadata_edio(nvar,igr,'No metadata available','[NA]','NA') 
-      end if
-
-
-
-
-
-
-
-
-      if (associated(csite%fast_soil_N)) then
-         nvar=nvar+1
-           call vtable_edio_r(npts,csite%fast_soil_N,nvar,igr,init,csite%paglob_id, &
-           var_len,var_len_global,max_ptrs,'FAST_SOIL_N :31:hist:year') 
-         call metadata_edio(nvar,igr,'No metadata available','[NA]','NA') 
-      end if
       
       if (associated(csite%sum_dgd)) then
          nvar=nvar+1
@@ -12080,7 +11918,10 @@ contains
          call metadata_edio(nvar,igr,'No metadata available','[NA]','NA') 
       end if
 
-
+      if(allocated(csite%sbgc%fast_soil_C))then
+         call filltab_sitetype_sbgc(nvar, npts, csite%sbgc, igr, init, csite%paglob_id,  &
+              var_len, var_len_global, max_ptrs)
+      endif
 
       if (associated(csite%can_theiv)) then
          nvar=nvar+1

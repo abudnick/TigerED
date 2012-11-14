@@ -1943,7 +1943,7 @@ subroutine fill_history_grid(cgrid,ipy,py_index)
    use fusion_fission_coms, only: ff_nhgt
    use ed_misc_coms, only : ndcycle
    use hdf5
-
+   use soil_bgc, only: fill_history_site_sbgc
    implicit none
 
 #if USE_INTERF
@@ -2008,26 +2008,9 @@ subroutine fill_history_grid(cgrid,ipy,py_index)
    call hdf_getslab_i(csite%dist_type,'DIST_TYPE ',dsetrank,iparallel,.true.)
    call hdf_getslab_r(csite%age,'AGE ',dsetrank,iparallel,.true.)
    call hdf_getslab_r(csite%area,'AREA ',dsetrank,iparallel,.true.)
-   call hdf_getslab_r(csite%fast_soil_C,'FAST_SOIL_C ',dsetrank,iparallel,.true.)
-   call hdf_getslab_r(csite%slow_soil_C,'SLOW_SOIL_C ',dsetrank,iparallel,.true.)
-   call hdf_getslab_r(csite%structural_soil_C,'STRUCTURAL_SOIL_C ',dsetrank,iparallel,.true.)
-   call hdf_getslab_r(csite%structural_soil_L,'STRUCTURAL_SOIL_L ',dsetrank,iparallel,.true.)
-   call hdf_getslab_r(csite%mineralized_soil_N,'MINERALIZED_SOIL_N ', &
-        dsetrank,iparallel,.true.)
 
+   call fill_history_site_sbgc(csite%sbgc,dsetrank,iparallel)
 
-
-   call hdf_getslab_r(csite%fast_soil_P,'FAST_SOIL_P ', &
-        dsetrank,iparallel,.true.)
-   call hdf_getslab_r(csite%struct_soil_P,'STRUCT_SOIL_P ', &
-        dsetrank,iparallel,.true.)
-   call hdf_getslab_r(csite%miner_soil_P,'MINER_SOIL_P ', &
-        dsetrank,iparallel,.true.)
-   call hdf_getslab_r(csite%slow_soil_P,'SLOW_SOIL_P ', &
-        dsetrank,iparallel,.true.)
-
-
-   call hdf_getslab_r(csite%fast_soil_N,'FAST_SOIL_N ',dsetrank,iparallel,.true.)
    call hdf_getslab_r(csite%sum_dgd,'SUM_DGD ',dsetrank,iparallel,.true.)
    call hdf_getslab_r(csite%sum_chd,'SUM_CHD ',dsetrank,iparallel,.true.)
    call hdf_getslab_i(csite%plantation,'PLANTATION ',dsetrank,iparallel,.true.)

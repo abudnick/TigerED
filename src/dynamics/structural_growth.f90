@@ -893,12 +893,12 @@ subroutine compute_C_and_N_storage(cgrid,ipy, soil_C, soil_N, veg_C, veg_N)
          area_factor   = dble(cpoly%area(isi)) * dble(csite%area(ipa))
 
          !----- Find carbon and nitrogen soil pools for this patch. -----------------------!
-         this_carbon   = dble(csite%fast_soil_C(ipa)) + dble(csite%slow_soil_C(ipa))       &
-                       + dble(csite%structural_soil_C(ipa))
-         this_nitrogen = dble(csite%fast_soil_N(ipa))                                      &
-                       + dble(csite%mineralized_soil_N(ipa))                               &
-                       + dble(csite%slow_soil_C(ipa)) / dble(c2n_slow)                     &
-                       + dble(csite%structural_soil_C(ipa)) / dble(c2n_structural)
+         this_carbon   = dble(csite%sbgc%fast_soil_C(ipa)) + dble(csite%sbgc%slow_soil_C(ipa))       &
+                       + dble(csite%sbgc%struct_soil_C(ipa))
+         this_nitrogen = dble(csite%sbgc%fast_soil_N(ipa))                                      &
+                       + dble(csite%sbgc%miner_soil_N(ipa))                               &
+                       + dble(csite%sbgc%slow_soil_C(ipa)) / dble(c2n_slow)                     &
+                       + dble(csite%sbgc%struct_soil_C(ipa)) / dble(c2n_structural)
 
          !----- Add to the full counter. --------------------------------------------------!
          soil_C8 = soil_C8 + area_factor * this_carbon

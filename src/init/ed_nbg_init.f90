@@ -44,27 +44,31 @@ subroutine near_bare_ground_init(cgrid)
          !---------------------------------------------------------------------------------!
          select case (n_plant_lim)
          case (0)
-            csite%fast_soil_C        (1) = 0.0
-            csite%slow_soil_C        (1) = 0.0
-            csite%structural_soil_C  (1) = 0.0
-            csite%structural_soil_L  (1) = 0.0
-            csite%mineralized_soil_N (1) = 0.0
-            csite%fast_soil_N        (1) = 0.0
+            csite%sbgc%fast_soil_C        (1) = 0.0
+            csite%sbgc%slow_soil_C        (1) = 0.0
+            csite%sbgc%struct_soil_C  (1) = 0.0
+            csite%sbgc%struct_soil_L  (1) = 0.0
+            csite%sbgc%miner_soil_N (1) = 0.0
+            csite%sbgc%fast_soil_N        (1) = 0.0
+            csite%sbgc%slow_soil_N        (1) = 0.0
+            csite%sbgc%struct_soil_N        (1) = 0.0
 
          case (1)
-            csite%fast_soil_C        (1) = 0.2
-            csite%slow_soil_C        (1) = 0.01
-            csite%structural_soil_C  (1) = 10.0
-            csite%structural_soil_L  (1) = csite%structural_soil_C (1)
-            csite%mineralized_soil_N (1) = 1.0
-            csite%fast_soil_N        (1) = 1.0
+            csite%sbgc%fast_soil_C        (1) = 0.2
+            csite%sbgc%slow_soil_C        (1) = 0.01
+            csite%sbgc%struct_soil_C  (1) = 10.0
+            csite%sbgc%struct_soil_L  (1) = csite%sbgc%struct_soil_C (1)
+            csite%sbgc%miner_soil_N (1) = 1.0
+            csite%sbgc%fast_soil_N        (1) = 1.0
+            csite%sbgc%struct_soil_N        (1) = 1.0
+            csite%sbgc%slow_soil_N        (1) = 1.0
 
          end select
 
-         csite%fast_soil_P(1) = 0.01
-         csite%struct_soil_P(1) = 0.01
-         csite%miner_soil_P(1) = 0.01
-         csite%slow_soil_P(1) = 0.01
+         csite%sbgc%fast_soil_P(1) = 0.01
+         csite%sbgc%struct_soil_P(1) = 0.01
+         csite%sbgc%miner_soil_P(1) = 0.01
+         csite%sbgc%slow_soil_P(1) = 0.01
 
          !---------------------------------------------------------------------------------!
 
