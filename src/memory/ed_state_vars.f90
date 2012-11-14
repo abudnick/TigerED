@@ -33,13 +33,23 @@ module ed_state_vars
   ! This is the lowest (most infantile) part of the memory structure.
   !--------------------------------------------------------------------------!  
 
+  !  About 190 variables
+
   type patchtype
 
+     !-------------------------
+     ! Module 1: Book-keeping variables.
+     !-------------------------
+
+     ! Number of cohorts in the patch.
      integer :: ncohorts
 
-     ! Global index of the first cohort across all cohorts
-
+     ! Global index of the first cohort across all cohorts.
      integer :: coglob_id
+
+     !-------------------------
+     ! Module 2: State variables
+     !-------------------------
 
      !================================================================
      ! Plant functional type:
@@ -60,7 +70,6 @@ module ed_state_vars
      ! 15 - c4 crop (e.g.,corn/maize)
      ! 16 - tropical C3 grass
      ! 17 - Araucaria (non-optim. south pine)
-
      integer ,pointer,dimension(:) :: pft
 
      ! Density of plants (number/m2)
@@ -69,23 +78,14 @@ module ed_state_vars
      ! Plant height (m)
      real ,pointer,dimension(:) :: hite
 
-     ! Above-ground biomass (kgC/plant)
-     real, pointer, dimension(:) :: agb
-
      ! Basal area (cm2)
      real, pointer, dimension(:) :: basarea
      
-     ! Rate of change in agb (kgC/plant/yr)
-     real, pointer, dimension(:) :: dagb_dt
-     
-     ! Rate of change in basal area (cm2/yr)
-     real, pointer, dimension(:) :: dba_dt
-     
-     ! Rate of change in dbh (cm/yr)
-     real, pointer, dimension(:) :: ddbh_dt
-
      ! Plant diameter at breast height (cm)
      real ,pointer,dimension(:) :: dbh
+
+     ! Above-ground biomass (kgC/plant)
+     real, pointer, dimension(:) :: agb
 
      ! Biomass of the structural wood (kgC/plant)
      real ,pointer,dimension(:) :: bdead
@@ -93,16 +93,6 @@ module ed_state_vars
      ! Biomass of leaves (kgC/plant)
      real ,pointer,dimension(:) :: bleaf
      
-
-     ! phenology_status codes:
-     ! 0 - plant has the maximum LAI, given its size
-     ! 1 - plant has an LAI between 0 and its maximum
-     ! -1 - plant is actively dropping leaves
-     ! 2 - plant has no leaves
-
-     
-     integer ,pointer,dimension(:) :: phenology_status
-
      ! Biomass of live tissue (kgC/plant)
      real ,pointer,dimension(:) :: balive
 
@@ -111,6 +101,15 @@ module ed_state_vars
      
      ! Biomass of sapwood (kgC/plant)
      real, pointer, dimension(:) :: bsapwood
+
+     ! Plant storage pool of carbon [kgC/plant]
+     real ,pointer,dimension(:) :: bstorage
+
+     ! Amount of seeds produced for dispersal [kgC/plant]
+     real ,pointer,dimension(:) :: bseeds
+
+     ! Crown area (m2 crown / m2 ground)
+     real ,pointer,dimension(:) :: crown_area
 
      ! Leaf area index (m2 leaf / m2 ground)
      real ,pointer,dimension(:) :: lai
@@ -121,16 +120,57 @@ module ed_state_vars
      ! Wood area index (m2 wood / m2 ground)
      real ,pointer,dimension(:) :: wai
 
-     ! Crown area (m2 crown / m2 ground)
-     real ,pointer,dimension(:) :: crown_area
+     ! This specifies the index of the deepest soil layer of which the 
+     ! cohort can access water.
+     integer ,pointer,dimension(:) :: krdepth
 
      ! Logical test to check whether the cohort leaves can be resolved...
      logical, pointer, dimension(:) :: leaf_resolvable
      logical, pointer, dimension(:) :: wood_resolvable
 
-     ! Plant storage pool of carbon [kgC/plant]
-     real ,pointer,dimension(:) :: bstorage
+     ! The model reports annual growth, mortality, cut and recruitment.  
+     ! These rates are calculated with respect to two censuses.  This 
+     ! is the flag specifying if a cohort was present at the first
+     ! census.
+     integer ,pointer,dimension(:) :: first_census
+
+     ! Flag specifying if this cohort is a new recruit with respect
+     ! to the first census.
+     integer ,pointer,dimension(:) :: new_recruit_flag
+
+     !--------------------------
+     ! Module 3: Phenology
+     !--------------------------
+
+     ! phenology_status codes:
+     ! 0 - plant has the maximum LAI, given its size
+     ! 1 - plant has an LAI between 0 and its maximum
+     ! -1 - plant is actively dropping leaves
+     ! 2 - plant has no leaves
+     integer ,pointer,dimension(:) :: phenology_status
+
+     ! Leaf loss to litter layer due to phenology [kgC/plant]
+     real , pointer, dimension(:) :: leaf_drop
+
+     ! Monthly mean, in kgC/plant/year
+     real , pointer, dimension(:) :: mmean_leaf_drop
+
+     ! Plant available water, (stress function)  0 to 1 [unitless]
+     real, pointer, dimension(:) :: paw_avg
+
+     ! Elongation factor (0 - 1), factor to scale bleaf under drought.  Not sure about this one.
+     real, pointer, dimension(:) :: elongf
+
+     ! Phenology-related.  (Light-phenology only.)
+     real, pointer, dimension(:) :: turnover_amp
+     real, pointer, dimension(:) :: llspan
+     real, pointer, dimension(:) :: vm_bar
+     real, pointer, dimension(:) :: sla
      
+     !--------------------------
+     ! Module 4: Mortality
+     !--------------------------
+
      ! Monthly carbon balance for past 12 months and the current month
      ! (kgC/plant/yr) - 13th column will have the partial month integration
      real, pointer,dimension(:,:) :: cb       !(13,ncohorts)
@@ -144,8 +184,21 @@ module ed_state_vars
      real ,pointer,dimension(:) :: cbr_bar
      
      ! Monthly mean of cb. The only difference from cb is the way it is scaled, so
-     ! all months have the same "weight"
+     ! all months have the same "weight". [Huh?  What is up with this one?]
      real, pointer, dimension(:) :: mmean_cb
+
+     ! Plant density tendency [plants/m2/month]
+     real ,pointer,dimension(:) :: monthly_dndt
+
+     ! Mortality rate [yr-1]
+     real , pointer, dimension(:,:) :: mort_rate
+
+     ! Monthly mean Mortality rate [yr-1] (only frost mortality changes...)
+     real , pointer, dimension(:,:) :: mmean_mort_rate  ! How is this different from monthly_dndt?
+
+     !--------------------------
+     ! Module 5: Water and energy
+     !--------------------------
 
      ! Leaf internal energy (J/m2 ground)
      real ,pointer,dimension(:) :: leaf_energy
@@ -177,8 +230,24 @@ module ed_state_vars
      ! Wood heat capacity [ J/m2/K]
      real, pointer,dimension(:) :: wood_hcap
 
+     ! Leaf boundary layer conductance for heat/entropy  (J/K/m2/s)
+     real ,pointer,dimension(:) :: leaf_gbh
+
+     ! Leaf boundary layer conductance for water (kg/m2/s)
+     real ,pointer,dimension(:) :: leaf_gbw
+
+     ! Wood boundary layer conductance for heat/entropy  (J/K/m2/s)
+     real ,pointer,dimension(:) :: wood_gbh
+
+     ! Wood boundary layer conductance for water (kg/m2/s)
+     real ,pointer,dimension(:) :: wood_gbw
+
      ! Reduced wind at the cohort level (m/s)
      real ,pointer,dimension(:) :: veg_wind
+
+     !--------------------------
+     ! Module 6: Variables used in photosynthesis
+     !--------------------------
 
      ! Leaf surface specific humidity for open stomata (kg/kg)
      real ,pointer,dimension(:) :: lsfc_shv_open
@@ -192,7 +261,7 @@ module ed_state_vars
      ! Leaf surface CO2 for closed stomata (µmol/mol)
      real ,pointer,dimension(:) :: lsfc_co2_closed
 
-     ! Leaf interecellular specific humidity (kg/kg)
+     ! Leaf intercellular specific humidity (kg/kg)
      real ,pointer,dimension(:) :: lint_shv
 
      ! Leaf intercellular CO2 for open stomata (µmol/mol)
@@ -201,99 +270,76 @@ module ed_state_vars
      ! Leaf intercellular CO2 for closed stomata (µmol/mol)
      real ,pointer,dimension(:) :: lint_co2_closed
 
-     ! Gross primary productivity (GPP) [umol/m2/s], averaged over the 
-     ! output frequency (FRQSTATE)
-     real ,pointer,dimension(:) :: mean_gpp
+     ! Stomatal conductance for water, open stomata (kg_H2O/m2/s)
+     real ,pointer,dimension(:) :: gsw_open
 
-     ! Mean leaf respiration rate (umol/m2 ground/s), averaged over FRQSTATE
-     real ,pointer,dimension(:) :: mean_leaf_resp
+     ! Stomatal conductance for water, closed stomata (kg_H2O/m2/s)
+     real ,pointer,dimension(:) :: gsw_closed
 
-     ! Mean root respiration rate (umol/m2 ground/s), averaged over FRQSTATE
-     real ,pointer,dimension(:) :: mean_root_resp
+     ! Transpiration rate, open stomata (mm/s)
+     real ,pointer,dimension(:) :: Psi_open
+     real , pointer, dimension(:)   :: dmean_psi_open
+     real , pointer, dimension(:,:) :: qmean_psi_open
+     real , pointer, dimension(:)   :: mmean_psi_open
 
-     ! Mean growth respiration rate (umol/m2 ground/s), averaged over FRQSTATE
-     real ,pointer,dimension(:) :: mean_growth_resp
+     ! Transpiration rate, closed stomata (mm/s)
+     real ,pointer,dimension(:) :: Psi_closed
+     real , pointer, dimension(:)   :: dmean_psi_closed
+     real , pointer, dimension(:,:) :: qmean_psi_closed
+     real , pointer, dimension(:)   :: mmean_psi_closed
 
-     ! Mean storage respiration rate (umol/m2 ground/s), averaged over FRQSTATE
-     real ,pointer,dimension(:) :: mean_storage_resp
+     ! Photosynthesis rate, open stomata (umol/m2 leaf/s)
+     real ,pointer,dimension(:) :: A_open
 
-     ! Mean vleaf respiration rate (umol/m2 ground/s), averaged over FRQSTATE
-     real ,pointer,dimension(:) :: mean_vleaf_resp
+     ! Photosynthesis rate, closed stomata (umol/m2 leaf/s)
+     real ,pointer,dimension(:) :: A_closed
 
-
-     ! Mean leaf respiration rate (umol/m2 ground/s), averaged over 1 day
-     real ,pointer,dimension(:) :: today_leaf_resp
-
-     ! Mean root respiration rate (umol/m2 ground/s), averaged over 1 day
-     real ,pointer,dimension(:) :: today_root_resp
-
-     ! Gross primary productivity (GPP) [umol/m2 ground/s], averaged over 1 day
-     real ,pointer,dimension(:) :: today_gpp
-     real, pointer, dimension(:)   :: today_nppleaf
-     real, pointer, dimension(:)   :: today_nppfroot
-     real, pointer, dimension(:)   :: today_nppsapwood
-     real, pointer, dimension(:)   :: today_nppcroot
-     real, pointer, dimension(:)   :: today_nppseeds
-     real, pointer, dimension(:)   :: today_nppwood
-     real, pointer, dimension(:)   :: today_nppdaily
-     
-     ! Potential GPP in the absence of N limitation [umol/m2 ground/s],
-     ! averaged over 1 day
-     real ,pointer,dimension(:) :: today_gpp_pot
-
-     ! Maximum GPP if cohort were at the top of the canopy 
-     ! [umol/m2 ground/s], averaged over 1 day
-     real ,pointer,dimension(:) :: today_gpp_max
-
-     ! Plant growth respiration (kgC/plant/day)
-     real ,pointer,dimension(:) :: growth_respiration
-
-     ! Plant storage respiration (kgC/plant/day)
-     real ,pointer,dimension(:) :: storage_respiration
-
-     ! Plant virtual leaf respiration (kgC/plant/day)
-     real ,pointer,dimension(:) :: vleaf_respiration
-
-     ! Daily and monthly means of the plant productivity terms, all in kgC/m2/yr
-     real, pointer, dimension(:)   :: dmean_gpp
-     real, pointer, dimension(:)   :: dmean_nppleaf
-     real, pointer, dimension(:)   :: dmean_nppfroot
-     real, pointer, dimension(:)   :: dmean_nppsapwood
-     real, pointer, dimension(:)   :: dmean_nppcroot
-     real, pointer, dimension(:)   :: dmean_nppseeds
-     real, pointer, dimension(:)   :: dmean_nppwood
-     real, pointer, dimension(:)   :: dmean_nppdaily
-     real, pointer, dimension(:)   :: dmean_leaf_resp
-     real, pointer, dimension(:)   :: dmean_root_resp
-     real, pointer, dimension(:,:) :: qmean_gpp
-     real, pointer, dimension(:,:) :: qmean_leaf_resp
-     real, pointer, dimension(:,:) :: qmean_root_resp
-     real, pointer, dimension(:)   :: mmean_gpp
-     real, pointer, dimension(:)   :: mmean_nppleaf
-     real, pointer, dimension(:)   :: mmean_nppfroot
-     real, pointer, dimension(:)   :: mmean_nppsapwood
-     real, pointer, dimension(:)   :: mmean_nppcroot
-     real, pointer, dimension(:)   :: mmean_nppseeds
-     real, pointer, dimension(:)   :: mmean_nppwood
-     real, pointer, dimension(:)   :: mmean_nppdaily
-     real, pointer, dimension(:)   :: mmean_leaf_resp
-     real, pointer, dimension(:)   :: mmean_root_resp
-     real, pointer, dimension(:)   :: mmean_growth_resp
-     real, pointer, dimension(:)   :: mmean_storage_resp
-     real, pointer, dimension(:)   :: mmean_vleaf_resp
+     ! Weighting factor for open and closed stomata (fsw=1 => fully open)
+     real ,pointer,dimension(:) :: fsw
+     real , pointer, dimension(:)   :: dmean_fsw
+     real , pointer, dimension(:,:) :: qmean_fsw
+     real , pointer, dimension(:)   :: mmean_fsw
 
      ! Weighting factor for open and closed stomata due to N limitation
      real ,pointer,dimension(:) :: fsn
+     real , pointer, dimension(:)   :: dmean_fsn
+     real , pointer, dimension(:,:) :: qmean_fsn
+     real , pointer, dimension(:)   :: mmean_fsn
 
-     ! Plant density tendency [plants/m2/month]
-     real ,pointer,dimension(:) :: monthly_dndt
+     ! Product of fsw and fsn
+     real ,pointer,dimension(:) :: fs_open
+     real , pointer, dimension(:)   :: dmean_fs_open
+     real , pointer, dimension(:,:) :: qmean_fs_open
+     real , pointer, dimension(:)   :: mmean_fs_open
 
-     ! Mortality rate [yr-1]
-     real , pointer, dimension(:,:) :: mort_rate
+     ! Water supply (kg_H2O/m2/s)
+     real , pointer, dimension(:) :: water_supply
+     real , pointer, dimension(:)   :: dmean_water_supply
+     real , pointer, dimension(:,:) :: qmean_water_supply
+     real , pointer, dimension(:)   :: mmean_water_supply
 
-     ! Monthly mean Mortality rate [yr-1] (only frost mortality changes...)
-     real , pointer, dimension(:,:) :: mmean_mort_rate
+     ! Net stomatal conductance [kg_H2O/m2/s]
+     real ,pointer,dimension(:) :: stomatal_conductance
 
+     ! Gross Primary Productivity [umol/m2/s]
+     real, pointer,dimension(:) :: gpp
+     ! Gross primary productivity (GPP) [umol/m2/s], averaged over the 
+     ! output frequency (FRQSTATE)
+     real ,pointer,dimension(:) :: mean_gpp
+     ! Gross primary productivity (GPP) [umol/m2 ground/s], averaged over 1 day
+     real ,pointer,dimension(:) :: today_gpp
+     ! Potential GPP in the absence of N limitation [umol/m2 ground/s],
+     ! averaged over 1 day
+     real ,pointer,dimension(:) :: today_gpp_pot
+     ! Maximum GPP if cohort were at the top of the canopy 
+     ! [umol/m2 ground/s], averaged over 1 day
+     real ,pointer,dimension(:) :: today_gpp_max
+     real, pointer, dimension(:)   :: dmean_gpp
+     real, pointer, dimension(:,:) :: qmean_gpp
+     real, pointer, dimension(:)   :: mmean_gpp
+
+     !-------
+     ! I'd like to get rid of these.
      ! This is where you keep the derivatives of the 
      ! stomatal conductance residual and the old met conditions.
      type(stoma_data) ,pointer,dimension(:) :: old_stoma_data
@@ -302,44 +348,9 @@ module ed_state_vars
      ! of the HDF5 file
      real ,pointer,dimension(:,:)           :: old_stoma_vector
 
-     ! Transpiration rate, open stomata (mm/s)
-     real ,pointer,dimension(:) :: Psi_open
-
-     ! This specifies the index of the deepest soil layer of which the 
-     ! cohort can access water.
-     integer ,pointer,dimension(:) :: krdepth
-
-     ! The model reports annual growth, mortality, cut and recruitment.  
-     ! These rates are calculated with respect to two censuses.  This 
-     ! is the flag specifying if a cohort was present at the first
-     ! census.
-     integer ,pointer,dimension(:) :: first_census
-
-     ! Flag specifying if this cohort is a new recruit with respect
-     ! to the first census.
-     integer ,pointer,dimension(:) :: new_recruit_flag
-
-     ! Light level received by this cohort, its diurnal and monthly means
-     real, pointer, dimension(:) :: light_level
-     real, pointer, dimension(:) :: dmean_light_level
-     real, pointer, dimension(:) :: mmean_light_level
-     real, pointer, dimension(:) :: light_level_beam
-     real, pointer, dimension(:) :: dmean_light_level_beam
-     real, pointer, dimension(:) :: mmean_light_level_beam
-     real, pointer, dimension(:) :: light_level_diff
-     real, pointer, dimension(:) :: dmean_light_level_diff
-     real, pointer, dimension(:) :: mmean_light_level_diff
-     real, pointer, dimension(:) :: beamext_level
-     real, pointer, dimension(:) :: dmean_beamext_level
-     real, pointer, dimension(:) :: mmean_beamext_level
-     real, pointer, dimension(:) :: diffext_level
-     real, pointer, dimension(:) :: dmean_diffext_level
-     real, pointer, dimension(:) :: mmean_diffext_level
-
-     ! Light extinction of this cohort, its diurnal and monthly means
-     real, pointer, dimension(:) :: lambda_light
-     real, pointer, dimension(:) :: dmean_lambda_light
-     real, pointer, dimension(:) :: mmean_lambda_light
+     !----------------------------------------------
+     ! Module 7: Radiation variables
+     !----------------------------------------------
 
      ! Photosynthetically active radiation (PAR) absorbed by the 
      ! cohort leaves(units are W/m2)
@@ -404,99 +415,128 @@ module ed_state_vars
      ! the incident atmospheric long wave alone
      real ,pointer,dimension(:) :: rlong_w_incid
 
-     ! Leaf boundary layer conductance for heat/entropy  (J/K/m2/s)
-     real ,pointer,dimension(:) :: leaf_gbh
+     ! Can probably get rid of the rest of these.
+     !----------
+     ! Light level received by this cohort, its diurnal and monthly means
+     real, pointer, dimension(:) :: light_level
+     real, pointer, dimension(:) :: dmean_light_level
+     real, pointer, dimension(:) :: mmean_light_level
+     real, pointer, dimension(:) :: light_level_beam
+     real, pointer, dimension(:) :: dmean_light_level_beam
+     real, pointer, dimension(:) :: mmean_light_level_beam
+     real, pointer, dimension(:) :: light_level_diff
+     real, pointer, dimension(:) :: dmean_light_level_diff
+     real, pointer, dimension(:) :: mmean_light_level_diff
+     real, pointer, dimension(:) :: beamext_level
+     real, pointer, dimension(:) :: dmean_beamext_level
+     real, pointer, dimension(:) :: mmean_beamext_level
+     real, pointer, dimension(:) :: diffext_level
+     real, pointer, dimension(:) :: dmean_diffext_level
+     real, pointer, dimension(:) :: mmean_diffext_level
 
-     ! Leaf boundary layer conductance for water (kg/m2/s)
-     real ,pointer,dimension(:) :: leaf_gbw
+     ! Light extinction of this cohort, its diurnal and monthly means
+     real, pointer, dimension(:) :: lambda_light
+     real, pointer, dimension(:) :: dmean_lambda_light
+     real, pointer, dimension(:) :: mmean_lambda_light
 
-     ! Wood boundary layer conductance for heat/entropy  (J/K/m2/s)
-     real ,pointer,dimension(:) :: wood_gbh
+     !---------------------------------
+     ! Module 8: Respiration and Maintenance
+     !---------------------------------
 
-     ! Wood boundary layer conductance for water (kg/m2/s)
-     real ,pointer,dimension(:) :: wood_gbw
-
-     ! Photosynthesis rate, open stomata (umol/m2 leaf/s)
-     real ,pointer,dimension(:) :: A_open
-
-     ! Photosynthesis rate, closed stomata (umol/m2 leaf/s)
-     real ,pointer,dimension(:) :: A_closed
-
-     ! Transpiration rate, closed stomata (mm/s)
-     real ,pointer,dimension(:) :: Psi_closed
-
-     ! Stomatal conductance for water, open stomata (kg_H2O/m2/s)
-     real ,pointer,dimension(:) :: gsw_open
-
-     ! Stomatal conductance for water, closed stomata (kg_H2O/m2/s)
-     real ,pointer,dimension(:) :: gsw_closed
-
-     ! Weighting factor for open and closed stomata (fsw=1 => fully open)
-     real ,pointer,dimension(:) :: fsw
-
-     ! Product of fsw and fsn
-     real ,pointer,dimension(:) :: fs_open
-
-     ! Water supply (kg_H2O/m2/s)
-     real , pointer, dimension(:) :: water_supply
-
-     ! Daily and monthly means of the weighting factors for open and closed stomata
-     real , pointer, dimension(:)   :: dmean_fs_open
-     real , pointer, dimension(:)   :: dmean_fsw
-     real , pointer, dimension(:)   :: dmean_fsn
-     real , pointer, dimension(:)   :: dmean_psi_open
-     real , pointer, dimension(:)   :: dmean_psi_closed
-     real , pointer, dimension(:)   :: dmean_water_supply
-     real , pointer, dimension(:,:) :: qmean_fs_open
-     real , pointer, dimension(:,:) :: qmean_fsw
-     real , pointer, dimension(:,:) :: qmean_fsn
-     real , pointer, dimension(:,:) :: qmean_psi_open
-     real , pointer, dimension(:,:) :: qmean_psi_closed
-     real , pointer, dimension(:,:) :: qmean_water_supply
-     real , pointer, dimension(:)   :: mmean_fs_open
-     real , pointer, dimension(:)   :: mmean_fsw
-     real , pointer, dimension(:)   :: mmean_fsn
-     real , pointer, dimension(:)   :: mmean_psi_open
-     real , pointer, dimension(:)   :: mmean_psi_closed
-     real , pointer, dimension(:)   :: mmean_water_supply
-
-     ! Net stomatal conductance [kg_H2O/m2/s]
-     real ,pointer,dimension(:) :: stomatal_conductance
-
-     ! Plant maintenance costs due to turnover of leaves and fine 
-     ! roots [kgC/plant]
+     ! Plant maintenance costs due to turnover of leaves [kgC/plant/day]
      real ,pointer,dimension(:) :: leaf_maintenance
-     real ,pointer,dimension(:) :: root_maintenance
      ! Monthly mean, in kgC/plant/year
      real ,pointer,dimension(:) :: mmean_leaf_maintenance
-     real ,pointer,dimension(:) :: mmean_root_maintenance
-     
-     ! Leaf loss to litter layer due to phenology [kgC/plant]
-     real , pointer, dimension(:) :: leaf_drop
+
+     ! Plant maintenance costs due to turnover of fine roots [kgC/plant/day]
+     real ,pointer,dimension(:) :: root_maintenance
      ! Monthly mean, in kgC/plant/year
-     real , pointer, dimension(:) :: mmean_leaf_drop
+     real ,pointer,dimension(:) :: mmean_root_maintenance
 
-     ! Amount of seeds produced for dispersal [kgC/plant]
-     real ,pointer,dimension(:) :: bseeds
-
-     ! Instantaneous values of leaf and root respiration [umol/m2/s]
+     ! Leaf respiration, instantaneous [umol/m2/s]
      real ,pointer,dimension(:) :: leaf_respiration
+     ! Mean leaf respiration rate (umol/m2 ground/s), averaged over FRQSTATE
+     real ,pointer,dimension(:) :: mean_leaf_resp
+     ! Mean leaf respiration rate (umol/m2 ground/s), averaged over 1 day
+     real ,pointer,dimension(:) :: today_leaf_resp
+     real, pointer, dimension(:)   :: dmean_leaf_resp  ! How is this different from preceding?
+     real, pointer, dimension(:,:) :: qmean_leaf_resp
+     real, pointer, dimension(:)   :: mmean_leaf_resp
+
+     ! Root respiration, instantaneous [umol/m2/s]
      real ,pointer,dimension(:) :: root_respiration
+     ! Mean root respiration rate (umol/m2 ground/s), averaged over FRQSTATE
+     real ,pointer,dimension(:) :: mean_root_resp
+     ! Mean root respiration rate (umol/m2 ground/s), averaged over 1 day
+     real ,pointer,dimension(:) :: today_root_resp
+     real, pointer, dimension(:)   :: dmean_root_resp  ! How is this different from preceding?
+     real, pointer, dimension(:,:) :: qmean_root_resp
+     real, pointer, dimension(:)   :: mmean_root_resp
 
-     ! Gross Primary Productivity [umol/m2/s]
-     real, pointer,dimension(:) :: gpp
+     ! Plant growth respiration (kgC/plant/day)
+     real ,pointer,dimension(:) :: growth_respiration
+     ! Mean growth respiration rate (umol/m2 ground/s), averaged over FRQSTATE
+     real ,pointer,dimension(:) :: mean_growth_resp
+     real, pointer, dimension(:)   :: mmean_growth_resp
 
-     ! Plant available water, (stress function)  0 to 1 [unitless]
-     real, pointer, dimension(:) :: paw_avg
+     ! Plant storage respiration (kgC/plant/day)
+     real ,pointer,dimension(:) :: storage_respiration
+     ! Mean storage respiration rate (umol/m2 ground/s), averaged over FRQSTATE
+     real ,pointer,dimension(:) :: mean_storage_resp
+     real, pointer, dimension(:)   :: mmean_storage_resp
 
-     ! Elongation factor (0 - 1), factor to scale bleaf under drought.
-     real, pointer, dimension(:) :: elongf
+     ! Plant virtual leaf respiration (kgC/plant/day)
+     real ,pointer,dimension(:) :: vleaf_respiration
+     ! Mean vleaf respiration rate (umol/m2 ground/s), averaged over FRQSTATE
+     real ,pointer,dimension(:) :: mean_vleaf_resp
+     real, pointer, dimension(:)   :: mmean_vleaf_resp
 
-     ! Phenology-related
-     real, pointer, dimension(:) :: turnover_amp
-     real, pointer, dimension(:) :: llspan
-     real, pointer, dimension(:) :: vm_bar
-     real, pointer, dimension(:) :: sla
+     !--------------------------
+     ! Module XXX: Time derivatives: Probably eliminate these.
+     !--------------------------
+
+     ! Rate of change in agb (kgC/plant/yr)
+     real, pointer, dimension(:) :: dagb_dt
+     
+     ! Rate of change in basal area (cm2/yr)
+     real, pointer, dimension(:) :: dba_dt
+     
+     ! Rate of change in dbh (cm/yr)
+     real, pointer, dimension(:) :: ddbh_dt
+
+     !--------------------------
+     ! Module 8: Daily averages
+     !--------------------------
+
+     ! Can probably get rid of these.
+     real, pointer, dimension(:)   :: today_nppleaf
+     real, pointer, dimension(:)   :: today_nppfroot
+     real, pointer, dimension(:)   :: today_nppsapwood
+     real, pointer, dimension(:)   :: today_nppcroot
+     real, pointer, dimension(:)   :: today_nppseeds
+     real, pointer, dimension(:)   :: today_nppwood
+     real, pointer, dimension(:)   :: today_nppdaily
+     
+     ! Daily and monthly means of the plant productivity terms, all in kgC/m2/yr
+     real, pointer, dimension(:)   :: dmean_nppleaf
+     real, pointer, dimension(:)   :: dmean_nppfroot
+     real, pointer, dimension(:)   :: dmean_nppsapwood
+     real, pointer, dimension(:)   :: dmean_nppcroot
+     real, pointer, dimension(:)   :: dmean_nppseeds
+     real, pointer, dimension(:)   :: dmean_nppwood
+     real, pointer, dimension(:)   :: dmean_nppdaily
+     real, pointer, dimension(:)   :: mmean_nppleaf
+     real, pointer, dimension(:)   :: mmean_nppfroot
+     real, pointer, dimension(:)   :: mmean_nppsapwood
+     real, pointer, dimension(:)   :: mmean_nppcroot
+     real, pointer, dimension(:)   :: mmean_nppseeds
+     real, pointer, dimension(:)   :: mmean_nppwood
+     real, pointer, dimension(:)   :: mmean_nppdaily
+
+     !----------------------------------------------
+     ! Module 10: Monthly averages
+     !----------------------------------------------
+
 
   end type patchtype
 !============================================================================!
@@ -515,6 +555,8 @@ module ed_state_vars
   
   type sitetype
      
+     ! About 226 variables here.
+
 
      integer :: npatches
 
@@ -1087,7 +1129,11 @@ module ed_state_vars
   ! The following are the arrays of site level variables
   ! that populate the current polygon.
   ! ----------------------------------------------------
+
+  ! About 159 variables here.
   type polygontype
+
+
 
      integer :: nsites
 
@@ -1410,6 +1456,7 @@ module ed_state_vars
   ! that populate the current grid.
   !---------------------------------------------------
 
+  ! About 450 of these.
   type edtype
 
      !---- Data space indexing variables ---------------
