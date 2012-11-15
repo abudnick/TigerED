@@ -157,7 +157,6 @@ canopy_radiation_coms.o: ed_max_dims.mod
 consts_coms.o: 
 decomp_coms.o: ed_max_dims.mod
 disturb_coms.o: ed_max_dims.mod
-ed_globals.o: ed_max_dims.mod ed_node_coms.mod ed_var_tables.mod soil_coms.mod
 ed_max_dims.o: 
 ed_mem_alloc.o: ed_max_dims.mod ed_mem_grid_dim_defs.mod ed_node_coms.mod
 ed_mem_alloc.o: ed_state_vars.mod ed_work_vars.mod grid_coms.mod

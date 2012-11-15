@@ -630,10 +630,12 @@ new_plant_P = new_plant_P + csite%area(ipa) * (csite%repro(1,ipa)/c2p_recruit(1)
 
       !----- Compute daily C uptake [kgC/plant/day]. --------------------------------------!
       if(cpatch%nplant(ico) > tiny(1.0)) then
-         daily_C_gain = umol_2_kgC * day_sec * ( cpatch%today_gpp(ico)                     &
-                                               - cpatch%today_leaf_resp(ico)               &
-                                               - cpatch%today_root_resp(ico))              &
-                                             / cpatch%nplant(ico)
+!         daily_C_gain = umol_2_kgC * day_sec * ( cpatch%today_gpp(ico)                     &
+!                                               - cpatch%today_leaf_resp(ico)               &
+!                                               - cpatch%today_root_resp(ico))              &
+!                                             / cpatch%nplant(ico)
+         daily_C_gain = cpatch%today_gpp(ico) - cpatch%today_leaf_resp(ico)               &
+              - cpatch%today_root_resp(ico)
       else
          daily_C_gain = 0.0
       end if
@@ -692,19 +694,25 @@ new_plant_P = new_plant_P + csite%area(ipa) * (csite%repro(1,ipa)/c2p_recruit(1)
          !      Calculate potential carbon balance (used for nitrogen demand function).    !
          ! [kgC/plant/day].                                                                !
          !---------------------------------------------------------------------------------!
-         daily_C_gain_pot       = umol_2_kgC * day_sec * ( cpatch%today_gpp_pot(ico)       &
-                                                         - cpatch%today_leaf_resp(ico)     &
-                                                         - cpatch%today_root_resp(ico))    &
-                                                       / cpatch%nplant(ico)
+!         daily_C_gain_pot       = umol_2_kgC * day_sec * ( cpatch%today_gpp_pot(ico)       &
+!                                                         - cpatch%today_leaf_resp(ico)     &
+!                                                         - cpatch%today_root_resp(ico))    &
+!                                                       / cpatch%nplant(ico)
+         daily_C_gain_pot       = cpatch%today_gpp_pot(ico)       &
+              - cpatch%today_leaf_resp(ico)     &
+              - cpatch%today_root_resp(ico)
          growth_respiration_pot = max(0.0, daily_C_gain_pot * growth_resp_factor(ipft))
          carbon_balance_pot     = daily_C_gain_pot - growth_respiration_pot                &
                                 - cpatch%vleaf_respiration(ico)
 
          !----- Calculate maximum carbon balance (used for mortality). --------------------!
-         daily_C_gain_max       = umol_2_kgC * day_sec * ( cpatch%today_gpp_max(ico)       &
-                                                         - cpatch%today_leaf_resp(ico)     &
-                                                         - cpatch%today_root_resp(ico) )   &
-                                                       / cpatch%nplant(ico)
+!         daily_C_gain_max       = umol_2_kgC * day_sec * ( cpatch%today_gpp_max(ico)       &
+!                                                         - cpatch%today_leaf_resp(ico)     &
+!                                                         - cpatch%today_root_resp(ico) )   &
+!                                                       / cpatch%nplant(ico)
+         daily_C_gain_max       = cpatch%today_gpp_max(ico)       &
+              - cpatch%today_leaf_resp(ico)     &
+              - cpatch%today_root_resp(ico)
          growth_respiration_max = max(0.0, daily_C_gain_max * growth_resp_factor(ipft))
          carbon_balance_max     = daily_C_gain_max - growth_respiration_max                &
                                                    - cpatch%vleaf_respiration(ico)
@@ -717,26 +725,26 @@ new_plant_P = new_plant_P + csite%area(ipa) * (csite%repro(1,ipa)/c2p_recruit(1)
       cpatch%cb(13,ico)     = cpatch%cb(13,ico)     + carbon_balance
       cpatch%cb_max(13,ico) = cpatch%cb_max(13,ico) + carbon_balance_max
 
-      if (print_debug) then
+!      if (print_debug) then
 
-         if (first_time(ipft)) then
-            first_time(ipft) = .false.
-            write (unit=30+ipft,fmt='(a10,15(1x,a12))')                                    &
-                '      TIME','       PATCH','      COHORT','      NPLANT','    CB_TODAY'   &
-                            ,' GROWTH_RESP','  VLEAF_RESP','   TODAY_GPP','TODAY_GPPMAX'   &
-                            ,'  TODAY_LEAF','  TODAY_ROOT',' CBMAX_TODAY','          CB'   &
-                            ,'       CBMAX','  LEAF_MAINT','  ROOT_MAINT'
-         end if
+!         if (first_time(ipft)) then
+!            first_time(ipft) = .false.
+!            write (unit=30+ipft,fmt='(a10,15(1x,a12))')                                    &
+!                '      TIME','       PATCH','      COHORT','      NPLANT','    CB_TODAY'   &
+!                            ,' GROWTH_RESP','  VLEAF_RESP','   TODAY_GPP','TODAY_GPPMAX'   &
+!                            ,'  TODAY_LEAF','  TODAY_ROOT',' CBMAX_TODAY','          CB'   &
+!                            ,'       CBMAX','  LEAF_MAINT','  ROOT_MAINT'
+!         end if
 
-         write(unit=30+ipft,fmt='(2(i2.2,a1),i4.4,2(1x,i12),13(1x,es12.5))')               &
-              current_time%month,'/',current_time%date,'/',current_time%year               &
-             ,ipa,ico,cpatch%nplant(ico),carbon_balance,cpatch%growth_respiration(ico)     &
-             ,cpatch%vleaf_respiration(ico),cpatch%today_gpp(ico)                          &
-             ,cpatch%today_gpp_max(ico),cpatch%today_leaf_resp(ico)                        &
-             ,cpatch%today_root_resp(ico),carbon_balance_max,cpatch%cb(13,ico)             &
-             ,cpatch%cb_max(13,ico),cpatch%leaf_maintenance(ico)                           &
-             ,cpatch%root_maintenance(ico)
-      end if
+!         write(unit=30+ipft,fmt='(2(i2.2,a1),i4.4,2(1x,i12),13(1x,es12.5))')               &
+!              current_time%month,'/',current_time%date,'/',current_time%year               &
+!             ,ipa,ico,cpatch%nplant(ico),carbon_balance,cpatch%growth_respiration(ico)     &
+!             ,cpatch%vleaf_respiration(ico),cpatch%today_gpp(ico)                          &
+!             ,cpatch%today_gpp_max(ico),cpatch%today_leaf_resp(ico)                        &
+!             ,cpatch%today_root_resp(ico),carbon_balance_max,cpatch%cb(13,ico)             &
+!             ,cpatch%cb_max(13,ico),cpatch%leaf_maintenance(ico)                           &
+!             ,cpatch%root_maintenance(ico)
+!      end if
 
       return
    end subroutine plant_carbon_balances
@@ -853,260 +861,6 @@ new_plant_P = new_plant_P + csite%area(ipa) * (csite%repro(1,ipa)/c2p_recruit(1)
       cpatch%bsapwood(ico) = qsw(ipft) * cpatch%hite(ico) * cpatch%balive(ico) /  &
            (1.0 + q(ipft) + qsw(ipft) * cpatch%hite(ico))
       
-
-
-if(.false.)then
-!!  All of this stuff if very difficult to understand.  Don't need it.
-
-      !------------------------------------------------------------------------------------!
-      !      When plants transit from dormancy to leaf flushing, it is possible that       !
-      ! carbon_balance is negative, but the sum of carbon_balance and bstorage is          !
-      ! positive. Under this circumstance, we have to allow plants to grow leaves.         !
-      !------------------------------------------------------------------------------------!
-      increment     = cpatch%bstorage(ico) + carbon_balance
-      time_to_flush = (carbon_balance <= 0.0) .and. (increment > 0.0) .and.                &
-                      (cpatch%phenology_status(ico) == 1) 
-
-      if (carbon_balance > 0.0 .or. time_to_flush) then 
-         if (cpatch%phenology_status(ico) == 1) then
-            !------------------------------------------------------------------------------!
-            ! There are leaves, we are not actively dropping leaves and we're off          !
-            ! allometry.  Here we will compute the maximum amount that can go to balive    !
-            ! pools, and put any excess in storage.                                        !
-            !------------------------------------------------------------------------------!
-            available_carbon = cpatch%bstorage(ico) + carbon_balance
-
-            !------------------------------------------------------------------------------!
-            !     Maximum bleaf that the allometric relationship would allow.  If the      !
-            ! plant is drought stress (elongf < 1), we do not allow the plant to get back  !
-            ! to full allometry.                                                           !
-            !------------------------------------------------------------------------------!
-            bl_max     = dbh2bl(cpatch%dbh(ico),ipft) * green_leaf_factor                  &
-                       * cpatch%elongf(ico)
-            balive_max = dbh2bl(cpatch%dbh(ico),ipft) * salloc * cpatch%elongf(ico)
-
-            !--- Amount that bleaf, broot, and bsapwood are off allometry -----------------!
-            delta_bleaf = max (0.0, bl_max- cpatch%bleaf(ico))
-            delta_broot = max (0.0, balive_max * q(ipft) * salloci - cpatch%broot(ico))
-            delta_bsapwood = max (0.0, balive_max * qsw(ipft) * cpatch%hite(ico) * salloci &
-                                     - cpatch%bsapwood(ico))
-
-            !------------------------------------------------------------------------------!
-            ! If the available carbon is less than what we need to get back to allometry.  !
-            ! Grow pools in proportion to demand.  If we have enough carbon, we'll put the !
-            ! extra into bstorage.                                                         !
-            !------------------------------------------------------------------------------!
-            
-            f_bleaf    = delta_bleaf / bl_max
-            f_broot    = delta_broot / (balive_max * q(ipft) * salloci )
-            f_bsapwood = delta_bsapwood / (balive_max * qsw(ipft) * cpatch%hite(ico)       &
-                       * salloci)
-            f_total    = f_bleaf + f_broot + f_bsapwood
-
-            !------------------------------------------------------------------------------!
-            !     We only allow transfer from storage to living tissues if there is need   !
-            ! to transfer.                                                                 !
-            !------------------------------------------------------------------------------!
-            if (f_total > 0.0) then
-               tr_bleaf    = min( delta_bleaf   , (f_bleaf/f_total)    * available_carbon)
-               tr_broot    = min( delta_broot   , (f_broot/f_total)    * available_carbon)
-               tr_bsapwood = min( delta_bsapwood, (f_bsapwood/f_total) * available_carbon)
-            else
-               tr_bleaf    = 0.
-               tr_broot    = 0.
-               tr_bsapwood = 0.
-            end if
-            !------------------------------------------------------------------------------!
-
-            cpatch%bleaf(ico)    = cpatch%bleaf(ico)    + tr_bleaf
-            cpatch%broot(ico)    = cpatch%broot(ico)    + tr_broot
-            cpatch%bsapwood(ico) = cpatch%bsapwood(ico) + tr_bsapwood
-
-            cpatch%balive(ico)   = cpatch%bleaf(ico) + cpatch%broot(ico)                   &
-                                 + cpatch%bsapwood(ico)
-            
-            !----- NPP allocation in diff pools in KgC/m2/day. ----------------------------!
-            cpatch%today_nppleaf(ico)   = tr_bleaf       * cpatch%nplant(ico)
-            cpatch%today_nppfroot(ico)  = tr_broot       * cpatch%nplant(ico)
-            cpatch%today_nppsapwood(ico)= tr_bsapwood    * cpatch%nplant(ico)
-            cpatch%today_nppdaily(ico)  = carbon_balance * cpatch%nplant(ico)
-            
-            !------------------------------------------------------------------------------!
-            !    Find the amount of carbon used to recover the tissues that were off-      !
-            ! -allometry, take that from the carbon balance first, then use some of the    !
-            ! storage if needed be.                                                        !
-            !------------------------------------------------------------------------------!
-            increment = carbon_balance -  tr_bleaf - tr_broot - tr_bsapwood
-            cpatch%bstorage(ico) = max(0.0, cpatch%bstorage(ico) + increment)
-            !------------------------------------------------------------------------------!
-
-            if (increment <= 0.0)  then
-               !---------------------------------------------------------------------------!
-               !    We are using up all of daily C gain and some of bstorage.  First       !
-               ! calculate N demand from using daily C gain.                               !
-               !---------------------------------------------------------------------------!
-               if (carbon_balance < 0.0) then
-!                  nitrogen_uptake = nitrogen_uptake + carbon_balance / c2n_storage
-                  nitrogen_uptake = nitrogen_uptake + increment / c2n_storage
-                  nitrogen_uptake = nitrogen_uptake                                        &
-                                  + (carbon_balance - increment)                           &
-                                  * ( f_labile(ipft) / c2n_leaf(ipft)                      &
-                                    + (1.0 - f_labile(ipft)) / c2n_stem(ipft)              &
-                                    -  1.0 / c2n_storage)
-
-
-                  P_uptake = P_uptake + increment / c2p_storage(ipft)
-                  P_uptake = P_uptake                                        &
-                                  + (carbon_balance - increment)                           &
-                                  * ( f_labile(ipft) / c2p_alive(ipft)                      &
-                                    + (1.0 - f_labile(ipft)) / c2p_dead(ipft)              &
-                                    -  1.0 / c2p_storage(ipft))
-                  
-               else
-                  nitrogen_uptake = nitrogen_uptake + carbon_balance                       &
-                                 * ( f_labile(ipft) / c2n_leaf(ipft)                       &
-                                   + (1.0 - f_labile(ipft)) / c2n_stem(ipft) )
-
-                  P_uptake = P_uptake + carbon_balance                       &
-                                 * ( f_labile(ipft) / c2p_alive(ipft)                       &
-                                   + (1.0 - f_labile(ipft)) / c2p_dead(ipft) )
-
-                  !------------------------------------------------------------------------!
-                  !     Now calculate additional N uptake required from transfer of C from !
-                  ! storage to balive.                                                     !
-                  !------------------------------------------------------------------------!
-                  nitrogen_uptake  = nitrogen_uptake +  ( - 1.0 * increment )              &
-                                   * ( f_labile(ipft)  / c2n_leaf(ipft)                    &
-                                     + (1.0 - f_labile(ipft)) / c2n_stem(ipft)             &
-                                     -  1.0 / c2n_storage)
-
-                  P_uptake  = P_uptake +  ( - 1.0 * increment )              &
-                                   * ( f_labile(ipft)  / c2p_alive(ipft)                    &
-                                     + (1.0 - f_labile(ipft)) / c2p_dead(ipft)             &
-                                     -  1.0 / c2p_storage(ipft))
-               end if
-
-            else
-               !---------------------------------------------------------------------------!
-               !     N uptake for fraction of daily C gain going to balive.                !
-               !---------------------------------------------------------------------------!
-               nitrogen_uptake = nitrogen_uptake + (carbon_balance - increment)            &
-                               * ( f_labile(ipft) / c2n_leaf(ipft)                         &
-                                 + (1.0 - f_labile(ipft)) / c2n_stem(ipft))
-
-
-               P_uptake = P_uptake + (carbon_balance - increment)            &
-                               * ( f_labile(ipft) / c2p_alive(ipft)                         &
-                                 + (1.0 - f_labile(ipft)) / c2p_dead(ipft))
-               !----- N uptake for fraction of daily C gain going to bstorage. ------------!
-               nitrogen_uptake = nitrogen_uptake + increment / c2n_storage
-
-               P_uptake = P_uptake + increment / c2p_storage(ipft)
-            end if
-
-            on_allometry = 2.0 * abs(balive_max - cpatch%balive(ico))                      &
-                         / (balive_max + cpatch%balive(ico))          < 1.e-6
-            if (cpatch%elongf(ico) == 1.0 .and. on_allometry) then
-               !---------------------------------------------------------------------------!
-               !     We're back to allometry, change phenology_status.                     !
-               !---------------------------------------------------------------------------!
-               cpatch%phenology_status(ico) = 0
-            end if
-         else
-            !------------------------------------------------------------------------------!
-            !     Put carbon gain into storage.  If we're not actively dropping leaves or  !
-            ! off-allometry, this will be used for structural growth at the end of the     !
-            ! month.                                                                       !
-            !------------------------------------------------------------------------------!
-            cpatch%bstorage(ico) = cpatch%bstorage(ico) + carbon_balance
-            nitrogen_uptake      = nitrogen_uptake      + carbon_balance / c2n_storage
-
-            P_uptake      = P_uptake      + carbon_balance / c2p_storage(ipft)
-
-            !----- NPP allocation in diff pools in Kg C/m2/day. ---------------------------!
-            cpatch%today_nppleaf(ico)    = 0.0
-            cpatch%today_nppfroot(ico)   = 0.0
-            cpatch%today_nppsapwood(ico) = 0.0
-            cpatch%today_nppdaily(ico)   = carbon_balance * cpatch%nplant(ico)
-         end if
- 
-
-      else
-         !---------------------------------------------------------------------------------!
-         !   Carbon balance is negative, take it out of storage.                           !
-         !---------------------------------------------------------------------------------!
-         increment =  cpatch%bstorage(ico) + carbon_balance
-
-         if (increment <= 0.0)  then
-            !----- Use Storage pool first then take out of balive. ------------------------!
-            increment            =  - increment
-            cpatch%bstorage(ico) = 0.0
-
-            csite%fsn_in(ipa)    = csite%fsn_in(ipa) + cpatch%bstorage(ico) / c2n_storage  &
-                                                     * cpatch%nplant(ico)
-
-            csite%fsp_in(ipa)    = csite%fsp_in(ipa) + cpatch%bstorage(ico) / c2p_storage(ipft)  &
-                                                     * cpatch%nplant(ico)
-
-            if (cpatch%phenology_status(ico) == 0)  then
-               !---------------------------------------------------------------------------!
-               !     We were on allometry, but now we need to burn carbon and go off-      !
-               ! -allometry.                                                               !
-               !---------------------------------------------------------------------------!
-               cpatch%balive(ico)   = cpatch%balive(ico) - increment
-               cpatch%bleaf(ico)    = cpatch%balive(ico) * salloci * green_leaf_factor
-               cpatch%broot(ico)    = cpatch%balive(ico) * q(ipft) * salloci
-               cpatch%bsapwood(ico) = cpatch%balive(ico) * cpatch%hite(ico) * qsw(ipft)    &
-                                    * salloci
-               cpatch%phenology_status(ico) = 1
-            else
-               f_resp = cpatch%today_leaf_resp(ico)                                        &
-                      / ( cpatch%today_leaf_resp(ico) + cpatch%today_root_resp(ico) )
-               bl     = cpatch%bleaf(ico) - f_resp * (increment)
-
-               if (bl > 0.0) then
-                  cpatch%bleaf(ico) = bl
-                  cpatch%broot(ico) = cpatch%broot(ico) - (1.0 - f_resp) * increment 
-               else
-                  cpatch%broot(ico) = cpatch%broot(ico) - (increment - cpatch%bleaf(ico))
-                  cpatch%bleaf(ico) = 0.0
-                  cpatch%elongf(ico) = 0.0
-                  cpatch%phenology_status(ico) = 2
-               end if
-
-               cpatch%balive(ico) = cpatch%bleaf(ico) + cpatch%broot(ico)                  &
-                                  + cpatch%bsapwood(ico)    
-            end if
-
-            csite%fsn_in(ipa) = csite%fsn_in(ipa) + increment                              &
-                              * ( f_labile(ipft) / c2n_leaf(ipft)                          &
-                                + (1.0 - f_labile(ipft)) / c2n_stem(ipft) )                &
-                              * cpatch%nplant(ico)
-
-            csite%fsp_in(ipa) = csite%fsp_in(ipa) + increment                              &
-                              * ( f_labile(ipft) / c2p_alive(ipft)                          &
-                                + (1.0 - f_labile(ipft)) / c2p_dead(ipft) )                &
-                              * cpatch%nplant(ico)
-
-         else
-            !------ Burn the storage pool.  Dont' forget the nitrogen. --------------------!
-            cpatch%bstorage(ico) =  cpatch%bstorage(ico) + carbon_balance
-
-            csite%fsn_in(ipa)    = csite%fsn_in(ipa) - carbon_balance / c2n_storage        &
-                                 * cpatch%nplant(ico)   
-
-            csite%fsp_in(ipa)    = csite%fsp_in(ipa) - carbon_balance / c2p_storage(ipft)        &
-                                 * cpatch%nplant(ico)   
-         end if
-
-         !---- NPP allocation in diff pools in KgC/m2/day. --------------------------------!
-         cpatch%today_nppleaf(ico)    = 0.0
-         cpatch%today_nppfroot(ico)   = 0.0
-         cpatch%today_nppsapwood(ico) = 0.0
-         cpatch%today_nppdaily(ico)   = carbon_balance * cpatch%nplant(ico)
-      end if
-
-endif
       return
    end subroutine alloc_plant_c_balance
    !=======================================================================================!

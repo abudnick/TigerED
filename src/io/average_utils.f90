@@ -407,13 +407,13 @@ subroutine reset_averaged_vars(cgrid)
       cgrid%avg_lai_ebalvars (:,:,ipy) = 0.0
 
       cgrid%avg_gpp              (ipy) = 0.0
-      cgrid%avg_nppleaf          (ipy) = 0.0
-      cgrid%avg_nppfroot         (ipy) = 0.0
-      cgrid%avg_nppsapwood       (ipy) = 0.0
-      cgrid%avg_nppcroot         (ipy) = 0.0
-      cgrid%avg_nppseeds         (ipy) = 0.0
-      cgrid%avg_nppwood          (ipy) = 0.0
-      cgrid%avg_nppdaily         (ipy) = 0.0
+!      cgrid%avg_nppleaf          (ipy) = 0.0
+!      cgrid%avg_nppfroot         (ipy) = 0.0
+!      cgrid%avg_nppsapwood       (ipy) = 0.0
+!      cgrid%avg_nppcroot         (ipy) = 0.0
+!      cgrid%avg_nppseeds         (ipy) = 0.0
+!      cgrid%avg_nppwood          (ipy) = 0.0
+!      cgrid%avg_nppdaily         (ipy) = 0.0
       cgrid%avg_leaf_resp        (ipy) = 0.0
       cgrid%avg_root_resp        (ipy) = 0.0
       cgrid%avg_growth_resp      (ipy) = 0.0
@@ -1687,35 +1687,44 @@ subroutine normalize_ed_daily_vars(cgrid,timefac1)
             
             !----- Included a loop so it won't crash with empty cohorts... ----------------!
             cohortloop: do ico=1,cpatch%ncohorts
-               cpatch%today_gpp(ico)       = cpatch%today_gpp(ico)       * timefac1
-               cpatch%today_gpp_pot(ico)   = cpatch%today_gpp_pot(ico)   * timefac1
-               cpatch%today_gpp_max(ico)   = cpatch%today_gpp_max(ico)   * timefac1
-               cpatch%today_leaf_resp(ico) = cpatch%today_leaf_resp(ico) * timefac1
-               cpatch%today_root_resp(ico) = cpatch%today_root_resp(ico) * timefac1
+!               cpatch%today_gpp(ico)       = cpatch%today_gpp(ico)       * timefac1
+!               cpatch%today_gpp_pot(ico)   = cpatch%today_gpp_pot(ico)   * timefac1
+!               cpatch%today_gpp_max(ico)   = cpatch%today_gpp_max(ico)   * timefac1
+!               cpatch%today_leaf_resp(ico) = cpatch%today_leaf_resp(ico) * timefac1
+!               cpatch%today_root_resp(ico) = cpatch%today_root_resp(ico) * timefac1
 
                !---------------------------------------------------------------------------!
                !    We now update the daily means of GPP, and leaf and root respiration,   !
-               ! and we convert them to kgC/plant/yr.                                      !
+               ! summed over all cohorts and converted to kgC/m2/day
                !---------------------------------------------------------------------------!
                if (save_daily) then
-                  cpatch%dmean_gpp(ico)       = cpatch%today_gpp(ico)                      &
-                                              * umols_2_kgCyr / cpatch%nplant(ico)
-                  cpatch%dmean_leaf_resp(ico) = cpatch%today_leaf_resp(ico)                &
-                                              * umols_2_kgCyr / cpatch%nplant(ico)
-                  cpatch%dmean_root_resp(ico) = cpatch%today_root_resp(ico)                &
-                                              * umols_2_kgCyr / cpatch%nplant(ico)
+!                  cpatch%dmean_gpp(ico)       = cpatch%today_gpp(ico)                      &
+!                                              * umols_2_kgCyr / cpatch%nplant(ico)
+!                  cpatch%dmean_leaf_resp(ico) = cpatch%today_leaf_resp(ico)                &
+!                                              * umols_2_kgCyr / cpatch%nplant(ico)
+!                  cpatch%dmean_root_resp(ico) = cpatch%today_root_resp(ico)                &
+!                                              * umols_2_kgCyr / cpatch%nplant(ico)
+!                  pss_gpp                     = pss_gpp                                    &
+!                                              + cpatch%today_gpp(ico)                      &
+!                                              * csite%area(ipa)                            &
+!                                              * umols_2_kgCyr                           
+!                  pss_leaf_resp               = pss_leaf_resp                              &
+!                                              + cpatch%today_leaf_resp(ico)                &
+!                                              * csite%area(ipa)                            &
+!                                              * umols_2_kgCyr
+!                  pss_root_resp               = pss_root_resp                              &
+!                                              + cpatch%today_root_resp(ico)                &
+!                                              * csite%area(ipa)                            &
+!                                              * umols_2_kgCyr
                   pss_gpp                     = pss_gpp                                    &
-                                              + cpatch%today_gpp(ico)                      &
-                                              * csite%area(ipa)                            &
-                                              * umols_2_kgCyr                           
+                                              + cpatch%today_gpp(ico)*cpatch%nplant(ico)  &
+                                              * csite%area(ipa)
                   pss_leaf_resp               = pss_leaf_resp                              &
-                                              + cpatch%today_leaf_resp(ico)                &
-                                              * csite%area(ipa)                            &
-                                              * umols_2_kgCyr
+                                              + cpatch%today_leaf_resp(ico)*cpatch%nplant(ico)  &
+                                              * csite%area(ipa)
                   pss_root_resp               = pss_root_resp                              &
-                                              + cpatch%today_root_resp(ico)                &
-                                              * csite%area(ipa)                            &
-                                              * umols_2_kgCyr
+                                              + cpatch%today_root_resp(ico)*cpatch%nplant(ico)  &
+                                              * csite%area(ipa)
                end if
 
                !---------------------------------------------------------------------------!
@@ -1725,14 +1734,16 @@ subroutine normalize_ed_daily_vars(cgrid,timefac1)
                !---------------------------------------------------------------------------!
                if (save_monthly) then 
                   cpatch%mmean_gpp(ico)           = cpatch%mmean_gpp(ico)                  &
-                                                  + cpatch%dmean_gpp(ico)
+                                                  + cpatch%today_gpp(ico)
                   cpatch%mmean_leaf_resp(ico)     = cpatch%mmean_leaf_resp(ico)            &
-                                                  + cpatch%dmean_leaf_resp(ico)
+                                                  + cpatch%today_leaf_resp(ico)
                   cpatch%mmean_root_resp(ico)     = cpatch%mmean_root_resp(ico)            &
-                                                  + cpatch%dmean_root_resp(ico)
+                                                  + cpatch%today_root_resp(ico)
                end if
             end do cohortloop
          end do patchloop
+
+         ! sss_gpp
          if (save_daily) then
             sss_gpp       = sss_gpp       + pss_gpp       * site_area_i * cpoly%area(isi)
             sss_leaf_resp = sss_leaf_resp + pss_leaf_resp * site_area_i * cpoly%area(isi)
@@ -1811,153 +1822,153 @@ subroutine normalize_ed_dailyNPP_vars(cgrid)
    logical           , save       :: save_daily
    logical           , save       :: save_monthly
    !---------------------------------------------------------------------------------------!
-   if (first_time) then
-      first_time   = .false.
-      save_daily   = imoutput > 0 .or. idoutput > 0 .or. iqoutput > 0
-      save_monthly = imoutput > 0 .or. iqoutput > 0
-   end if
+!   if (first_time) then
+!      first_time   = .false.
+!      save_daily   = imoutput > 0 .or. idoutput > 0 .or. iqoutput > 0
+!      save_monthly = imoutput > 0 .or. iqoutput > 0
+!   end if
 
-   polyloop: do ipy=1,cgrid%npolygons
-      cpoly => cgrid%polygon(ipy)
+!   polyloop: do ipy=1,cgrid%npolygons
+!      cpoly => cgrid%polygon(ipy)
       !----- This part is done only if arrays are sought. ---------------------------------!
-      if (save_daily) then
-         poly_area_i             = 1./sum(cpoly%area)
-         sss_nppleaf                = 0.
-         sss_nppfroot               = 0.
-         sss_nppsapwood             = 0.
-         sss_nppcroot               = 0.
-         sss_nppseeds               = 0.
-         sss_nppwood                = 0.
-         sss_nppdaily               = 0.
-      end if
+!      if (save_daily) then
+!         poly_area_i             = 1./sum(cpoly%area)
+!         sss_nppleaf                = 0.
+!         sss_nppfroot               = 0.
+!         sss_nppsapwood             = 0.
+!         sss_nppcroot               = 0.
+!         sss_nppseeds               = 0.
+!         sss_nppwood                = 0.
+!         sss_nppdaily               = 0.
+!      end if
       
-      siteloop: do isi=1,cpoly%nsites
-         csite => cpoly%site(isi)
+!      siteloop: do isi=1,cpoly%nsites
+!         csite => cpoly%site(isi)
          
 
-         if (save_daily) then
-            site_area_i               = 1./ sum(csite%area)
-            pss_nppleaf               = 0.
-            pss_nppfroot              = 0.
-            pss_nppsapwood            = 0.
-            pss_nppcroot              = 0.
-            pss_nppseeds              = 0.
-            pss_nppwood               = 0.
-            pss_nppdaily              = 0.
-         end if
+!         if (save_daily) then
+!            site_area_i               = 1./ sum(csite%area)
+!            pss_nppleaf               = 0.
+!            pss_nppfroot              = 0.
+!            pss_nppsapwood            = 0.
+!            pss_nppcroot              = 0.
+!            pss_nppseeds              = 0.
+!            pss_nppwood               = 0.
+!            pss_nppdaily              = 0.
+!         end if
          
-         patchloop: do ipa=1,csite%npatches
+!         patchloop: do ipa=1,csite%npatches
 
-            cpatch => csite%patch(ipa)
+!            cpatch => csite%patch(ipa)
             
             !----- Included a loop so it won't crash with empty cohorts... ----------------!
-            cohortloop: do ico=1,cpatch%ncohorts
+!            cohortloop: do ico=1,cpatch%ncohorts
  
                !---------------------------------------------------------------------------!
                !    We now update the daily means of NPP allocation terms                  !
                ! and we convert them to kgC/plant/yr                                      !
                !---------------------------------------------------------------------------!
-               if (save_daily) then                                              
-                  cpatch%dmean_nppleaf(ico)   = cpatch%today_nppleaf(ico)                  &
-                                              * yr_day / cpatch%nplant(ico)
-                  cpatch%dmean_nppfroot(ico)  = cpatch%today_nppfroot(ico)                 &
-                                              * yr_day / cpatch%nplant(ico)                                              
-                  cpatch%dmean_nppsapwood(ico)= cpatch%today_nppsapwood(ico)               &
-                                              * yr_day / cpatch%nplant(ico)                                            
-                  cpatch%dmean_nppcroot(ico)  = cpatch%today_nppcroot(ico)                 &
-                                              * yr_day / cpatch%nplant(ico)
-                  cpatch%dmean_nppseeds(ico)  = cpatch%today_nppseeds(ico)                 &
-                                              * yr_day / cpatch%nplant(ico)
-                  cpatch%dmean_nppwood(ico)   = cpatch%today_nppwood(ico)                  &
-                                              * yr_day / cpatch%nplant(ico)
-                  cpatch%dmean_nppdaily(ico)  = cpatch%today_nppdaily(ico)                 &
-                                              * yr_day / cpatch%nplant(ico)
-                  pss_nppleaf                 = pss_nppleaf                                &
-                                              + cpatch%today_nppleaf(ico)                  &
-                                              * yr_day * csite%area(ipa)                            
-                  pss_nppfroot                = pss_nppfroot                               &
-                                              + cpatch%today_nppfroot(ico)                 &
-                                              * yr_day * csite%area(ipa)                            
-                  pss_nppsapwood              = pss_nppsapwood                             &
-                                              + cpatch%today_nppsapwood(ico)               &
-                                              * yr_day * csite%area(ipa)                            
-                  pss_nppcroot                = pss_nppcroot                               &
-                                              + cpatch%today_nppcroot(ico)                 &
-                                              * yr_day * csite%area(ipa)                    
-                  pss_nppseeds                = pss_nppseeds                               &
-                                              + cpatch%today_nppseeds(ico)                 &
-                                              * yr_day * csite%area(ipa) 
-                  pss_nppwood                 = pss_nppwood                                &
-                                              + cpatch%today_nppwood(ico)                  &
-                                              * yr_day * csite%area(ipa)                            
-                  pss_nppdaily                = pss_nppdaily                               &
-                                              + cpatch%today_nppdaily(ico)                 &
-                                              * yr_day * csite%area(ipa)                            
-               end if
+!               if (save_daily) then                                              
+!                  cpatch%dmean_nppleaf(ico)   = cpatch%today_nppleaf(ico)                  &
+!                                              * yr_day / cpatch%nplant(ico)
+!                  cpatch%dmean_nppfroot(ico)  = cpatch%today_nppfroot(ico)                 &
+!                                              * yr_day / cpatch%nplant(ico)                                              
+!                  cpatch%dmean_nppsapwood(ico)= cpatch%today_nppsapwood(ico)               &
+!                                              * yr_day / cpatch%nplant(ico)                                            
+!                  cpatch%dmean_nppcroot(ico)  = cpatch%today_nppcroot(ico)                 &
+!                                              * yr_day / cpatch%nplant(ico)
+!                  cpatch%dmean_nppseeds(ico)  = cpatch%today_nppseeds(ico)                 &
+!                                              * yr_day / cpatch%nplant(ico)
+!                  cpatch%dmean_nppwood(ico)   = cpatch%today_nppwood(ico)                  &
+!                                              * yr_day / cpatch%nplant(ico)
+!                  cpatch%dmean_nppdaily(ico)  = cpatch%today_nppdaily(ico)                 &
+!                                              * yr_day / cpatch%nplant(ico)
+!                  pss_nppleaf                 = pss_nppleaf                                &
+!                                              + cpatch%today_nppleaf(ico)                  &
+!                                              * yr_day * csite%area(ipa)                            
+!                  pss_nppfroot                = pss_nppfroot                               &
+!                                              + cpatch%today_nppfroot(ico)                 &
+!                                              * yr_day * csite%area(ipa)                            
+!                  pss_nppsapwood              = pss_nppsapwood                             &
+!                                              + cpatch%today_nppsapwood(ico)               &
+!                                              * yr_day * csite%area(ipa)                            
+!                  pss_nppcroot                = pss_nppcroot                               &
+!                                              + cpatch%today_nppcroot(ico)                 &
+!                                              * yr_day * csite%area(ipa)                    
+!                  pss_nppseeds                = pss_nppseeds                               &
+!                                              + cpatch%today_nppseeds(ico)                 &
+!                                              * yr_day * csite%area(ipa) 
+!                  pss_nppwood                 = pss_nppwood                                &
+!                                              + cpatch%today_nppwood(ico)                  &
+!                                              * yr_day * csite%area(ipa)                            
+!                  pss_nppdaily                = pss_nppdaily                               &
+!                                              + cpatch%today_nppdaily(ico)                 &
+!                                              * yr_day * csite%area(ipa)                            
+!               end if
 
                !---------------------------------------------------------------------------!
                !    We update the following monthly means here because these dmean vari-   !
                ! ables will be discarded before integrate_ed_monthly_output_vars is        !
                ! called.                                                                   !
                !---------------------------------------------------------------------------!
-               if (save_monthly) then 
-                  cpatch%mmean_nppleaf(ico)       = cpatch%mmean_nppleaf(ico)              &
-                                                  + cpatch%dmean_nppleaf(ico)
-                  cpatch%mmean_nppfroot(ico)      = cpatch%mmean_nppfroot(ico)             &
-                                                  + cpatch%dmean_nppfroot(ico)
-                  cpatch%mmean_nppsapwood(ico)    = cpatch%mmean_nppsapwood(ico)           &
-                                                  + cpatch%dmean_nppsapwood(ico)
-                  cpatch%mmean_nppcroot(ico)      = cpatch%mmean_nppcroot(ico)             &
-                                                  + cpatch%dmean_nppcroot(ico)
-                  cpatch%mmean_nppseeds(ico)      = cpatch%mmean_nppseeds(ico)             &
-                                                  + cpatch%dmean_nppseeds(ico)
-                  cpatch%mmean_nppwood(ico)       = cpatch%mmean_nppwood(ico)              &
-                                                  + cpatch%dmean_nppwood(ico)
-                  cpatch%mmean_nppdaily(ico)      = cpatch%mmean_nppdaily(ico)             &
-                                                  + cpatch%dmean_nppdaily(ico)
-               end if
-            end do cohortloop
-         end do patchloop
-         if (save_daily) then
-            sss_nppleaf   = sss_nppleaf   + pss_nppleaf   * site_area_i * cpoly%area(isi)
-            sss_nppfroot  = sss_nppfroot  + pss_nppfroot  * site_area_i * cpoly%area(isi)
-            sss_nppsapwood = sss_nppsapwood  + pss_nppsapwood  * site_area_i               &
-                              * cpoly%area(isi)
-            sss_nppcroot  = sss_nppcroot  + pss_nppcroot  * site_area_i * cpoly%area(isi)
-            sss_nppseeds  = sss_nppseeds  + pss_nppseeds  * site_area_i * cpoly%area(isi)
-            sss_nppwood   = sss_nppwood   + pss_nppwood   * site_area_i * cpoly%area(isi)
-            sss_nppdaily  = sss_nppdaily  + pss_nppdaily  * site_area_i * cpoly%area(isi)
-         end if
+!               if (save_monthly) then 
+!                  cpatch%mmean_nppleaf(ico)       = cpatch%mmean_nppleaf(ico)              &
+!                                                  + cpatch%dmean_nppleaf(ico)
+!                  cpatch%mmean_nppfroot(ico)      = cpatch%mmean_nppfroot(ico)             &
+!                                                  + cpatch%dmean_nppfroot(ico)
+!                  cpatch%mmean_nppsapwood(ico)    = cpatch%mmean_nppsapwood(ico)           &
+!                                                  + cpatch%dmean_nppsapwood(ico)
+!                  cpatch%mmean_nppcroot(ico)      = cpatch%mmean_nppcroot(ico)             &
+!                                                  + cpatch%dmean_nppcroot(ico)
+!                  cpatch%mmean_nppseeds(ico)      = cpatch%mmean_nppseeds(ico)             &
+!                                                  + cpatch%dmean_nppseeds(ico)
+!                  cpatch%mmean_nppwood(ico)       = cpatch%mmean_nppwood(ico)              &
+!                                                  + cpatch%dmean_nppwood(ico)
+!                  cpatch%mmean_nppdaily(ico)      = cpatch%mmean_nppdaily(ico)             &
+!                                                  + cpatch%dmean_nppdaily(ico)
+!               end if
+!            end do cohortloop
+!         end do patchloop
+!         if (save_daily) then
+!            sss_nppleaf   = sss_nppleaf   + pss_nppleaf   * site_area_i * cpoly%area(isi)
+!            sss_nppfroot  = sss_nppfroot  + pss_nppfroot  * site_area_i * cpoly%area(isi)
+!            sss_nppsapwood = sss_nppsapwood  + pss_nppsapwood  * site_area_i               &
+!                              * cpoly%area(isi)
+!            sss_nppcroot  = sss_nppcroot  + pss_nppcroot  * site_area_i * cpoly%area(isi)
+!            sss_nppseeds  = sss_nppseeds  + pss_nppseeds  * site_area_i * cpoly%area(isi)
+!            sss_nppwood   = sss_nppwood   + pss_nppwood   * site_area_i * cpoly%area(isi)
+!            sss_nppdaily  = sss_nppdaily  + pss_nppdaily  * site_area_i * cpoly%area(isi)
+!         end if
          
-      end do siteloop
+!      end do siteloop
 
-      if (save_daily) then
-         cgrid%dmean_nppleaf(ipy)       = sss_nppleaf      * poly_area_i
-         cgrid%dmean_nppfroot(ipy)      = sss_nppfroot     * poly_area_i
-         cgrid%dmean_nppsapwood(ipy)    = sss_nppsapwood   * poly_area_i
-         cgrid%dmean_nppcroot(ipy)      = sss_nppcroot     * poly_area_i
-         cgrid%dmean_nppseeds(ipy)      = sss_nppseeds     * poly_area_i
-         cgrid%dmean_nppwood(ipy)       = sss_nppwood      * poly_area_i
-         cgrid%dmean_nppdaily(ipy)      = sss_nppdaily     * poly_area_i
-      end if
+!      if (save_daily) then
+!         cgrid%dmean_nppleaf(ipy)       = sss_nppleaf      * poly_area_i
+!         cgrid%dmean_nppfroot(ipy)      = sss_nppfroot     * poly_area_i
+!         cgrid%dmean_nppsapwood(ipy)    = sss_nppsapwood   * poly_area_i
+!         cgrid%dmean_nppcroot(ipy)      = sss_nppcroot     * poly_area_i
+!         cgrid%dmean_nppseeds(ipy)      = sss_nppseeds     * poly_area_i
+!         cgrid%dmean_nppwood(ipy)       = sss_nppwood      * poly_area_i
+!         cgrid%dmean_nppdaily(ipy)      = sss_nppdaily     * poly_area_i
+!      end if
       
-      if (save_monthly) then
-         cgrid%mmean_nppleaf(ipy)   = cgrid%mmean_nppleaf(ipy)                             &
-                                    + cgrid%dmean_nppleaf(ipy)
-         cgrid%mmean_nppfroot(ipy)  = cgrid%mmean_nppfroot(ipy)                            &
-                                    + cgrid%dmean_nppfroot(ipy)
-         cgrid%mmean_nppsapwood(ipy)= cgrid%mmean_nppsapwood(ipy)                          &
-                                    + cgrid%dmean_nppsapwood(ipy)
-         cgrid%mmean_nppcroot(ipy)  = cgrid%mmean_nppcroot(ipy)                            &
-                                    + cgrid%dmean_nppcroot(ipy)
-         cgrid%mmean_nppseeds(ipy)  = cgrid%mmean_nppseeds(ipy)                            &
-                                    + cgrid%dmean_nppseeds(ipy)
-         cgrid%mmean_nppwood(ipy)   = cgrid%mmean_nppwood(ipy)                             &
-                                    + cgrid%dmean_nppwood(ipy)
-         cgrid%mmean_nppdaily(ipy)  = cgrid%mmean_nppdaily(ipy)                            &
-                                    + cgrid%dmean_nppdaily(ipy)
-      end if
-   end do polyloop
+!      if (save_monthly) then
+!         cgrid%mmean_nppleaf(ipy)   = cgrid%mmean_nppleaf(ipy)                             &
+!                                    + cgrid%dmean_nppleaf(ipy)
+!         cgrid%mmean_nppfroot(ipy)  = cgrid%mmean_nppfroot(ipy)                            &
+!                                    + cgrid%dmean_nppfroot(ipy)
+!         cgrid%mmean_nppsapwood(ipy)= cgrid%mmean_nppsapwood(ipy)                          &
+!                                    + cgrid%dmean_nppsapwood(ipy)
+!         cgrid%mmean_nppcroot(ipy)  = cgrid%mmean_nppcroot(ipy)                            &
+!                                    + cgrid%dmean_nppcroot(ipy)
+!         cgrid%mmean_nppseeds(ipy)  = cgrid%mmean_nppseeds(ipy)                            &
+!                                    + cgrid%dmean_nppseeds(ipy)
+!         cgrid%mmean_nppwood(ipy)   = cgrid%mmean_nppwood(ipy)                             &
+!                                    + cgrid%dmean_nppwood(ipy)
+!         cgrid%mmean_nppdaily(ipy)  = cgrid%mmean_nppdaily(ipy)                            &
+!                                    + cgrid%dmean_nppdaily(ipy)
+!      end if
+!   end do polyloop
    
    return
 end subroutine normalize_ed_dailyNPP_vars
@@ -2496,13 +2507,13 @@ subroutine zero_ed_daily_vars(cgrid)
             !----- Reset variables stored in patchtype. -----------------------------------!
             do ico = 1, cpatch%ncohorts
                cpatch%today_gpp      (ico) = 0.0
-               cpatch%today_nppleaf  (ico) = 0.0
-               cpatch%today_nppfroot (ico) = 0.0
-               cpatch%today_nppsapwood (ico) = 0.0
-               cpatch%today_nppcroot (ico) = 0.0
-               cpatch%today_nppseeds (ico) = 0.0
-               cpatch%today_nppwood  (ico) = 0.0
-               cpatch%today_nppdaily (ico) = 0.0
+!               cpatch%today_nppleaf  (ico) = 0.0
+!               cpatch%today_nppfroot (ico) = 0.0
+!               cpatch%today_nppsapwood (ico) = 0.0
+!               cpatch%today_nppcroot (ico) = 0.0
+!               cpatch%today_nppseeds (ico) = 0.0
+!               cpatch%today_nppwood  (ico) = 0.0
+!               cpatch%today_nppdaily (ico) = 0.0
                cpatch%today_gpp_pot  (ico) = 0.0
                cpatch%today_gpp_max  (ico) = 0.0
                cpatch%today_leaf_resp(ico) = 0.0
@@ -2557,13 +2568,13 @@ subroutine zero_ed_daily_output_vars(cgrid)
       cgrid%dmean_vapor_gc       (ipy) = 0.
       cgrid%dmean_vapor_ac       (ipy) = 0.
       cgrid%dmean_gpp            (ipy) = 0.
-      cgrid%dmean_nppleaf        (ipy) = 0.
-      cgrid%dmean_nppfroot       (ipy) = 0.
-      cgrid%dmean_nppsapwood     (ipy) = 0.
-      cgrid%dmean_nppcroot       (ipy) = 0.
-      cgrid%dmean_nppseeds       (ipy) = 0.
-      cgrid%dmean_nppwood        (ipy) = 0.
-      cgrid%dmean_nppdaily       (ipy) = 0.
+!      cgrid%dmean_nppleaf        (ipy) = 0.
+!      cgrid%dmean_nppfroot       (ipy) = 0.
+!      cgrid%dmean_nppsapwood     (ipy) = 0.
+!      cgrid%dmean_nppcroot       (ipy) = 0.
+!      cgrid%dmean_nppseeds       (ipy) = 0.
+!      cgrid%dmean_nppwood        (ipy) = 0.
+!      cgrid%dmean_nppdaily       (ipy) = 0.
       cgrid%dmean_evap           (ipy) = 0.
       cgrid%dmean_transp         (ipy) = 0.
       cgrid%dmean_sensible_lc    (ipy) = 0.
@@ -2654,16 +2665,16 @@ subroutine zero_ed_daily_output_vars(cgrid)
 
             cpatch => csite%patch(ipa)
             do ico=1, cpatch%ncohorts
-               cpatch%dmean_gpp(ico)              = 0.
-               cpatch%dmean_nppleaf(ico)          = 0.
-               cpatch%dmean_nppfroot(ico)         = 0.
-               cpatch%dmean_nppsapwood(ico)       = 0.
-               cpatch%dmean_nppcroot(ico)         = 0.
-               cpatch%dmean_nppseeds(ico)         = 0.
-               cpatch%dmean_nppwood(ico)          = 0.
-               cpatch%dmean_nppdaily(ico)         = 0.
-               cpatch%dmean_leaf_resp(ico)        = 0.
-               cpatch%dmean_root_resp(ico)        = 0.
+!               cpatch%dmean_gpp(ico)              = 0.
+!               cpatch%dmean_nppleaf(ico)          = 0.
+!               cpatch%dmean_nppfroot(ico)         = 0.
+!               cpatch%dmean_nppsapwood(ico)       = 0.
+!               cpatch%dmean_nppcroot(ico)         = 0.
+!               cpatch%dmean_nppseeds(ico)         = 0.
+!               cpatch%dmean_nppwood(ico)          = 0.
+!               cpatch%dmean_nppdaily(ico)         = 0.
+!               cpatch%dmean_leaf_resp(ico)        = 0.
+!               cpatch%dmean_root_resp(ico)        = 0.
                cpatch%dmean_par_l(ico)            = 0.
                cpatch%dmean_par_l_beam(ico)       = 0.
                cpatch%dmean_par_l_diff(ico)       = 0.
@@ -3135,13 +3146,13 @@ subroutine normalize_ed_monthly_output_vars(cgrid)
       cgrid%mmean_fsw            (ipy) = cgrid%mmean_fsw            (ipy) * ndaysi
       cgrid%mmean_fsn            (ipy) = cgrid%mmean_fsn            (ipy) * ndaysi
       cgrid%mmean_gpp            (ipy) = cgrid%mmean_gpp            (ipy) * ndaysi
-      cgrid%mmean_nppleaf        (ipy) = cgrid%mmean_nppleaf        (ipy) * ndaysi
-      cgrid%mmean_nppfroot       (ipy) = cgrid%mmean_nppfroot       (ipy) * ndaysi
-      cgrid%mmean_nppsapwood     (ipy) = cgrid%mmean_nppsapwood     (ipy) * ndaysi
-      cgrid%mmean_nppcroot       (ipy) = cgrid%mmean_nppcroot       (ipy) * ndaysi
-      cgrid%mmean_nppseeds       (ipy) = cgrid%mmean_nppseeds       (ipy) * ndaysi
-      cgrid%mmean_nppwood        (ipy) = cgrid%mmean_nppwood        (ipy) * ndaysi
-      cgrid%mmean_nppdaily       (ipy) = cgrid%mmean_nppdaily       (ipy) * ndaysi
+!      cgrid%mmean_nppleaf        (ipy) = cgrid%mmean_nppleaf        (ipy) * ndaysi
+!      cgrid%mmean_nppfroot       (ipy) = cgrid%mmean_nppfroot       (ipy) * ndaysi
+!      cgrid%mmean_nppsapwood     (ipy) = cgrid%mmean_nppsapwood     (ipy) * ndaysi
+!      cgrid%mmean_nppcroot       (ipy) = cgrid%mmean_nppcroot       (ipy) * ndaysi
+!      cgrid%mmean_nppseeds       (ipy) = cgrid%mmean_nppseeds       (ipy) * ndaysi
+!      cgrid%mmean_nppwood        (ipy) = cgrid%mmean_nppwood        (ipy) * ndaysi
+!      cgrid%mmean_nppdaily       (ipy) = cgrid%mmean_nppdaily       (ipy) * ndaysi
       cgrid%mmean_evap           (ipy) = cgrid%mmean_evap           (ipy) * ndaysi
       cgrid%mmean_transp         (ipy) = cgrid%mmean_transp         (ipy) * ndaysi
       cgrid%mmean_vapor_ac       (ipy) = cgrid%mmean_vapor_ac       (ipy) * ndaysi
@@ -3363,16 +3374,16 @@ subroutine normalize_ed_monthly_output_vars(cgrid)
             cpatch => csite%patch(ipa)
             cohortloop: do ico = 1, cpatch%ncohorts
                !----- Find the carbon fluxes. ---------------------------------------------!
-               cpatch%mmean_gpp         (ico) = cpatch%mmean_gpp         (ico) * ndaysi
-               cpatch%mmean_nppleaf     (ico) = cpatch%mmean_nppleaf     (ico) * ndaysi
-               cpatch%mmean_nppfroot    (ico) = cpatch%mmean_nppfroot    (ico) * ndaysi
-               cpatch%mmean_nppsapwood  (ico) = cpatch%mmean_nppsapwood  (ico) * ndaysi
-               cpatch%mmean_nppcroot    (ico) = cpatch%mmean_nppcroot    (ico) * ndaysi
-               cpatch%mmean_nppseeds    (ico) = cpatch%mmean_nppseeds    (ico) * ndaysi
-               cpatch%mmean_nppwood     (ico) = cpatch%mmean_nppwood     (ico) * ndaysi
-               cpatch%mmean_nppdaily    (ico) = cpatch%mmean_nppdaily    (ico) * ndaysi
-               cpatch%mmean_leaf_resp   (ico) = cpatch%mmean_leaf_resp   (ico) * ndaysi
-               cpatch%mmean_root_resp   (ico) = cpatch%mmean_root_resp   (ico) * ndaysi
+!               cpatch%mmean_gpp         (ico) = cpatch%mmean_gpp         (ico) * ndaysi
+!               cpatch%mmean_nppleaf     (ico) = cpatch%mmean_nppleaf     (ico) * ndaysi
+!               cpatch%mmean_nppfroot    (ico) = cpatch%mmean_nppfroot    (ico) * ndaysi
+!               cpatch%mmean_nppsapwood  (ico) = cpatch%mmean_nppsapwood  (ico) * ndaysi
+!               cpatch%mmean_nppcroot    (ico) = cpatch%mmean_nppcroot    (ico) * ndaysi
+!               cpatch%mmean_nppseeds    (ico) = cpatch%mmean_nppseeds    (ico) * ndaysi
+!               cpatch%mmean_nppwood     (ico) = cpatch%mmean_nppwood     (ico) * ndaysi
+!               cpatch%mmean_nppdaily    (ico) = cpatch%mmean_nppdaily    (ico) * ndaysi
+!               cpatch%mmean_leaf_resp   (ico) = cpatch%mmean_leaf_resp   (ico) * ndaysi
+!               cpatch%mmean_root_resp   (ico) = cpatch%mmean_root_resp   (ico) * ndaysi
                cpatch%mmean_growth_resp (ico) = cpatch%mmean_growth_resp (ico) * ndaysi
                cpatch%mmean_storage_resp(ico) = cpatch%mmean_storage_resp(ico) * ndaysi
                cpatch%mmean_vleaf_resp  (ico) = cpatch%mmean_vleaf_resp  (ico) * ndaysi
@@ -3390,8 +3401,6 @@ subroutine normalize_ed_monthly_output_vars(cgrid)
                cpatch%mmean_root_maintenance (ico) = cpatch%mmean_root_maintenance(ico)    &
                                                    * ndaysi
                cpatch%mmean_leaf_drop   (ico) = cpatch%mmean_leaf_drop   (ico) * ndaysi
-               !----- Mean carbon balance is re-scaled so it will be in kgC/plant/yr. -----!
-               cpatch%mmean_cb          (ico) = cpatch%mmean_cb(ico) * ndaysi * yr_day
 
                !----- Find the mortality rates. -------------------------------------------!
                do imt=1,n_mort
@@ -3754,13 +3763,13 @@ subroutine zero_ed_monthly_output_vars(cgrid)
       cgrid%mmean_fsw                (ipy) = 0.
       cgrid%mmean_fsn                (ipy) = 0.
       cgrid%mmean_gpp                (ipy) = 0.
-      cgrid%mmean_nppleaf            (ipy) = 0.
-      cgrid%mmean_nppfroot           (ipy) = 0.
-      cgrid%mmean_nppsapwood         (ipy) = 0.
-      cgrid%mmean_nppcroot           (ipy) = 0.
-      cgrid%mmean_nppseeds           (ipy) = 0.
-      cgrid%mmean_nppwood            (ipy) = 0.
-      cgrid%mmean_nppdaily           (ipy) = 0.
+!      cgrid%mmean_nppleaf            (ipy) = 0.
+!      cgrid%mmean_nppfroot           (ipy) = 0.
+!      cgrid%mmean_nppsapwood         (ipy) = 0.
+!      cgrid%mmean_nppcroot           (ipy) = 0.
+!      cgrid%mmean_nppseeds           (ipy) = 0.
+!      cgrid%mmean_nppwood            (ipy) = 0.
+!      cgrid%mmean_nppdaily           (ipy) = 0.
       cgrid%mmean_evap               (ipy) = 0.
       cgrid%mmean_transp             (ipy) = 0.
       cgrid%mmean_vapor_ac           (ipy) = 0.
@@ -3884,13 +3893,13 @@ subroutine zero_ed_monthly_output_vars(cgrid)
                cpatch%mmean_root_maintenance  (ico) = 0.
                cpatch%mmean_leaf_drop         (ico) = 0.
                cpatch%mmean_gpp               (ico) = 0.
-               cpatch%mmean_nppleaf           (ico) = 0.
-               cpatch%mmean_nppfroot          (ico) = 0.
-               cpatch%mmean_nppsapwood        (ico) = 0.
-               cpatch%mmean_nppcroot          (ico) = 0.
-               cpatch%mmean_nppseeds          (ico) = 0.
-               cpatch%mmean_nppwood           (ico) = 0.
-               cpatch%mmean_nppdaily          (ico) = 0.
+!               cpatch%mmean_nppleaf           (ico) = 0.
+!               cpatch%mmean_nppfroot          (ico) = 0.
+!               cpatch%mmean_nppsapwood        (ico) = 0.
+!               cpatch%mmean_nppcroot          (ico) = 0.
+!               cpatch%mmean_nppseeds          (ico) = 0.
+!               cpatch%mmean_nppwood           (ico) = 0.
+!               cpatch%mmean_nppdaily          (ico) = 0.
                cpatch%mmean_leaf_resp         (ico) = 0.
                cpatch%mmean_root_resp         (ico) = 0.
                cpatch%mmean_growth_resp       (ico) = 0.

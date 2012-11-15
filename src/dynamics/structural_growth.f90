@@ -134,10 +134,10 @@ n1=n1+csite%area(ipa)*cpatch%nplant(ico)*(cpatch%balive(ico)/c2n_leaf(ipft)+cpat
 
 
                !------ NPP allocation to wood and course roots in KgC /m2 -----------------!
-               cpatch%today_NPPwood(ico) = agf_bs * f_bdead * cpatch%bstorage(ico)         &
-                                          * cpatch%nplant(ico)
-               cpatch%today_NPPcroot(ico) = (1. - agf_bs) * f_bdead * cpatch%bstorage(ico) &
-                                          * cpatch%nplant(ico)
+!               cpatch%today_NPPwood(ico) = agf_bs * f_bdead * cpatch%bstorage(ico)         &
+!                                          * cpatch%nplant(ico)
+!               cpatch%today_NPPcroot(ico) = (1. - agf_bs) * f_bdead * cpatch%bstorage(ico) &
+!                                          * cpatch%nplant(ico)
                                           
                !---------------------------------------------------------------------------!
                !      Rebalance the plant nitrogen uptake considering the actual alloc-    !
@@ -156,8 +156,8 @@ n1=n1+csite%area(ipa)*cpatch%nplant(ico)*(cpatch%balive(ico)/c2n_leaf(ipft)+cpat
                !---------------------------------------------------------------------------!
                cpatch%bseeds(ico) = f_bseeds * cpatch%bstorage(ico)
                
-               cpatch%today_NPPseeds(ico) = f_bseeds * cpatch%bstorage(ico)                &
-                                          * cpatch%nplant(ico)
+!               cpatch%today_NPPseeds(ico) = f_bseeds * cpatch%bstorage(ico)                &
+!                                          * cpatch%nplant(ico)
                
                seed_litter        = cpatch%bseeds(ico) * cpatch%nplant(ico)                &
                                   * seedling_mortality(ipft)
@@ -244,11 +244,6 @@ nup=nup+csite%area(ipa)*(net_stem_N_uptake+net_seed_N_uptake)
                if(update_month == 0) update_month = 12
                cpatch%cb(update_month,ico)     = cpatch%cb(13,ico)
                cpatch%cb_max(update_month,ico) = cpatch%cb_max(13,ico)
-
-               !----- If monthly files are written, save the current carbon balance. ------!
-               if (associated(cpatch%mmean_cb)) then
-                  cpatch%mmean_cb(ico)         = cpatch%cb(13,ico)
-               end if
 
                !----- Reset the current month integrator. ---------------------------------!
                cpatch%cb(13,ico)               = 0.0

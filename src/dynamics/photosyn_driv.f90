@@ -19,9 +19,9 @@ subroutine canopy_photosynthesis(csite,cmet,mzg,ipa,lsl,ntext_soil              
                              , epi               & ! intent(in)
                              , wdnsi             & ! intent(in)
                              , wdns              & ! intent(in)
-                             , kgCday_2_umols    & ! intent(in)
+                             , kgCday_2_umols, umol_2_kgC    & ! intent(in)
                              , lnexp_min         ! ! intent(in)
-   use ed_misc_coms   , only : current_time      ! ! intent(in)
+   use ed_misc_coms   , only : current_time, dtlsm      ! ! intent(in)
    use met_driver_coms, only : met_driv_state    ! ! structure
    use physiology_coms, only : print_photo_debug & ! intent(in)
                              , h2o_plant_lim     ! ! intent(in)
@@ -315,8 +315,8 @@ subroutine canopy_photosynthesis(csite,cmet,mzg,ipa,lsl,ntext_soil              
             cpatch%leaf_respiration(ico) = leaf_resp * cpatch%lai(ico)
             cpatch%mean_leaf_resp(ico)   = cpatch%mean_leaf_resp(ico)                      &
                                          + cpatch%leaf_respiration(ico)
-            cpatch%today_leaf_resp(ico)  = cpatch%today_leaf_resp(ico)                     &
-                                         + cpatch%leaf_respiration(ico)
+            cpatch%dmean_leaf_resp(ico)  = cpatch%dmean_leaf_resp(ico)                     &
+                                         + cpatch%leaf_respiration(ico) / cpatch%nplant(ico) * umol_2_kgC * dtlsm
 
             !----- Root biomass [kg/m2]. --------------------------------------------------!
             broot_loc = cpatch%broot(ico)  * cpatch%nplant(ico)
@@ -384,23 +384,34 @@ subroutine canopy_photosynthesis(csite,cmet,mzg,ipa,lsl,ntext_soil              
                                   + cpatch%leaf_respiration(ico)
             cpatch%mean_gpp(ico)  = cpatch%mean_gpp(ico) + cpatch%gpp(ico)
 
-            !----- GPP, summed over 1 day. [µmol/m²ground] --------------------------------!
-            cpatch%today_gpp(ico) = cpatch%today_gpp(ico) + cpatch%gpp(ico)
+            !----- GPP, summed over 1 day. [kgC/plant/day] --------------------------------!
+            cpatch%today_gpp(ico) = cpatch%today_gpp(ico) + cpatch%gpp(ico) / cpatch%nplant(ico) * umol_2_kgC * dtlsm
 
             !----- Potential GPP if no N limitation. [µmol/m²ground] ----------------------!
+!            cpatch%today_gpp_pot(ico) = cpatch%today_gpp_pot(ico)                          &
+!                                      + cpatch%lai(ico)                                    &
+!                                      * ( cpatch%fsw(ico) * cpatch%A_open(ico)             &
+!                                        + (1.0 - cpatch%fsw(ico)) * cpatch%A_closed(ico))  &
+!                                      + cpatch%leaf_respiration(ico)
             cpatch%today_gpp_pot(ico) = cpatch%today_gpp_pot(ico)                          &
-                                      + cpatch%lai(ico)                                    &
+                                      + (cpatch%lai(ico)                                    &
                                       * ( cpatch%fsw(ico) * cpatch%A_open(ico)             &
                                         + (1.0 - cpatch%fsw(ico)) * cpatch%A_closed(ico))  &
-                                      + cpatch%leaf_respiration(ico)
+                                      + cpatch%leaf_respiration(ico)) / cpatch%nplant(ico) * umol_2_kgC * dtlsm
 
             !----- Maximum GPP if at the top of the canopy [µmol/m²ground] ----------------!
+!            cpatch%today_gpp_max(ico) = cpatch%today_gpp_max(ico)                          &
+!                                      + cpatch%lai(ico)                                    &
+!                                      * ( cpatch%fs_open(ico) * csite%A_o_max(ipft,ipa)    &
+!                                        + (1.0 - cpatch%fs_open(ico))                      &
+!                                          * csite%A_c_max(ipft,ipa))                       &
+!                                      + cpatch%leaf_respiration(ico)
             cpatch%today_gpp_max(ico) = cpatch%today_gpp_max(ico)                          &
-                                      + cpatch%lai(ico)                                    &
+                                      + (cpatch%lai(ico)                                    &
                                       * ( cpatch%fs_open(ico) * csite%A_o_max(ipft,ipa)    &
                                         + (1.0 - cpatch%fs_open(ico))                      &
                                           * csite%A_c_max(ipft,ipa))                       &
-                                      + cpatch%leaf_respiration(ico)
+                                      + cpatch%leaf_respiration(ico)) / cpatch%nplant(ico) * umol_2_kgC * dtlsm
 
       else
          !----- If the cohort wasn't solved, we must assign some zeroes. ------------------!

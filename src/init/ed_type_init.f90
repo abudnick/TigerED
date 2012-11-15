@@ -44,13 +44,13 @@ subroutine init_ed_cohort_vars(cpatch,ico, lsl)
    cpatch%today_leaf_resp(ico)   = 0.0
    cpatch%today_root_resp(ico)   = 0.0
    cpatch%today_gpp(ico)         = 0.0
-   cpatch%today_nppleaf(ico)     = 0.0
-   cpatch%today_nppfroot(ico)    = 0.0
-   cpatch%today_nppsapwood(ico)  = 0.0
-   cpatch%today_nppcroot(ico)    = 0.0
-   cpatch%today_nppseeds(ico)    = 0.0
-   cpatch%today_nppwood(ico)     = 0.0
-   cpatch%today_nppdaily(ico)    = 0.0
+!   cpatch%today_nppleaf(ico)     = 0.0
+!   cpatch%today_nppfroot(ico)    = 0.0
+!   cpatch%today_nppsapwood(ico)  = 0.0
+!   cpatch%today_nppcroot(ico)    = 0.0
+!   cpatch%today_nppseeds(ico)    = 0.0
+!   cpatch%today_nppwood(ico)     = 0.0
+!   cpatch%today_nppdaily(ico)    = 0.0
    cpatch%today_gpp_pot(ico)     = 0.0
    cpatch%today_gpp_max(ico)     = 0.0
 
@@ -222,13 +222,13 @@ subroutine init_ed_cohort_vars(cpatch,ico, lsl)
       cpatch%mmean_par_l_beam       (ico) = 0.0
       cpatch%mmean_par_l_diff       (ico) = 0.0
       cpatch%mmean_gpp              (ico) = 0.0
-      cpatch%mmean_nppleaf          (ico) = 0.0
-      cpatch%mmean_nppfroot         (ico) = 0.0
-      cpatch%mmean_nppsapwood       (ico) = 0.0
-      cpatch%mmean_nppcroot         (ico) = 0.0
-      cpatch%mmean_nppseeds         (ico) = 0.0
-      cpatch%mmean_nppwood          (ico) = 0.0
-      cpatch%mmean_nppdaily         (ico) = 0.0
+!      cpatch%mmean_nppleaf          (ico) = 0.0
+!      cpatch%mmean_nppfroot         (ico) = 0.0
+!      cpatch%mmean_nppsapwood       (ico) = 0.0
+!      cpatch%mmean_nppcroot         (ico) = 0.0
+!      cpatch%mmean_nppseeds         (ico) = 0.0
+!      cpatch%mmean_nppwood          (ico) = 0.0
+!      cpatch%mmean_nppdaily         (ico) = 0.0
       cpatch%mmean_leaf_resp        (ico) = 0.0
       cpatch%mmean_root_resp        (ico) = 0.0
       cpatch%mmean_growth_resp      (ico) = 0.0
@@ -249,7 +249,6 @@ subroutine init_ed_cohort_vars(cpatch,ico, lsl)
       cpatch%mmean_leaf_maintenance (ico) = 0.0
       cpatch%mmean_root_maintenance (ico) = 0.0
       cpatch%mmean_leaf_drop        (ico) = 0.0
-      cpatch%mmean_cb               (ico) = 0.0
       cpatch%mmean_mort_rate      (:,ico) = 0.0
    end if
    !---------------------------------------------------------------------------------------!
@@ -264,16 +263,16 @@ subroutine init_ed_cohort_vars(cpatch,ico, lsl)
       cpatch%dmean_par_l            (ico) = 0.0
       cpatch%dmean_par_l_beam       (ico) = 0.0
       cpatch%dmean_par_l_diff       (ico) = 0.0
-      cpatch%dmean_gpp              (ico) = 0.0
-      cpatch%dmean_nppleaf          (ico) = 0.0
-      cpatch%dmean_nppfroot         (ico) = 0.0
-      cpatch%dmean_nppsapwood       (ico) = 0.0
-      cpatch%dmean_nppcroot         (ico) = 0.0
-      cpatch%dmean_nppseeds         (ico) = 0.0
-      cpatch%dmean_nppwood          (ico) = 0.0
-      cpatch%dmean_nppdaily         (ico) = 0.0
-      cpatch%dmean_leaf_resp        (ico) = 0.0
-      cpatch%dmean_root_resp        (ico) = 0.0
+!      cpatch%dmean_gpp              (ico) = 0.0
+!      cpatch%dmean_nppleaf          (ico) = 0.0
+!      cpatch%dmean_nppfroot         (ico) = 0.0
+!      cpatch%dmean_nppsapwood       (ico) = 0.0
+!      cpatch%dmean_nppcroot         (ico) = 0.0
+!      cpatch%dmean_nppseeds         (ico) = 0.0
+!      cpatch%dmean_nppwood          (ico) = 0.0
+!      cpatch%dmean_nppdaily         (ico) = 0.0
+!      cpatch%dmean_leaf_resp        (ico) = 0.0
+!      cpatch%dmean_root_resp        (ico) = 0.0
       cpatch%dmean_light_level      (ico) = 0.0
       cpatch%dmean_light_level_beam (ico) = 0.0
       cpatch%dmean_light_level_diff (ico) = 0.0

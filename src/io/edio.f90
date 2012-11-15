@@ -406,13 +406,13 @@ subroutine spatial_averages
          cgrid%avg_bseeds          (ipy) = 0.0
          cgrid%lai                 (ipy) = 0.0
          cgrid%avg_gpp             (ipy) = 0.0
-         cgrid%avg_nppleaf         (ipy) = 0.0
-         cgrid%avg_nppfroot        (ipy) = 0.0
-         cgrid%avg_nppsapwood      (ipy) = 0.0
-         cgrid%avg_nppcroot        (ipy) = 0.0
-         cgrid%avg_nppseeds        (ipy) = 0.0
-         cgrid%avg_nppwood         (ipy) = 0.0
-         cgrid%avg_nppdaily        (ipy) = 0.0
+!         cgrid%avg_nppleaf         (ipy) = 0.0
+!         cgrid%avg_nppfroot        (ipy) = 0.0
+!         cgrid%avg_nppsapwood      (ipy) = 0.0
+!         cgrid%avg_nppcroot        (ipy) = 0.0
+!         cgrid%avg_nppseeds        (ipy) = 0.0
+!         cgrid%avg_nppwood         (ipy) = 0.0
+!         cgrid%avg_nppdaily        (ipy) = 0.0
          cgrid%avg_leaf_resp       (ipy) = 0.0
          cgrid%avg_root_resp       (ipy) = 0.0
          cgrid%avg_growth_resp     (ipy) = 0.0
@@ -729,47 +729,47 @@ subroutine spatial_averages
                                               * csite%area(ipa)*cpoly%area(isi)            &
                                               * site_area_i * poly_area_i
 
-                  cgrid%avg_nppleaf(ipy)      = cgrid%avg_nppleaf(ipy)                     &
-                                              + sum(cpatch%today_nppleaf                   &
-                                              * cpatch%nplant)                             &
-                                              * csite%area(ipa)*cpoly%area(isi)            &
-                                              * site_area_i * poly_area_i
+!                  cgrid%avg_nppleaf(ipy)      = cgrid%avg_nppleaf(ipy)                     &
+!                                              + sum(cpatch%today_nppleaf                   &
+!                                              * cpatch%nplant)                             &
+!                                              * csite%area(ipa)*cpoly%area(isi)            &
+!                                              * site_area_i * poly_area_i
                                               
-                  cgrid%avg_nppfroot(ipy)     = cgrid%avg_nppfroot(ipy)                    &
-                                              + sum(cpatch%today_nppfroot                  &
-                                              * cpatch%nplant)                             &
-                                              * csite%area(ipa)*cpoly%area(isi)            &
-                                              * site_area_i * poly_area_i
+!                  cgrid%avg_nppfroot(ipy)     = cgrid%avg_nppfroot(ipy)                    &
+!                                              + sum(cpatch%today_nppfroot                  &
+!                                              * cpatch%nplant)                             &
+!                                              * csite%area(ipa)*cpoly%area(isi)            &
+!                                              * site_area_i * poly_area_i
                                               
-                  cgrid%avg_nppsapwood(ipy)   = cgrid%avg_nppsapwood(ipy)                  &
-                                              + sum(cpatch%today_nppsapwood                &
-                                              * cpatch%nplant)                             &
-                                              * csite%area(ipa)*cpoly%area(isi)            &
-                                              * site_area_i * poly_area_i
+!                  cgrid%avg_nppsapwood(ipy)   = cgrid%avg_nppsapwood(ipy)                  &
+!                                              + sum(cpatch%today_nppsapwood                &
+!                                              * cpatch%nplant)                             &
+!                                              * csite%area(ipa)*cpoly%area(isi)            &
+!                                              * site_area_i * poly_area_i
                                               
-                  cgrid%avg_nppcroot(ipy)     = cgrid%avg_nppcroot(ipy)                    &
-                                              + sum(cpatch%today_nppcroot                  &
-                                              * cpatch%nplant)                             &
-                                              * csite%area(ipa)*cpoly%area(isi)            &
-                                              * site_area_i * poly_area_i
+!                  cgrid%avg_nppcroot(ipy)     = cgrid%avg_nppcroot(ipy)                    &
+!                                              + sum(cpatch%today_nppcroot                  &
+!                                              * cpatch%nplant)                             &
+!                                              * csite%area(ipa)*cpoly%area(isi)            &
+!                                              * site_area_i * poly_area_i
                                               
-                  cgrid%avg_nppseeds(ipy)     = cgrid%avg_nppseeds(ipy)                    &
-                                              + sum(cpatch%today_nppseeds                  &
-                                              * cpatch%nplant)                             &
-                                              * csite%area(ipa)*cpoly%area(isi)            &
-                                              * site_area_i * poly_area_i
+!                  cgrid%avg_nppseeds(ipy)     = cgrid%avg_nppseeds(ipy)                    &
+!                                              + sum(cpatch%today_nppseeds                  &
+!                                              * cpatch%nplant)                             &
+!                                              * csite%area(ipa)*cpoly%area(isi)            &
+!                                              * site_area_i * poly_area_i
                                               
-                  cgrid%avg_nppwood(ipy)      = cgrid%avg_nppwood(ipy)                     &
-                                              + sum(cpatch%today_nppwood                   &
-                                              * cpatch%nplant)                             &
-                                              * csite%area(ipa)*cpoly%area(isi)            &
-                                              * site_area_i * poly_area_i
+!                  cgrid%avg_nppwood(ipy)      = cgrid%avg_nppwood(ipy)                     &
+!                                              + sum(cpatch%today_nppwood                   &
+!                                              * cpatch%nplant)                             &
+!                                              * csite%area(ipa)*cpoly%area(isi)            &
+!                                              * site_area_i * poly_area_i
                                               
-                  cgrid%avg_nppdaily(ipy)     = cgrid%avg_nppdaily(ipy)                    &
-                                              + sum(cpatch%today_nppdaily                  &
-                                              * cpatch%nplant)                             &
-                                              * csite%area(ipa)*cpoly%area(isi)            &
-                                              * site_area_i * poly_area_i
+!                  cgrid%avg_nppdaily(ipy)     = cgrid%avg_nppdaily(ipy)                    &
+!                                              + sum(cpatch%today_nppdaily                  &
+!                                              * cpatch%nplant)                             &
+!                                              * csite%area(ipa)*cpoly%area(isi)            &
+!                                              * site_area_i * poly_area_i
                                               
                   cgrid%avg_leaf_resp(ipy)    = cgrid%avg_leaf_resp(ipy)                   &
                                               + sum(cpatch%mean_leaf_resp)                 &
