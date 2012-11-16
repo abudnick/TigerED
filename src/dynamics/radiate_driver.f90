@@ -377,23 +377,23 @@ subroutine sfcrad_ed(cosz,cosaoi,csite,mzg,mzs,ntext_soil,maxcohort,tuco        
 
          !------ Transfer information from linked lists to arrays. ------------------------!
          
-         if (cpatch%leaf_resolvable(ico) .or. cpatch%wood_resolvable(ico)) then
+         if (cpatch%costate%leaf_resolvable(ico) .or. cpatch%costate%wood_resolvable(ico)) then
             !----- This will eventually have the index of the tallest used cohort. --------!
             tuco = ico
 
             cohort_count                          = cohort_count + 1
-            pft_array              (cohort_count) = cpatch%pft(ico)
+            pft_array              (cohort_count) = cpatch%costate%pft(ico)
             !------------------------------------------------------------------------------!
             !     Here we only tell the true LAI if the leaf is resolvable, and the true   !
             ! WAI if the wood is resolvable.                                               !
             !------------------------------------------------------------------------------!
-            if (cpatch%leaf_resolvable(ico)) then
-               lai_array              (cohort_count) = dble(cpatch%lai(ico))
+            if (cpatch%costate%leaf_resolvable(ico)) then
+               lai_array              (cohort_count) = dble(cpatch%costate%lai(ico))
             else
                lai_array              (cohort_count) = 0.d0
             end if
-            if (cpatch%wood_resolvable(ico)) then
-               wai_array              (cohort_count) = dble(cpatch%wai(ico))
+            if (cpatch%costate%wood_resolvable(ico)) then
+               wai_array              (cohort_count) = dble(cpatch%costate%wai(ico))
             else
                wai_array              (cohort_count) = 0.d0
             end if
@@ -410,9 +410,9 @@ subroutine sfcrad_ed(cosz,cosaoi,csite,mzg,mzs,ntext_soil,maxcohort,tuco        
             light_level_array      (cohort_count) = 0.d0
             light_beam_level_array (cohort_count) = 0.d0
             light_diff_level_array (cohort_count) = 0.d0
-            htop_array             (cohort_count) = dble(cpatch%hite(ico))
-            hbot_array             (cohort_count) = dble(h2crownbh(cpatch%hite(ico)        &
-                                                                  ,cpatch%pft(ico) ) )
+            htop_array             (cohort_count) = dble(cpatch%costate%hite(ico))
+            hbot_array             (cohort_count) = dble(h2crownbh(cpatch%costate%hite(ico)        &
+                                                                  ,cpatch%costate%pft(ico) ) )
             !------------------------------------------------------------------------------!
             !      Decide whether to assume infinite crown, or the crown area allometry    !
             ! method as in Dietze and Clark (2008).                                        !
@@ -421,7 +421,7 @@ subroutine sfcrad_ed(cosz,cosaoi,csite,mzg,mzs,ntext_soil,maxcohort,tuco        
             case (0)
                CA_array           (cohort_count) = 1.d0
             case (1,2)
-               CA_array           (cohort_count) = dble(cpatch%crown_area(ico))
+               CA_array           (cohort_count) = dble(cpatch%costate%crown_area(ico))
             end select
             !------------------------------------------------------------------------------!
          end if
@@ -805,7 +805,7 @@ subroutine sfcrad_ed(cosz,cosaoi,csite,mzg,mzs,ntext_soil,maxcohort,tuco        
          il = 0
 
          do ico = cpatch%ncohorts,1,-1
-            if (cpatch%leaf_resolvable(ico) .or. cpatch%wood_resolvable(ico)) then
+            if (cpatch%costate%leaf_resolvable(ico) .or. cpatch%costate%wood_resolvable(ico)) then
                il = il + 1
                
                !---------------------------------------------------------------------------!
@@ -1118,7 +1118,7 @@ subroutine scale_ed_radiation(tuco,rshort,rshort_diffuse,rlong,csite)
       do ipa = 1, csite%npatches
          cpatch => csite%patch(ipa)
          do ico = 1, cpatch%ncohorts
-            if (cpatch%leaf_resolvable(ico) .or. cpatch%wood_resolvable(ico)) then
+            if (cpatch%costate%leaf_resolvable(ico) .or. cpatch%costate%wood_resolvable(ico)) then
                cpatch%par_l_beam       (ico) = 0.0
                cpatch%par_l_diffuse    (ico) = 0.0
                cpatch%par_l            (ico) = 0.0
@@ -1167,7 +1167,7 @@ subroutine scale_ed_radiation(tuco,rshort,rshort_diffuse,rlong,csite)
       cpatch => csite%patch(ipa)
       do ico = 1,cpatch%ncohorts
          
-         if (cpatch%leaf_resolvable(ico) .or. cpatch%wood_resolvable(ico)) then
+         if (cpatch%costate%leaf_resolvable(ico) .or. cpatch%costate%wood_resolvable(ico)) then
 
             cpatch%par_l_beam(ico)       = cpatch%par_l_beam(ico)    * rshort
             cpatch%par_l_diffuse(ico)    = cpatch%par_l_diffuse(ico) * rshort

@@ -97,10 +97,10 @@ old_plant_P = old_plant_P + csite%area(ipa) * (csite%repro(1,ipa)/c2p_recruit(1)
                do ico = 1,cpatch%ncohorts
 
                   !----- Alias for current PFT. -------------------------------------------!
-                  ipft = cpatch%pft(ico)
+                  ipft = cpatch%costate%pft(ico)
 
 ! Phosphorus budgets
-old_plant_P = old_plant_P + csite%area(ipa) * cpatch%nplant(ico) * (cpatch%balive(ico)/c2p_alive(cpatch%pft(ico)) + cpatch%bdead(ico)/c2p_dead(cpatch%pft(ico))+cpatch%bstorage(ico)/c2p_storage(cpatch%pft(ico)))
+old_plant_P = old_plant_P + csite%area(ipa) * cpatch%costate%nplant(ico) * (cpatch%costate%balive(ico)/c2p_alive(cpatch%costate%pft(ico)) + cpatch%costate%bdead(ico)/c2p_dead(cpatch%costate%pft(ico))+cpatch%costate%bstorage(ico)/c2p_storage(cpatch%costate%pft(ico)))
 
                   !----- Update the elongation factor. ------------------------------------!
                   select case (phenology(ipft))
@@ -114,24 +114,24 @@ old_plant_P = old_plant_P + csite%area(ipa) * cpatch%nplant(ico) * (cpatch%baliv
 
 
                   !----- Set allocation factors. ------------------------------------------!
-                  salloc  = 1.0 + qsw(ipft) * cpatch%hite(ico) + q(ipft)
+                  salloc  = 1.0 + qsw(ipft) * cpatch%costate%hite(ico) + q(ipft)
                   salloci = 1.0 / salloc
 
                   !------------------------------------------------------------------------!
                   !     Compute maintenance costs using actual pools.                      !
                   !------------------------------------------------------------------------!
-                  call plant_maintenance(cpatch,ico,cpatch%broot(ico),cpatch%bleaf(ico)    &
+                  call plant_maintenance(cpatch,ico,cpatch%costate%broot(ico),cpatch%costate%bleaf(ico)    &
                                         ,tfact,daily_C_gain,csite%avg_daily_temp(ipa))
 !cpatch%leaf_maintenance(ico) = 0.                  
 !cpatch%root_maintenance(ico) = 0.                  
 !daily_C_gain = 0.
                   !----- Subtract maintenance costs from pools. ---------------------------!
-                  cpatch%balive(ico)    = cpatch%balive(ico)                               &
+                  cpatch%costate%balive(ico)    = cpatch%costate%balive(ico)                               &
                                         - cpatch%leaf_maintenance(ico)                     &
                                         - cpatch%root_maintenance(ico)
-                  cpatch%bleaf(ico)     = cpatch%bleaf(ico)                                &
+                  cpatch%costate%bleaf(ico)     = cpatch%costate%bleaf(ico)                                &
                                         - cpatch%leaf_maintenance(ico)       
-                  cpatch%broot(ico)     = cpatch%broot(ico)                                &
+                  cpatch%costate%broot(ico)     = cpatch%costate%broot(ico)                                &
                                         - cpatch%root_maintenance(ico)
                   cpatch%cb(13,ico)     = cpatch%cb(13,ico)                                &
                                         - cpatch%leaf_maintenance(ico)                     &
@@ -155,11 +155,11 @@ old_plant_P = old_plant_P + csite%area(ipa) * cpatch%nplant(ico) * (cpatch%baliv
                   temp_dep = 1.0
                   !------------------------------------------------------------------------!
 
-                  cpatch%storage_respiration(ico) = cpatch%bstorage(ico)                   &
+                  cpatch%storage_respiration(ico) = cpatch%costate%bstorage(ico)                   &
                                                   * storage_turnover_rate(ipft)            &
                                                   * tfact * temp_dep
 
-                  cpatch%bstorage(ico) = cpatch%bstorage(ico)                              &
+                  cpatch%costate%bstorage(ico) = cpatch%costate%bstorage(ico)                              &
                                          - cpatch%storage_respiration(ico)
 
                   !------------------------------------------------------------------------!
@@ -167,10 +167,10 @@ old_plant_P = old_plant_P + csite%area(ipa) * cpatch%nplant(ico) * (cpatch%baliv
                   ! to litter in order to maintain prescribed C2N ratio.                   !
                   !------------------------------------------------------------------------!
                   csite%fsn_in(ipa) = csite%fsn_in(ipa) + cpatch%storage_respiration(ico)  &
-                                                        / c2n_storage * cpatch%nplant(ico)
+                                                        / c2n_storage * cpatch%costate%nplant(ico)
 
                   csite%fsp_in(ipa) = csite%fsp_in(ipa) + cpatch%storage_respiration(ico) &
-                       / c2p_storage(ipft) * cpatch%nplant(ico)
+                       / c2p_storage(ipft) * cpatch%costate%nplant(ico)
 
                   !------------------------------------------------------------------------!
                   !      Calculate actual, potential and maximum carbon balances.          !
@@ -196,7 +196,7 @@ old_plant_P = old_plant_P + csite%area(ipa) * cpatch%nplant(ico) * (cpatch%baliv
                   !     Find the "virtual" leaf respiration.                               !
                   !------------------------------------------------------------------------!
                   cpatch%vleaf_respiration(ico) = (1.0-cpoly%green_leaf_factor(ipft,isi))  &
-                                                * salloci * cpatch%balive(ico)             &
+                                                * salloci * cpatch%costate%balive(ico)             &
                                                 * storage_turnover_rate(ipft)              &
                                                 * tfact * temp_dep
                   !------------------------------------------------------------------------!
@@ -205,7 +205,7 @@ old_plant_P = old_plant_P + csite%area(ipa) * cpatch%nplant(ico) * (cpatch%baliv
                   !------------------------------------------------------------------------!
                   !      Allocate plant carbon balance to balive and bstorage.             !
                   !------------------------------------------------------------------------!
-                  balive_in = cpatch%balive(ico)
+                  balive_in = cpatch%costate%balive(ico)
                   call alloc_plant_c_balance(csite,ipa,ico,salloc,salloci,carbon_balance   &
                                             ,nitrogen_uptake, P_uptake                 &
                                             ,cpoly%green_leaf_factor(ipft,isi))
@@ -232,7 +232,7 @@ old_plant_P = old_plant_P + csite%area(ipa) * cpatch%nplant(ico) * (cpatch%baliv
                   !------------------------------------------------------------------------!
                   csite%total_plant_nitrogen_uptake(ipa) =                                 &
                                        csite%total_plant_nitrogen_uptake(ipa)              &
-                                     + nitrogen_uptake * cpatch%nplant(ico)
+                                     + nitrogen_uptake * cpatch%costate%nplant(ico)
 
                   !------------------------------------------------------------------------!
                   !------------------------------------------------------------------------!
@@ -240,14 +240,14 @@ old_plant_P = old_plant_P + csite%area(ipa) * cpatch%nplant(ico) * (cpatch%baliv
                   !------------------------------------------------------------------------!
                   csite%total_plant_P_uptake(ipa) =                                 &
                                        csite%total_plant_P_uptake(ipa)              &
-                                     + P_uptake * cpatch%nplant(ico)
+                                     + P_uptake * cpatch%costate%nplant(ico)
                   !------------------------------------------------------------------------!
 
                   !----- Calculate plant N limitation factor. -----------------------------!
                   if (n_plant_lim == 0 .or. N_uptake_pot <= 0.0) then
                      cpatch%fsn(ico) = 1.0
                   else
-                     nitrogen_supply = plant_N_supply_scale * cpatch%broot(ico)            &
+                     nitrogen_supply = plant_N_supply_scale * cpatch%costate%broot(ico)            &
                                      * csite%sbgc%miner_soil_N(ipa)
                      cpatch%fsn(ico) = nitrogen_supply                                     &
                                      / (nitrogen_supply + N_uptake_pot)
@@ -258,24 +258,24 @@ old_plant_P = old_plant_P + csite%area(ipa) * cpatch%nplant(ico) * (cpatch%baliv
                   !------------------------------------------------------------------------!
                   call mortality_rates(cpatch,ipa,ico,csite%avg_daily_temp(ipa)            &
                                       ,csite%age(ipa))
-                  dndt = - sum(cpatch%mort_rate(:,ico)) * cpatch%nplant(ico) * tfact
+                  dndt = - sum(cpatch%mort_rate(:,ico)) * cpatch%costate%nplant(ico) * tfact
 
                   !----- Update monthly mortality rate [plants/m2/month]. -----------------!
                   cpatch%monthly_dndt(ico) = cpatch%monthly_dndt(ico) + dndt
 
 
                   !----- Updating LAI, WPA, and WAI. --------------------------------------!
-                  call area_indices(cpatch%nplant(ico),cpatch%bleaf(ico)                   &
-                                   ,cpatch%bdead(ico),cpatch%balive(ico),cpatch%dbh(ico)   &
-                                   ,cpatch%hite(ico) ,cpatch%pft(ico),cpatch%sla(ico)      &
-                                   ,cpatch%lai(ico),cpatch%wpa(ico),cpatch%wai(ico)        &
-                                   ,cpatch%crown_area(ico),cpatch%bsapwood(ico))
+                  call area_indices(cpatch%costate%nplant(ico),cpatch%costate%bleaf(ico)                   &
+                                   ,cpatch%costate%bdead(ico),cpatch%costate%balive(ico),cpatch%costate%dbh(ico)   &
+                                   ,cpatch%costate%hite(ico) ,cpatch%costate%pft(ico),cpatch%sla(ico)      &
+                                   ,cpatch%costate%lai(ico),cpatch%costate%wpa(ico),cpatch%costate%wai(ico)        &
+                                   ,cpatch%costate%crown_area(ico),cpatch%costate%bsapwood(ico))
 
                   !----- Update above-ground biomass. -------------------------------------!
-                  cpatch%agb(ico) = ed_biomass(cpatch%bdead(ico),cpatch%balive(ico)        &
-                                              ,cpatch%bleaf(ico),cpatch%pft(ico)           &
-                                              ,cpatch%hite(ico),cpatch%bstorage(ico)       &
-                                              ,cpatch%bsapwood(ico))
+                  cpatch%costate%agb(ico) = ed_biomass(cpatch%costate%bdead(ico),cpatch%costate%balive(ico)        &
+                                              ,cpatch%costate%bleaf(ico),cpatch%costate%pft(ico)           &
+                                              ,cpatch%costate%hite(ico),cpatch%costate%bstorage(ico)       &
+                                              ,cpatch%costate%bsapwood(ico))
 
                   !------------------------------------------------------------------------!
                   !     It is likely that biomass has changed, therefore, update           !
@@ -283,16 +283,16 @@ old_plant_P = old_plant_P + csite%area(ipa) * cpatch%nplant(ico) * (cpatch%baliv
                   !------------------------------------------------------------------------!
                   old_leaf_hcap         = cpatch%leaf_hcap(ico)
                   old_wood_hcap         = cpatch%wood_hcap(ico)
-                  call calc_veg_hcap(cpatch%bleaf(ico) ,cpatch%bdead(ico)                  &
-                                    ,cpatch%bsapwood(ico),cpatch%nplant(ico)               &
-                                    ,cpatch%pft(ico)                                       &
+                  call calc_veg_hcap(cpatch%costate%bleaf(ico) ,cpatch%costate%bdead(ico)                  &
+                                    ,cpatch%costate%bsapwood(ico),cpatch%costate%nplant(ico)               &
+                                    ,cpatch%costate%pft(ico)                                       &
                                     ,cpatch%leaf_hcap(ico),cpatch%wood_hcap(ico))
                   call update_veg_energy_cweh(csite,ipa,ico,old_leaf_hcap,old_wood_hcap)
                   !----- Update the stability status. -------------------------------------!
                   call is_resolvable(csite,ipa,ico,cpoly%green_leaf_factor(:,isi))
                   !------------------------------------------------------------------------!
 ! Phosphorus budgets
-new_plant_P = new_plant_P + csite%area(ipa) * cpatch%nplant(ico) * (cpatch%balive(ico)/c2p_alive(cpatch%pft(ico)) + cpatch%bdead(ico)/c2p_dead(cpatch%pft(ico))+cpatch%bstorage(ico)/c2p_storage(cpatch%pft(ico)))
+new_plant_P = new_plant_P + csite%area(ipa) * cpatch%costate%nplant(ico) * (cpatch%costate%balive(ico)/c2p_alive(cpatch%costate%pft(ico)) + cpatch%costate%bdead(ico)/c2p_dead(cpatch%costate%pft(ico))+cpatch%costate%bstorage(ico)/c2p_storage(cpatch%costate%pft(ico)))
                end do
                
                !----- Update litter. ------------------------------------------------------!
@@ -399,7 +399,7 @@ new_plant_P = new_plant_P + csite%area(ipa) * (csite%repro(1,ipa)/c2p_recruit(1)
                do ico = 1,cpatch%ncohorts
 
                   !----- Alias for current PFT. -------------------------------------------!
-                  ipft = cpatch%pft(ico)
+                  ipft = cpatch%costate%pft(ico)
 
                   !----- Update the elongation factor. ------------------------------------!
                   select case (phenology(ipft))
@@ -415,12 +415,12 @@ new_plant_P = new_plant_P + csite%area(ipa) * (csite%repro(1,ipa)/c2p_recruit(1)
                   P_uptake = 0.
 
                   !----- Set allocation factors. ------------------------------------------!
-                  salloc  = 1.0 + qsw(ipft) * cpatch%hite(ico) + q(ipft)
+                  salloc  = 1.0 + qsw(ipft) * cpatch%costate%hite(ico) + q(ipft)
                   salloci = 1.0 / salloc
                   
                   !----- Leaf and root biomass. -------------------------------------------!
-                  bl = cpatch%bleaf(ico)
-                  br = cpatch%broot(ico)
+                  bl = cpatch%costate%bleaf(ico)
+                  br = cpatch%costate%broot(ico)
 
                   !------------------------------------------------------------------------!
                   !     Compute maintenance costs.                                         !
@@ -447,12 +447,12 @@ new_plant_P = new_plant_P + csite%area(ipa) * (csite%repro(1,ipa)/c2p_recruit(1)
                   !------------------------------------------------------------------------!
                   cpatch%growth_respiration(ico)  = max(0.0, daily_C_gain                  &
                                                            * growth_resp_factor(ipft))
-                  cpatch%storage_respiration(ico) = cpatch%bstorage(ico)                   &
+                  cpatch%storage_respiration(ico) = cpatch%costate%bstorage(ico)                   &
                                                   * storage_turnover_rate(ipft) * tfact
                   cpatch%vleaf_respiration(ico) =                                          &
                                         (1.0 - cpoly%green_leaf_factor(ipft,isi))          &
-                                      / (1.0 + q(ipft) + qsw(ipft) * cpatch%hite(ico))     &
-                                      * cpatch%balive(ico) * storage_turnover_rate(ipft)   &
+                                      / (1.0 + q(ipft) + qsw(ipft) * cpatch%costate%hite(ico))     &
+                                      * cpatch%costate%balive(ico) * storage_turnover_rate(ipft)   &
                                       * tfact
 
                   !------------------------------------------------------------------------!
@@ -471,14 +471,14 @@ new_plant_P = new_plant_P + csite%area(ipa) * (csite%repro(1,ipa)/c2p_recruit(1)
                   !------------------------------------------------------------------------!
                   csite%total_plant_nitrogen_uptake(ipa) =                                 &
                                                    csite%total_plant_nitrogen_uptake(ipa)  &
-                                                 + nitrogen_uptake * cpatch%nplant(ico)
+                                                 + nitrogen_uptake * cpatch%costate%nplant(ico)
 
                   !------------------------------------------------------------------------!
                   !  Increment the [kgP/m2] taken up during previous day.                  !
                   !------------------------------------------------------------------------!
                   csite%total_plant_P_uptake(ipa) =                                 &
                                                    csite%total_plant_P_uptake(ipa)  &
-                                                 + P_uptake * cpatch%nplant(ico)
+                                                 + P_uptake * cpatch%costate%nplant(ico)
 
                   !----- Calculate plant N limitation factor. -----------------------------!
                   if (n_plant_lim == 0 .or. N_uptake_pot <= 0.0) then
@@ -548,19 +548,19 @@ new_plant_P = new_plant_P + csite%area(ipa) * (csite%repro(1,ipa)/c2p_recruit(1)
       if (cpatch%phenology_status(ico) == 2) return
      
       !----- Alias for pft type. ----------------------------------------------------------!
-      ipft = cpatch%pft(ico)
+      ipft = cpatch%costate%pft(ico)
      
       !----- Determine how much biomass we need to go back to allometry. ------------------!
-      off_allometry_cb = dbh2bl(cpatch%dbh(ico),ipft) * salloc - cpatch%balive(ico)
+      off_allometry_cb = dbh2bl(cpatch%costate%dbh(ico),ipft) * salloc - cpatch%costate%balive(ico)
 
       !----- If plants have storage, transfer it to balive. -------------------------------!
-      increment            = max(0.0,min(max(0.0, off_allometry_cb),cpatch%bstorage(ico)))
-      cpatch%balive(ico)   = cpatch%balive(ico)   + increment
-      cpatch%bstorage(ico) = cpatch%bstorage(ico) - increment
+      increment            = max(0.0,min(max(0.0, off_allometry_cb),cpatch%costate%bstorage(ico)))
+      cpatch%costate%balive(ico)   = cpatch%costate%balive(ico)   + increment
+      cpatch%costate%bstorage(ico) = cpatch%costate%bstorage(ico) - increment
 
       !----- Compute sapwood and fine root biomass. ---------------------------------------!
-      cpatch%broot(ico)    = q(ipft) * cpatch%balive(ico) * salloci
-      cpatch%bsapwood(ico) = qsw(ipft) * cpatch%hite(ico) * cpatch%balive(ico) * salloci
+      cpatch%costate%broot(ico)    = q(ipft) * cpatch%costate%balive(ico) * salloci
+      cpatch%costate%bsapwood(ico) = qsw(ipft) * cpatch%costate%hite(ico) * cpatch%costate%balive(ico) * salloci
 
       !------------------------------------------------------------------------------------!
       !      N uptake is required since c2n_leaf < c2n_storage.  Units are kgN/plant/day.  !
@@ -604,7 +604,7 @@ new_plant_P = new_plant_P + csite%area(ipa) * (csite%repro(1,ipa)/c2p_recruit(1)
       !------------------------------------------------------------------------------------!
 
       !------ Alias for plant functional type. --------------------------------------------!
-      ipft = cpatch%pft(ico)
+      ipft = cpatch%costate%pft(ico)
 
       !------ Get the temperature dependence. ---------------------------------------------!
       if (phenology(ipft) == 0) then
@@ -629,7 +629,7 @@ new_plant_P = new_plant_P + csite%area(ipa) * (csite%repro(1,ipa)/c2p_recruit(1)
 
 
       !----- Compute daily C uptake [kgC/plant/day]. --------------------------------------!
-      if(cpatch%nplant(ico) > tiny(1.0)) then
+      if(cpatch%costate%nplant(ico) > tiny(1.0)) then
 !         daily_C_gain = umol_2_kgC * day_sec * ( cpatch%today_gpp(ico)                     &
 !                                               - cpatch%today_leaf_resp(ico)               &
 !                                               - cpatch%today_root_resp(ico))              &
@@ -682,13 +682,13 @@ new_plant_P = new_plant_P + csite%area(ipa) * (csite%repro(1,ipa)/c2p_recruit(1)
       !------------------------------------------------------------------------------------!
 
       !----- Alias for PFT type. ----------------------------------------------------------!
-      ipft = cpatch%pft(ico)
+      ipft = cpatch%costate%pft(ico)
 
       !------ Calculate actual daily carbon balance: kgC/plant/day. -----------------------!
       carbon_balance = daily_C_gain - cpatch%growth_respiration(ico)                       &
                                     - cpatch%vleaf_respiration(ico)
 
-      if (cpatch%nplant(ico) > tiny(1.0)) then
+      if (cpatch%costate%nplant(ico) > tiny(1.0)) then
 
          !---------------------------------------------------------------------------------!
          !      Calculate potential carbon balance (used for nitrogen demand function).    !
@@ -807,10 +807,10 @@ new_plant_P = new_plant_P + csite%area(ipa) * (csite%repro(1,ipa)/c2p_recruit(1)
 
       cpatch => csite%patch(ipa)
       
-      ipft = cpatch%pft(ico) 
+      ipft = cpatch%costate%pft(ico) 
 
       ! First, have the daily carbon balance transit through storage.  Adjust N, P as necessary.
-      cpatch%bstorage(ico) = cpatch%bstorage(ico) + carbon_balance
+      cpatch%costate%bstorage(ico) = cpatch%costate%bstorage(ico) + carbon_balance
       nitrogen_uptake = carbon_balance / c2n_storage
       P_uptake = carbon_balance / c2p_storage(ipft)
 
@@ -818,19 +818,19 @@ new_plant_P = new_plant_P + csite%area(ipa) * (csite%repro(1,ipa)/c2p_recruit(1)
       storage2alive = 0.0
 
       ! However, f there is carbon and leaves want to grow, let them grow.
-      if(cpatch%bstorage(ico) > 0. .and. cpatch%phenology_status(ico) == 1)then
+      if(cpatch%costate%bstorage(ico) > 0. .and. cpatch%phenology_status(ico) == 1)then
 
          !  Maximum bleaf that the allometric relationship would allow.  
-         bl_max     = dbh2bl(cpatch%dbh(ico),ipft) * green_leaf_factor
-         balive_target = bl_max * (green_leaf_factor + q(ipft) + qsw(ipft) * cpatch%hite(ico))
+         bl_max     = dbh2bl(cpatch%costate%dbh(ico),ipft) * green_leaf_factor
+         balive_target = bl_max * (green_leaf_factor + q(ipft) + qsw(ipft) * cpatch%costate%hite(ico))
          
-         desired_carbon = balive_target - cpatch%balive(ico)
+         desired_carbon = balive_target - cpatch%costate%balive(ico)
 
-         if(cpatch%bstorage(ico) >= desired_carbon)then
+         if(cpatch%costate%bstorage(ico) >= desired_carbon)then
             storage2alive = desired_carbon
             cpatch%phenology_status(ico) = 0
          else
-            storage2alive = cpatch%bstorage(ico)
+            storage2alive = cpatch%costate%bstorage(ico)
          endif
 
          ! This process is going to require some additional nutrients.
@@ -839,27 +839,27 @@ new_plant_P = new_plant_P + csite%area(ipa) * (csite%repro(1,ipa)/c2p_recruit(1)
       endif
 
       ! If plants have negative storage, take from balive.
-      if(cpatch%bstorage(ico) < 0.)then
-         storage2alive = cpatch%bstorage(ico)
+      if(cpatch%costate%bstorage(ico) < 0.)then
+         storage2alive = cpatch%costate%bstorage(ico)
          if(cpatch%phenology_status(ico) == 0)cpatch%phenology_status(ico) = 1
 
          ! This process implies the loss of some additional nutrients.
-         csite%fsp_in(ipa) = csite%fsp_in(ipa) - cpatch%nplant(ico) *   &
+         csite%fsp_in(ipa) = csite%fsp_in(ipa) - cpatch%costate%nplant(ico) *   &
               storage2alive * (1./c2p_alive(ipft) - 1./c2p_storage(ipft))
-         csite%fsn_in(ipa) = csite%fsn_in(ipa) - cpatch%nplant(ico) *   &
+         csite%fsn_in(ipa) = csite%fsn_in(ipa) - cpatch%costate%nplant(ico) *   &
               storage2alive * (1./c2n_leaf(ipft) - 1./c2n_storage)
 
       endif
 
-      cpatch%bstorage(ico) = cpatch%bstorage(ico) - storage2alive
-      cpatch%balive(ico) = cpatch%balive(ico) + storage2alive
+      cpatch%costate%bstorage(ico) = cpatch%costate%bstorage(ico) - storage2alive
+      cpatch%costate%balive(ico) = cpatch%costate%balive(ico) + storage2alive
       
-      cpatch%bleaf(ico)    = green_leaf_factor * cpatch%balive(ico) / (1.0 + q(ipft)   &
-           + qsw(ipft) * cpatch%hite(ico))
-      cpatch%broot(ico)    = q(ipft) * cpatch%balive(ico) / (1.0 + q(ipft)   &
-           + qsw(ipft) * cpatch%hite(ico))
-      cpatch%bsapwood(ico) = qsw(ipft) * cpatch%hite(ico) * cpatch%balive(ico) /  &
-           (1.0 + q(ipft) + qsw(ipft) * cpatch%hite(ico))
+      cpatch%costate%bleaf(ico)    = green_leaf_factor * cpatch%costate%balive(ico) / (1.0 + q(ipft)   &
+           + qsw(ipft) * cpatch%costate%hite(ico))
+      cpatch%costate%broot(ico)    = q(ipft) * cpatch%costate%balive(ico) / (1.0 + q(ipft)   &
+           + qsw(ipft) * cpatch%costate%hite(ico))
+      cpatch%costate%bsapwood(ico) = qsw(ipft) * cpatch%costate%hite(ico) * cpatch%costate%balive(ico) /  &
+           (1.0 + q(ipft) + qsw(ipft) * cpatch%costate%hite(ico))
       
       return
    end subroutine alloc_plant_c_balance
@@ -897,7 +897,7 @@ new_plant_P = new_plant_P + csite%area(ipa) * (csite%repro(1,ipa)/c2p_recruit(1)
       real                           :: increment
       !------------------------------------------------------------------------------------!
 
-      ipft = cpatch%pft(ico) 
+      ipft = cpatch%costate%pft(ico) 
 
       if ( cpatch%phenology_status(ico) == 0 .and. carbon_balance_pot > 0.0 ) then
 
@@ -906,17 +906,17 @@ new_plant_P = new_plant_P + csite%area(ipa) * (csite%repro(1,ipa)/c2p_recruit(1)
 
       elseif (cpatch%phenology_status(ico) == 1) then
 
-         bl_max = dbh2bl(cpatch%dbh(ico),ipft) * green_leaf_factor * cpatch%elongf(ico)
-         bl_pot = cpatch%bleaf(ico) + carbon_balance_pot
+         bl_max = dbh2bl(cpatch%costate%dbh(ico),ipft) * green_leaf_factor * cpatch%elongf(ico)
+         bl_pot = cpatch%costate%bleaf(ico) + carbon_balance_pot
 
          if (bl_pot > bl_max) then
             !------------------------------------------------------------------------------!
             !     This increment would take us over the limit, so we assign all that can   !
             ! go for leaves to them, and put the remainder in storage.                     !
             !------------------------------------------------------------------------------!
-            increment    = carbon_balance_pot - (bl_max-cpatch%bleaf(ico))
+            increment    = carbon_balance_pot - (bl_max-cpatch%costate%bleaf(ico))
             N_uptake_pot = N_uptake_pot + increment / c2n_storage
-            increment    = bl_max-cpatch%bleaf(ico)
+            increment    = bl_max-cpatch%costate%bleaf(ico)
             N_uptake_pot = N_uptake_pot + increment                                        &
                          * ( f_labile(ipft) / c2n_leaf(ipft)                               &
                            + (1.0 - f_labile(ipft)) / c2n_stem(ipft))
@@ -973,10 +973,10 @@ new_plant_P = new_plant_P + csite%area(ipa) * (csite%repro(1,ipa)/c2p_recruit(1)
       !      Add fine root and leaf turnover to the litter.                                !
       !------------------------------------------------------------------------------------!
       do ico=1,cpatch%ncohorts
-         ipft = cpatch%pft(ico)
+         ipft = cpatch%costate%pft(ico)
 
          plant_litter   = ( cpatch%leaf_maintenance(ico) + cpatch%root_maintenance(ico) )  &
-                        * cpatch%nplant(ico)
+                        * cpatch%costate%nplant(ico)
          plant_litter_f = plant_litter * f_labile(ipft)
          plant_litter_s = plant_litter - plant_litter_f
 

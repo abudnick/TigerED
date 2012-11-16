@@ -275,7 +275,7 @@ module canopy_struct_dynamics
 
 
       !---- Find the minimum leaf boundary layer heat conductance. ------------------------!
-      if (any(cpatch%leaf_resolvable .or. cpatch%wood_resolvable)) then
+      if (any(cpatch%costate%leaf_resolvable .or. cpatch%costate%wood_resolvable)) then
          gbhmos_min = 1. / (rb_inter + rb_slope * (csite%lai(ipa) + csite%wai(ipa)))
       else
          gbhmos_min = 0.
@@ -359,7 +359,7 @@ module canopy_struct_dynamics
          !---------------------------------------------------------------------------------!
          !----- Find the wind at the top of the canopy. -----------------------------------!
          uh = reduced_wind(csite%ustar(ipa),csite%zeta(ipa),csite%ribulk(ipa),cmet%geoht   &
-                          ,csite%veg_displace(ipa),cpatch%hite(1),csite%rough(ipa))
+                          ,csite%veg_displace(ipa),cpatch%costate%hite(1),csite%rough(ipa))
          select case (crown_mod)
          case (0)
             !------------------------------------------------------------------------------!
@@ -369,8 +369,8 @@ module canopy_struct_dynamics
             !------------------------------------------------------------------------------!
             do ico=1,cpatch%ncohorts
                !----- Find the extinction coefficients. -----------------------------------!
-               extinct_half = exp(- 0.25 * cpatch%lai(ico) / cpatch%crown_area(ico))
-               extinct_full = exp(- 0.50 * cpatch%lai(ico) / cpatch%crown_area(ico))
+               extinct_half = exp(- 0.25 * cpatch%costate%lai(ico) / cpatch%costate%crown_area(ico))
+               extinct_full = exp(- 0.50 * cpatch%costate%lai(ico) / cpatch%costate%crown_area(ico))
 
                !----- Assume that wind is at the middle of the thin crown. ----------------!
                cpatch%veg_wind(ico) = max(ugbmin, uh * extinct_half)
@@ -386,12 +386,12 @@ module canopy_struct_dynamics
             !------------------------------------------------------------------------------!
             do ico=1,cpatch%ncohorts
                !----- Find the extinction coefficients. -----------------------------------!
-               extinct_half = cpatch%crown_area(ico)                                       &
-                            * exp(- 0.25 * cpatch%lai(ico) / cpatch%crown_area(ico))       &
-                            + (1. - cpatch%crown_area(ico))
-               extinct_full = cpatch%crown_area(ico)                                       &
-                            * exp(- 0.50 * cpatch%lai(ico) / cpatch%crown_area(ico))       &
-                            + (1. - cpatch%crown_area(ico))
+               extinct_half = cpatch%costate%crown_area(ico)                                       &
+                            * exp(- 0.25 * cpatch%costate%lai(ico) / cpatch%costate%crown_area(ico))       &
+                            + (1. - cpatch%costate%crown_area(ico))
+               extinct_full = cpatch%costate%crown_area(ico)                                       &
+                            * exp(- 0.50 * cpatch%costate%lai(ico) / cpatch%costate%crown_area(ico))       &
+                            + (1. - cpatch%costate%crown_area(ico))
 
                !----- Assume that wind is at the middle of the thin crown. ----------------!
                cpatch%veg_wind(ico) = max(ugbmin, uh * extinct_half)
@@ -414,7 +414,7 @@ module canopy_struct_dynamics
             !------------------------------------------------------------------------------!
             !    Find the top layer and the top height.                                    !
             !------------------------------------------------------------------------------!
-            zcan = max(1,min(ncanlyr,ceiling((cpatch%hite(1) * zztop0i)**ehgti)))
+            zcan = max(1,min(ncanlyr,ceiling((cpatch%costate%hite(1) * zztop0i)**ehgti)))
             htop = zztop(zcan)
             !------------------------------------------------------------------------------!
 
@@ -425,14 +425,14 @@ module canopy_struct_dynamics
             windext_full(:) = 0.0
             opencan     (:) = 0.0 !----- This will be closed canopy inside this loop. -----!
             do ico=1,cpatch%ncohorts
-               ipft = cpatch%pft(ico)
+               ipft = cpatch%costate%pft(ico)
 
                !---------------------------------------------------------------------------!
                !     Find the heights, and compute the LAD of this cohort.                 !
                !---------------------------------------------------------------------------!
-               htopcrown = cpatch%hite(ico)
-               hbotcrown = h2crownbh(cpatch%hite(ico),ipft)
-               ladcohort = (cpatch%lai(ico) + cpatch%wai(ico)) / (htopcrown - hbotcrown)
+               htopcrown = cpatch%costate%hite(ico)
+               hbotcrown = h2crownbh(cpatch%costate%hite(ico),ipft)
+               ladcohort = (cpatch%costate%lai(ico) + cpatch%costate%wai(ico)) / (htopcrown - hbotcrown)
                kapartial = min(ncanlyr,floor  ((hbotcrown * zztop0i)**ehgti) + 1)
                kafull    = min(ncanlyr,ceiling((hbotcrown * zztop0i)**ehgti) + 1)
                kzpartial = min(ncanlyr,ceiling((htopcrown * zztop0i)**ehgti))
@@ -446,11 +446,11 @@ module canopy_struct_dynamics
                !---------------------------------------------------------------------------!
                do k = kafull,kzfull
                   this_lai        = ladcohort * dzcan(k)
-                  opencan(k)      = opencan(k)      + cpatch%crown_area(ico)
-                  windext_full(k) = windext_full(k) + cpatch%crown_area(ico)               &
-                                  * exp(- 0.50 * this_lai / cpatch%crown_area(ico))
-                  windext_half(k) = windext_half(k) + cpatch%crown_area(ico)               &
-                                  * exp(- 0.25 * this_lai / cpatch%crown_area(ico))
+                  opencan(k)      = opencan(k)      + cpatch%costate%crown_area(ico)
+                  windext_full(k) = windext_full(k) + cpatch%costate%crown_area(ico)               &
+                                  * exp(- 0.50 * this_lai / cpatch%costate%crown_area(ico))
+                  windext_half(k) = windext_half(k) + cpatch%costate%crown_area(ico)               &
+                                  * exp(- 0.25 * this_lai / cpatch%costate%crown_area(ico))
                end do
                !---------------------------------------------------------------------------!
 
@@ -463,28 +463,28 @@ module canopy_struct_dynamics
                if (kapartial == kzpartial) then
                   k               = kapartial
                   this_lai        = ladcohort * (htopcrown - hbotcrown)
-                  opencan(k)      = opencan(k)      + cpatch%crown_area(ico)
-                  windext_full(k) = windext_full(k) + cpatch%crown_area(ico)               &
-                                  * exp(- 0.50 * this_lai / cpatch%crown_area(ico))
-                  windext_half(k) = windext_half(k) + cpatch%crown_area(ico)               &
-                                  * exp(- 0.25 * this_lai / cpatch%crown_area(ico))
+                  opencan(k)      = opencan(k)      + cpatch%costate%crown_area(ico)
+                  windext_full(k) = windext_full(k) + cpatch%costate%crown_area(ico)               &
+                                  * exp(- 0.50 * this_lai / cpatch%costate%crown_area(ico))
+                  windext_half(k) = windext_half(k) + cpatch%costate%crown_area(ico)               &
+                                  * exp(- 0.25 * this_lai / cpatch%costate%crown_area(ico))
                else
                   !------ Bottom partial layer. -------------------------------------------!
                   k               = kapartial
                   this_lai        = ladcohort * (zztop(kapartial) - hbotcrown)
-                  opencan(k)      = opencan(k)      + cpatch%crown_area(ico)
-                  windext_full(k) = windext_full(k) + cpatch%crown_area(ico)               &
-                                  * exp(- 0.50 * this_lai / cpatch%crown_area(ico))
-                  windext_half(k) = windext_half(k) + cpatch%crown_area(ico)               &
-                                  * exp(- 0.25 * this_lai / cpatch%crown_area(ico))
+                  opencan(k)      = opencan(k)      + cpatch%costate%crown_area(ico)
+                  windext_full(k) = windext_full(k) + cpatch%costate%crown_area(ico)               &
+                                  * exp(- 0.50 * this_lai / cpatch%costate%crown_area(ico))
+                  windext_half(k) = windext_half(k) + cpatch%costate%crown_area(ico)               &
+                                  * exp(- 0.25 * this_lai / cpatch%costate%crown_area(ico))
                   !------ Top partial layer. ----------------------------------------------!
                   k               = kzpartial
                   this_lai        = ladcohort * (htopcrown - zzbot(kzpartial))
-                  opencan(k)      = opencan(k)      + cpatch%crown_area(ico)
-                  windext_full(k) = windext_full(k) + cpatch%crown_area(ico)               &
-                                  * exp(- 0.50 * this_lai / cpatch%crown_area(ico))
-                  windext_half(k) = windext_half(k) + cpatch%crown_area(ico)               &
-                                  * exp(- 0.25 * this_lai / cpatch%crown_area(ico))
+                  opencan(k)      = opencan(k)      + cpatch%costate%crown_area(ico)
+                  windext_full(k) = windext_full(k) + cpatch%costate%crown_area(ico)               &
+                                  * exp(- 0.50 * this_lai / cpatch%costate%crown_area(ico))
+                  windext_half(k) = windext_half(k) + cpatch%costate%crown_area(ico)               &
+                                  * exp(- 0.25 * this_lai / cpatch%costate%crown_area(ico))
                end if
                !---------------------------------------------------------------------------!
             end do
@@ -537,14 +537,14 @@ module canopy_struct_dynamics
             ! defined.                                                                     !
             !------------------------------------------------------------------------------!
             do ico=1,cpatch%ncohorts
-               ipft = cpatch%pft(ico)
+               ipft = cpatch%costate%pft(ico)
 
 
                !---------------------------------------------------------------------------!
                !     Find the heights, and compute the bounds.                             !
                !---------------------------------------------------------------------------!
-               htopcrown = cpatch%hite(ico)
-               hbotcrown = h2crownbh(cpatch%hite(ico),ipft)
+               htopcrown = cpatch%costate%hite(ico)
+               hbotcrown = h2crownbh(cpatch%costate%hite(ico),ipft)
                kapartial = min(ncanlyr,floor  ((hbotcrown * zztop0i)**ehgti) + 1)
                kzpartial = min(ncanlyr,ceiling((htopcrown * zztop0i)**ehgti))
                !---------------------------------------------------------------------------!
@@ -575,9 +575,9 @@ module canopy_struct_dynamics
          do ico=1,cpatch%ncohorts
 
             !----- Calculate the wind speed at height z. ----------------------------------!
-            ipft       = cpatch%pft(ico)
+            ipft       = cpatch%costate%pft(ico)
 
-            if (cpatch%leaf_resolvable(ico)) then
+            if (cpatch%costate%leaf_resolvable(ico)) then
                !---------------------------------------------------------------------------!
                !    Find the aerodynamic conductances for heat and water at the leaf       !
                ! boundary layer.                                                           !
@@ -595,12 +595,12 @@ module canopy_struct_dynamics
                cpatch%leaf_gbh(ico)      = 0.0
                cpatch%leaf_gbw(ico)      = 0.0
             end if
-            if (cpatch%wood_resolvable(ico)) then
+            if (cpatch%costate%wood_resolvable(ico)) then
                !---------------------------------------------------------------------------!
                !    Find the aerodynamic conductances for heat and water at the wood       !
                ! boundary layer.                                                           !
                !---------------------------------------------------------------------------!
-               call wood_aerodynamic_conductances(ipft,cpatch%dbh(ico),cpatch%hite(ico)    &
+               call wood_aerodynamic_conductances(ipft,cpatch%costate%dbh(ico),cpatch%costate%hite(ico)    &
                                                  ,cpatch%veg_wind(ico)                     &
                                                  ,cpatch%wood_temp(ico)                    &
                                                  ,csite%can_temp(ipa)                      &
@@ -719,19 +719,19 @@ module canopy_struct_dynamics
          !---------------------------------------------------------------------------------!
          !----- Top of canopy wind speed. -------------------------------------------------!
          uh   = reduced_wind(csite%ustar(ipa),csite%zeta(ipa),csite%ribulk(ipa),cmet%geoht &
-                            ,csite%veg_displace(ipa),cpatch%hite(1),csite%rough(ipa))
-         htop = cpatch%hite(1)
+                            ,csite%veg_displace(ipa),cpatch%costate%hite(1),csite%rough(ipa))
+         htop = cpatch%costate%hite(1)
          do ico=1,cpatch%ncohorts
 
             !----- Alias for PFT type. ----------------------------------------------------!
-            ipft  = cpatch%pft(ico)
+            ipft  = cpatch%costate%pft(ico)
             !------------------------------------------------------------------------------!
 
 
 
             !----- Estimate the height at the crown midpoint. -----------------------------!
-            htopcrown = cpatch%hite(ico)
-            hbotcrown = h2crownbh(cpatch%hite(ico),ipft)
+            htopcrown = cpatch%costate%hite(ico)
+            hbotcrown = h2crownbh(cpatch%costate%hite(ico),ipft)
             hmidcrown = 0.5 * (htopcrown + hbotcrown)
             !------------------------------------------------------------------------------!
 
@@ -744,7 +744,7 @@ module canopy_struct_dynamics
 
 
 
-            if (cpatch%leaf_resolvable(ico)) then
+            if (cpatch%costate%leaf_resolvable(ico)) then
                !---------------------------------------------------------------------------!
                !    Find the aerodynamic conductances for heat and water at the leaf       !
                ! boundary layer.                                                           !
@@ -762,12 +762,12 @@ module canopy_struct_dynamics
                cpatch%leaf_gbh(ico)      = 0.0
                cpatch%leaf_gbw(ico)      = 0.0
             end if
-            if (cpatch%wood_resolvable(ico)) then
+            if (cpatch%costate%wood_resolvable(ico)) then
                !---------------------------------------------------------------------------!
                !    Find the aerodynamic conductances for heat and water at the wood       !
                ! boundary layer.                                                           !
                !---------------------------------------------------------------------------!
-               call wood_aerodynamic_conductances(ipft,cpatch%dbh(ico),cpatch%hite(ico)    &
+               call wood_aerodynamic_conductances(ipft,cpatch%costate%dbh(ico),cpatch%costate%hite(ico)    &
                                                  ,cpatch%veg_wind(ico)                     &
                                                  ,cpatch%wood_temp(ico)                    &
                                                  ,csite%can_temp(ipa)                      &
@@ -832,7 +832,7 @@ module canopy_struct_dynamics
          !---------------------------------------------------------------------------------!
          !    Find the top layer and the top height.                                       !
          !---------------------------------------------------------------------------------!
-         zcan = min(ncanlyr,ceiling((cpatch%hite(1) * zztop0i)**ehgti))
+         zcan = min(ncanlyr,ceiling((cpatch%costate%hite(1) * zztop0i)**ehgti))
          htop = zztop(zcan)
          !---------------------------------------------------------------------------------!
 
@@ -856,21 +856,21 @@ module canopy_struct_dynamics
             ! dead material that remains around.                                           !
             !------------------------------------------------------------------------------!
             do ico=1,cpatch%ncohorts
-               ipft = cpatch%pft(ico)
+               ipft = cpatch%costate%pft(ico)
 
 
                !------ Estimate WAI. ------------------------------------------------------!
-               waiuse = 0.10 * cpatch%nplant(ico) * cpatch%sla(ico)                        &
-                      * dbh2bl(cpatch%dbh(ico),ipft)
+               waiuse = 0.10 * cpatch%costate%nplant(ico) * cpatch%sla(ico)                        &
+                      * dbh2bl(cpatch%costate%dbh(ico),ipft)
                !---------------------------------------------------------------------------!
 
 
                !---------------------------------------------------------------------------!
                !     Find the heights, and compute the LAD of this cohort.                 !
                !---------------------------------------------------------------------------!
-               htopcrown = cpatch%hite(ico)
-               hbotcrown = h2crownbh(cpatch%hite(ico),ipft)
-               ladcohort = (cpatch%lai(ico) + waiuse) / (htopcrown - hbotcrown)
+               htopcrown = cpatch%costate%hite(ico)
+               hbotcrown = h2crownbh(cpatch%costate%hite(ico),ipft)
+               ladcohort = (cpatch%costate%lai(ico) + waiuse) / (htopcrown - hbotcrown)
                kapartial = min(ncanlyr,floor  ((hbotcrown * zztop0i)**ehgti) + 1)
                kafull    = min(ncanlyr,ceiling((hbotcrown * zztop0i)**ehgti) + 1)
                kzpartial = min(ncanlyr,ceiling((htopcrown * zztop0i)**ehgti))
@@ -910,14 +910,14 @@ module canopy_struct_dynamics
          case default
             !----- Use the default wood area index. ---------------------------------------!
             do ico=1,cpatch%ncohorts
-               ipft = cpatch%pft(ico)
+               ipft = cpatch%costate%pft(ico)
 
                !---------------------------------------------------------------------------!
                !     Find the heights, and compute the LAD of this cohort.                 !
                !---------------------------------------------------------------------------!
-               htopcrown = cpatch%hite(ico)
-               hbotcrown = h2crownbh(cpatch%hite(ico),ipft)
-               ladcohort = (cpatch%lai(ico) + cpatch%wai(ico)) / (htopcrown - hbotcrown)
+               htopcrown = cpatch%costate%hite(ico)
+               hbotcrown = h2crownbh(cpatch%costate%hite(ico),ipft)
+               ladcohort = (cpatch%costate%lai(ico) + cpatch%costate%wai(ico)) / (htopcrown - hbotcrown)
                kapartial = min(ncanlyr,floor  ((hbotcrown * zztop0i)**ehgti) + 1)
                kafull    = min(ncanlyr,ceiling((hbotcrown * zztop0i)**ehgti) + 1)
                kzpartial = min(ncanlyr,ceiling((htopcrown * zztop0i)**ehgti))
@@ -1066,11 +1066,11 @@ module canopy_struct_dynamics
                           ,csite%veg_displace(ipa),htop,csite%rough(ipa))
          !---------------------------------------------------------------------------------!
          do ico=1,cpatch%ncohorts
-            ipft      = cpatch%pft(ico)
+            ipft      = cpatch%costate%pft(ico)
 
             !----- Find the crown relevant heights. ---------------------------------------!
-            htopcrown = cpatch%hite(ico)
-            hbotcrown = h2crownbh(cpatch%hite(ico),cpatch%pft(ico))
+            htopcrown = cpatch%costate%hite(ico)
+            hbotcrown = h2crownbh(cpatch%costate%hite(ico),cpatch%costate%pft(ico))
             hmidcrown = 0.5 * (hbotcrown + htopcrown)
             !------------------------------------------------------------------------------!
 
@@ -1091,7 +1091,7 @@ module canopy_struct_dynamics
 
 
             !------------------------------------------------------------------------------!
-            if (cpatch%leaf_resolvable(ico)) then
+            if (cpatch%costate%leaf_resolvable(ico)) then
                !---------------------------------------------------------------------------!
                !    Find the aerodynamic conductances for heat and water at the leaf       !
                ! boundary layer.                                                           !
@@ -1109,12 +1109,12 @@ module canopy_struct_dynamics
                cpatch%leaf_gbh(ico)      = 0.0
                cpatch%leaf_gbw(ico)      = 0.0
             end if
-            if (cpatch%wood_resolvable(ico)) then
+            if (cpatch%costate%wood_resolvable(ico)) then
                !---------------------------------------------------------------------------!
                !    Find the aerodynamic conductances for heat and water at the wood       !
                ! boundary layer.                                                           !
                !---------------------------------------------------------------------------!
-               call wood_aerodynamic_conductances(ipft,cpatch%dbh(ico),cpatch%hite(ico)    &
+               call wood_aerodynamic_conductances(ipft,cpatch%costate%dbh(ico),cpatch%costate%hite(ico)    &
                                                  ,cpatch%veg_wind(ico)                     &
                                                  ,cpatch%wood_temp(ico)                    &
                                                  ,csite%can_temp(ipa)                      &
@@ -1647,7 +1647,7 @@ module canopy_struct_dynamics
          !---------------------------------------------------------------------------------!
          !----- Find the wind at the top of the canopy. -----------------------------------!
          uh = reduced_wind8(initp%ustar,initp%zeta,initp%ribulk,rk4site%geoht              &
-                           ,initp%veg_displace,dble(cpatch%hite(1)),initp%rough)
+                           ,initp%veg_displace,dble(cpatch%costate%hite(1)),initp%rough)
 
          select case (crown_mod)
          case (0)
@@ -1700,7 +1700,7 @@ module canopy_struct_dynamics
             !------------------------------------------------------------------------------!
             !    Find the top layer and the top height.                                    !
             !------------------------------------------------------------------------------!
-            zcan = max(1,min(ncanlyr,ceiling((dble(cpatch%hite(1)) * zztop0i8)**ehgti8)))
+            zcan = max(1,min(ncanlyr,ceiling((dble(cpatch%costate%hite(1)) * zztop0i8)**ehgti8)))
             htop = zztop8(zcan)
             !------------------------------------------------------------------------------!
 
@@ -1711,13 +1711,13 @@ module canopy_struct_dynamics
             windext_full8(:) = 0.d0
             opencan8     (:) = 0.d0 !----- This will be closed canopy inside this loop. ---!
             do ico=1,cpatch%ncohorts
-               ipft = cpatch%pft(ico)
+               ipft = cpatch%costate%pft(ico)
 
                !---------------------------------------------------------------------------!
                !     Find the heights, and compute the LAD of this cohort.                 !
                !---------------------------------------------------------------------------!
-               htopcrown = dble(cpatch%hite(ico))
-               hbotcrown = dble(h2crownbh(cpatch%hite(ico),ipft))
+               htopcrown = dble(cpatch%costate%hite(ico))
+               hbotcrown = dble(h2crownbh(cpatch%costate%hite(ico),ipft))
                ladcohort = (initp%lai(ico) + initp%wai(ico)) / (htopcrown - hbotcrown)
                kapartial = min(ncanlyr,floor  ((hbotcrown * zztop0i8)**ehgti8) + 1)
                kafull    = min(ncanlyr,ceiling((hbotcrown * zztop0i8)**ehgti8) + 1)
@@ -1823,14 +1823,14 @@ module canopy_struct_dynamics
             ! defined.                                                                     !
             !------------------------------------------------------------------------------!
             do ico=1,cpatch%ncohorts
-               ipft = cpatch%pft(ico)
+               ipft = cpatch%costate%pft(ico)
 
 
                !---------------------------------------------------------------------------!
                !     Find the heights, and compute the bounds.                             !
                !---------------------------------------------------------------------------!
-               htopcrown = dble(cpatch%hite(ico))
-               hbotcrown = dble(h2crownbh(cpatch%hite(ico),ipft))
+               htopcrown = dble(cpatch%costate%hite(ico))
+               hbotcrown = dble(h2crownbh(cpatch%costate%hite(ico),ipft))
                kapartial = min(ncanlyr,floor  ((hbotcrown * zztop0i8)**ehgti8) + 1)
                kzpartial = min(ncanlyr,ceiling((htopcrown * zztop0i8)**ehgti8))
                !---------------------------------------------------------------------------!
@@ -1859,7 +1859,7 @@ module canopy_struct_dynamics
          !---------------------------------------------------------------------------------!
          do ico=1,cpatch%ncohorts
 
-            ipft  = cpatch%pft(ico)
+            ipft  = cpatch%costate%pft(ico)
 
 
             !------ Leaf boundary layer conductance. --------------------------------------!
@@ -1895,7 +1895,7 @@ module canopy_struct_dynamics
                !    Find the aerodynamic conductances for heat and water at the leaf       !
                ! boundary layer.                                                           !
                !---------------------------------------------------------------------------!
-               call wood_aerodynamic_conductances8(ipft,cpatch%dbh(ico),cpatch%hite(ico)   &
+               call wood_aerodynamic_conductances8(ipft,cpatch%costate%dbh(ico),cpatch%costate%hite(ico)   &
                                                   ,initp%veg_wind(ico)                     &
                                                   ,initp%wood_temp(ico),initp%can_temp     &
                                                   ,initp%can_shv,initp%can_rhos,gbhmos_min &
@@ -2000,19 +2000,19 @@ module canopy_struct_dynamics
          !---------------------------------------------------------------------------------!
          !----- Top of canopy wind speed. -------------------------------------------------!
          uh   = reduced_wind8(initp%ustar,initp%zeta,initp%ribulk,rk4site%geoht            &
-                             ,initp%veg_displace,dble(cpatch%hite(1)),initp%rough)
-         htop = dble(cpatch%hite(1))
+                             ,initp%veg_displace,dble(cpatch%costate%hite(1)),initp%rough)
+         htop = dble(cpatch%costate%hite(1))
          do ico=1,cpatch%ncohorts
 
             !----- Alias for PFT type. ----------------------------------------------------!
-            ipft  = cpatch%pft(ico)
+            ipft  = cpatch%costate%pft(ico)
             !------------------------------------------------------------------------------!
 
 
 
             !----- Estimate the height center of the crown. -------------------------------!
-            htopcrown = dble(cpatch%hite(ico))
-            hbotcrown = dble(h2crownbh(cpatch%hite(ico),ipft))
+            htopcrown = dble(cpatch%costate%hite(ico))
+            hbotcrown = dble(h2crownbh(cpatch%costate%hite(ico),ipft))
             hmidcrown = 5.d-1 * (htopcrown + hbotcrown)
             !------------------------------------------------------------------------------!
 
@@ -2055,7 +2055,7 @@ module canopy_struct_dynamics
                !    Find the aerodynamic conductances for heat and water at the leaf       !
                ! boundary layer.                                                           !
                !---------------------------------------------------------------------------!
-               call wood_aerodynamic_conductances8(ipft,cpatch%dbh(ico),cpatch%hite(ico)   &
+               call wood_aerodynamic_conductances8(ipft,cpatch%costate%dbh(ico),cpatch%costate%hite(ico)   &
                                                   ,initp%veg_wind(ico)                     &
                                                   ,initp%wood_temp(ico),initp%can_temp     &
                                                   ,initp%can_shv,initp%can_rhos,gbhmos_min &
@@ -2118,7 +2118,7 @@ module canopy_struct_dynamics
          !---------------------------------------------------------------------------------!
          !    Find the top layer and the top height.                                       !
          !---------------------------------------------------------------------------------!
-         zcan = min(ncanlyr,ceiling((dble(cpatch%hite(1)) * zztop0i8)**ehgti8))
+         zcan = min(ncanlyr,ceiling((dble(cpatch%costate%hite(1)) * zztop0i8)**ehgti8))
          htop = zztop8(zcan)
          !---------------------------------------------------------------------------------!
 
@@ -2140,20 +2140,20 @@ module canopy_struct_dynamics
             ! dead material that remains around.                                           !
             !------------------------------------------------------------------------------!
             do ico=1,cpatch%ncohorts
-               ipft = cpatch%pft(ico)
+               ipft = cpatch%costate%pft(ico)
 
 
                !------ Estimate WAI. ------------------------------------------------------!
                waiuse = 1.d-1 * initp%nplant(ico) * dble(cpatch%sla(ico))                  &
-                      * dble(dbh2bl(cpatch%dbh(ico),ipft))
+                      * dble(dbh2bl(cpatch%costate%dbh(ico),ipft))
                !---------------------------------------------------------------------------!
 
 
                !---------------------------------------------------------------------------!
                !     Find the heights, and compute the LAD of this cohort.                 !
                !---------------------------------------------------------------------------!
-               htopcrown = dble(cpatch%hite(ico))
-               hbotcrown = dble(h2crownbh(cpatch%hite(ico),cpatch%pft(ico)))
+               htopcrown = dble(cpatch%costate%hite(ico))
+               hbotcrown = dble(h2crownbh(cpatch%costate%hite(ico),cpatch%costate%pft(ico)))
                ladcohort = (initp%lai(ico) + waiuse) / (htopcrown - hbotcrown)
                kapartial = min(ncanlyr,floor  ((hbotcrown * zztop0i8)**ehgti8) + 1)
                kafull    = min(ncanlyr,ceiling((hbotcrown * zztop0i8)**ehgti8) + 1)
@@ -2194,13 +2194,13 @@ module canopy_struct_dynamics
          case default
             !----- Use the default wood area index. ---------------------------------------!
             do ico=1,cpatch%ncohorts
-               ipft = cpatch%pft(ico)
+               ipft = cpatch%costate%pft(ico)
 
                !---------------------------------------------------------------------------!
                !     Find the heights, and compute the LAD of this cohort.                 !
                !---------------------------------------------------------------------------!
-               htopcrown = dble(cpatch%hite(ico))
-               hbotcrown = dble(h2crownbh(cpatch%hite(ico),ipft))
+               htopcrown = dble(cpatch%costate%hite(ico))
+               hbotcrown = dble(h2crownbh(cpatch%costate%hite(ico),ipft))
                ladcohort = (initp%lai(ico) + initp%wai(ico)) / (htopcrown - hbotcrown)
                kapartial = min(ncanlyr,floor  ((hbotcrown * zztop0i8)**ehgti8) + 1)
                kafull    = min(ncanlyr,ceiling((hbotcrown * zztop0i8)**ehgti8) + 1)
@@ -2350,11 +2350,11 @@ module canopy_struct_dynamics
          uh = reduced_wind8(initp%ustar,initp%zeta,initp%ribulk,rk4site%geoht              &
                            ,initp%veg_displace,htop,initp%rough)
          do ico=1,cpatch%ncohorts
-            ipft = cpatch%pft(ico)
+            ipft = cpatch%costate%pft(ico)
 
             !----- Find the crown relevant heights. ---------------------------------------!
-            htopcrown = dble(cpatch%hite(ico))
-            hbotcrown = dble(h2crownbh(cpatch%hite(ico),cpatch%pft(ico)))
+            htopcrown = dble(cpatch%costate%hite(ico))
+            hbotcrown = dble(h2crownbh(cpatch%costate%hite(ico),cpatch%costate%pft(ico)))
             hmidcrown = 5.d-1 * (hbotcrown + htopcrown)
             !------------------------------------------------------------------------------!
 
@@ -2403,7 +2403,7 @@ module canopy_struct_dynamics
                !    Find the aerodynamic conductances for heat and water at the leaf       !
                ! boundary layer.                                                           !
                !---------------------------------------------------------------------------!
-               call wood_aerodynamic_conductances8(ipft,cpatch%dbh(ico),cpatch%hite(ico)   &
+               call wood_aerodynamic_conductances8(ipft,cpatch%costate%dbh(ico),cpatch%costate%hite(ico)   &
                                                   ,initp%veg_wind(ico)                     &
                                                   ,initp%wood_temp(ico),initp%can_temp     &
                                                   ,initp%can_shv,initp%can_rhos,gbhmos_min &

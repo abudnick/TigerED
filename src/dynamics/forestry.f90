@@ -332,7 +332,7 @@ subroutine inventory_mat_forests(cpoly,isi,area_mature_primary,agb_mature_primar
       csite%plant_ag_biomass(ipa) = 0.0
       do ico=1,cpatch%ncohorts
          csite%plant_ag_biomass(ipa) = csite%plant_ag_biomass(ipa)                         &
-                                     + cpatch%agb(ico) * cpatch%nplant(ico)
+                                     + cpatch%costate%agb(ico) * cpatch%costate%nplant(ico)
       end do
 
       !----- Skip the patch if the biomass is low. ----------------------------------------!

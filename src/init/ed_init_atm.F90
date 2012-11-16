@@ -154,9 +154,9 @@ subroutine ed_init_atm()
                   cpatch%wood_water  (ico) = 0.0
                   
                   
-                  call calc_veg_hcap(cpatch%bleaf(ico),cpatch%bdead(ico)                   &
-                                    ,cpatch%bsapwood(ico),cpatch%nplant(ico)               &
-                                    ,cpatch%pft(ico)                                       &
+                  call calc_veg_hcap(cpatch%costate%bleaf(ico),cpatch%costate%bdead(ico)                   &
+                                    ,cpatch%costate%bsapwood(ico),cpatch%costate%nplant(ico)               &
+                                    ,cpatch%costate%pft(ico)                                       &
                                     ,cpatch%leaf_hcap(ico),cpatch%wood_hcap(ico) )
 
                   cpatch%leaf_energy (ico) = cpatch%leaf_hcap(ico) * cpatch%leaf_temp(ico)
@@ -341,9 +341,9 @@ subroutine ed_init_atm()
 
                cohortloop3: do ico = 1,cpatch%ncohorts
                   ncohorts=ncohorts+1
-                  poly_lai    = poly_lai + cpatch%lai(ico) * csite%area(ipa)               &
+                  poly_lai    = poly_lai + cpatch%costate%lai(ico) * csite%area(ipa)               &
                                          * cpoly%area(isi) * site_area_i * poly_area_i
-                  poly_nplant = poly_nplant + cpatch%nplant(ico) * csite%area(ipa)         &
+                  poly_nplant = poly_nplant + cpatch%costate%nplant(ico) * csite%area(ipa)         &
                                             * cpoly%area(isi) * site_area_i * poly_area_i
                end do cohortloop3
             end do patchloop3

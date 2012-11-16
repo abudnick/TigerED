@@ -224,7 +224,7 @@ subroutine update_turnover(cpoly, isi)
       cpatch => csite%patch(ipa)
       cohortloop: do ico = 1,cpatch%ncohorts
 
-         ipft = cpatch%pft(ico)
+         ipft = cpatch%costate%pft(ico)
          
          if(phenology(ipft) /= 3)cycle cohortloop
          !write(unit=*,fmt='(a,1x,es12.5)') 'Rad_avg is       =', cpoly%rad_avg
@@ -342,17 +342,17 @@ subroutine first_phenology(cgrid)
 
 
                !----- Find LAI, WPA, WAI. -------------------------------------------------!
-               call area_indices(cpatch%nplant(ico),cpatch%bleaf(ico),cpatch%bdead(ico)    &
-                                ,cpatch%balive(ico),cpatch%dbh(ico),cpatch%hite(ico)       &
-                                ,cpatch%pft(ico),cpatch%sla(ico),cpatch%lai(ico)           &
-                                ,cpatch%wpa(ico),cpatch%wai(ico),cpatch%crown_area(ico)    &
-                                ,cpatch%bsapwood(ico)) 
+               call area_indices(cpatch%costate%nplant(ico),cpatch%costate%bleaf(ico),cpatch%costate%bdead(ico)    &
+                                ,cpatch%costate%balive(ico),cpatch%costate%dbh(ico),cpatch%costate%hite(ico)       &
+                                ,cpatch%costate%pft(ico),cpatch%sla(ico),cpatch%costate%lai(ico)           &
+                                ,cpatch%costate%wpa(ico),cpatch%costate%wai(ico),cpatch%costate%crown_area(ico)    &
+                                ,cpatch%costate%bsapwood(ico)) 
                !---------------------------------------------------------------------------!
 
 
                !----- Find heat capacity and vegetation internal energy. ------------------!
-               call calc_veg_hcap(cpatch%bleaf(ico),cpatch%bdead(ico),cpatch%bsapwood(ico) &
-                                 ,cpatch%nplant(ico),cpatch%pft(ico)                       &
+               call calc_veg_hcap(cpatch%costate%bleaf(ico),cpatch%costate%bdead(ico),cpatch%costate%bsapwood(ico) &
+                                 ,cpatch%costate%nplant(ico),cpatch%costate%pft(ico)                       &
                                  ,cpatch%leaf_hcap(ico),cpatch%wood_hcap(ico) )
                cpatch%leaf_energy(ico) = cpatch%leaf_hcap(ico) * cpatch%leaf_temp(ico)
                cpatch%wood_energy(ico) = cpatch%wood_hcap(ico) * cpatch%wood_temp(ico)
@@ -420,12 +420,12 @@ subroutine pheninit_balive_bstorage(mzg,csite,ipa,ico,ntext_soil,green_leaf_fact
 
    cpatch => csite%patch(ipa)
 
-   ipft = cpatch%pft(ico)
+   ipft = cpatch%costate%pft(ico)
 
    cpatch%paw_avg(ico) = 0.0
 
    do k = 1, 10
-      cpatch%paw_avg(ico) = cpatch%paw_avg(ico) + 0.1 * csite%past_paw(cpatch%krdepth(ico),k,ipa)
+      cpatch%paw_avg(ico) = cpatch%paw_avg(ico) + 0.1 * csite%past_paw(cpatch%costate%krdepth(ico),k,ipa)
    enddo
 
 !   do k = cpatch%krdepth(ico), mzg - 1
@@ -472,20 +472,20 @@ subroutine pheninit_balive_bstorage(mzg,csite,ipa,ico,ntext_soil,green_leaf_fact
 
 
    !----- Compute the biomass of living tissues. ------------------------------------------!
-   salloc               = 1.0 + q(ipft) + qsw(ipft) * cpatch%hite(ico)
+   salloc               = 1.0 + q(ipft) + qsw(ipft) * cpatch%costate%hite(ico)
    salloci              = 1.0 / salloc
-   bleaf_max            = dbh2bl(cpatch%dbh(ico),cpatch%pft(ico))
+   bleaf_max            = dbh2bl(cpatch%costate%dbh(ico),cpatch%costate%pft(ico))
    balive_max           = bleaf_max * salloc
    select case (cpatch%phenology_status(ico))
    case (2)
-      cpatch%bleaf(ico)  = 0.
+      cpatch%costate%bleaf(ico)  = 0.
       cpatch%elongf(ico) = 0.
    case default
-      cpatch%bleaf(ico) = bleaf_max * cpatch%elongf(ico) 
+      cpatch%costate%bleaf(ico) = bleaf_max * cpatch%elongf(ico) 
    end select
-   cpatch%broot(ico)    = balive_max * q(ipft)   * salloci
-   cpatch%bsapwood(ico) = balive_max * qsw(ipft) * cpatch%hite(ico) * salloci
-   cpatch%balive(ico)   = cpatch%bleaf(ico) + cpatch%broot(ico) + cpatch%bsapwood(ico)
+   cpatch%costate%broot(ico)    = balive_max * q(ipft)   * salloci
+   cpatch%costate%bsapwood(ico) = balive_max * qsw(ipft) * cpatch%costate%hite(ico) * salloci
+   cpatch%costate%balive(ico)   = cpatch%costate%bleaf(ico) + cpatch%costate%broot(ico) + cpatch%costate%bsapwood(ico)
    !---------------------------------------------------------------------------------------!
 
 
@@ -495,7 +495,7 @@ subroutine pheninit_balive_bstorage(mzg,csite,ipa,ico,ntext_soil,green_leaf_fact
    ! leaves in the storage.  This gives some extra chance for the plant whilst it          !
    ! conserves the total carbon.                                                           !
    !---------------------------------------------------------------------------------------!
-   cpatch%bstorage(ico) = max(0.0, bleaf_max - cpatch%bleaf(ico))
+   cpatch%costate%bstorage(ico) = max(0.0, bleaf_max - cpatch%costate%bleaf(ico))
    !---------------------------------------------------------------------------------------!
 
    return

@@ -205,51 +205,51 @@ subroutine init_nbg_cohorts(csite,lsl,ipa_a,ipa_z)
          end select
 
          !----- The PFT is the plant functional type. -------------------------------------!
-         cpatch%pft(ico)              = ipft
+         cpatch%costate%pft(ico)              = ipft
          !---------------------------------------------------------------------------------!
          !     Define the near-bare ground state using the standard minimum height and     !
          ! minimum plant density.  We assume all NBG PFTs to have leaves fully flushed,    !
          ! but with no storage biomass.  We then compute the other biomass quantities      !
          ! using the standard allometry for this PFT.                                      !
          !---------------------------------------------------------------------------------!
-         cpatch%nplant(ico)           = init_density(ipft)
-         cpatch%hite(ico)             = hgt_min(ipft)
+         cpatch%costate%nplant(ico)           = init_density(ipft)
+         cpatch%costate%hite(ico)             = hgt_min(ipft)
          cpatch%phenology_status(ico) = 0
-         cpatch%bstorage(ico)         = 0.0
-         cpatch%dbh(ico)              = h2dbh(cpatch%hite(ico),ipft)
-         cpatch%bdead(ico)            = dbh2bd(cpatch%dbh(ico),ipft)
-         cpatch%bleaf(ico)            = dbh2bl(cpatch%dbh(ico),ipft)
+         cpatch%costate%bstorage(ico)         = 0.0
+         cpatch%costate%dbh(ico)              = h2dbh(cpatch%costate%hite(ico),ipft)
+         cpatch%costate%bdead(ico)            = dbh2bd(cpatch%costate%dbh(ico),ipft)
+         cpatch%costate%bleaf(ico)            = dbh2bl(cpatch%costate%dbh(ico),ipft)
          cpatch%sla(ico)              = sla(ipft)
 
 
-         salloc                       = 1.0 + q(ipft) + qsw(ipft) * cpatch%hite(ico)
+         salloc                       = 1.0 + q(ipft) + qsw(ipft) * cpatch%costate%hite(ico)
          salloci                      = 1. / salloc
 
-         cpatch%balive(ico)           = cpatch%bleaf(ico) * salloc
-         cpatch%broot(ico)            = q(ipft) * cpatch%balive(ico) * salloci
-         cpatch%bsapwood(ico)         = qsw(ipft) * cpatch%hite(ico) * cpatch%balive(ico)  &
+         cpatch%costate%balive(ico)           = cpatch%costate%bleaf(ico) * salloc
+         cpatch%costate%broot(ico)            = q(ipft) * cpatch%costate%balive(ico) * salloci
+         cpatch%costate%bsapwood(ico)         = qsw(ipft) * cpatch%costate%hite(ico) * cpatch%costate%balive(ico)  &
                                       * salloci
 
          !----- Find the initial area indices (LAI, WPA, WAI). ----------------------------!
-         call area_indices(cpatch%nplant(ico),cpatch%bleaf(ico),cpatch%bdead(ico)          &
-                          ,cpatch%balive(ico),cpatch%dbh(ico), cpatch%hite(ico)            &
-                          ,cpatch%pft(ico),cpatch%sla(ico),cpatch%lai(ico)                 &
-                          ,cpatch%wpa(ico),cpatch%wai(ico),cpatch%crown_area(ico)          &
-                          ,cpatch%bsapwood(ico))
+         call area_indices(cpatch%costate%nplant(ico),cpatch%costate%bleaf(ico),cpatch%costate%bdead(ico)          &
+                          ,cpatch%costate%balive(ico),cpatch%costate%dbh(ico), cpatch%costate%hite(ico)            &
+                          ,cpatch%costate%pft(ico),cpatch%sla(ico),cpatch%costate%lai(ico)                 &
+                          ,cpatch%costate%wpa(ico),cpatch%costate%wai(ico),cpatch%costate%crown_area(ico)          &
+                          ,cpatch%costate%bsapwood(ico))
 
          !----- Find the above-ground biomass and basal area. -----------------------------!
-         cpatch%agb(ico) = ed_biomass(cpatch%bdead(ico),cpatch%balive(ico)                 &
-                                     ,cpatch%bleaf(ico),cpatch%pft(ico)                    &
-                                     ,cpatch%hite(ico),cpatch%bstorage(ico)                &
-                                     ,cpatch%bsapwood(ico))
-         cpatch%basarea(ico) = pio4 * cpatch%dbh(ico)*cpatch%dbh(ico)
+         cpatch%costate%agb(ico) = ed_biomass(cpatch%costate%bdead(ico),cpatch%costate%balive(ico)                 &
+                                     ,cpatch%costate%bleaf(ico),cpatch%costate%pft(ico)                    &
+                                     ,cpatch%costate%hite(ico),cpatch%costate%bstorage(ico)                &
+                                     ,cpatch%costate%bsapwood(ico))
+         cpatch%costate%basarea(ico) = pio4 * cpatch%costate%dbh(ico)*cpatch%costate%dbh(ico)
 
          !----- Initialize other cohort-level variables. ----------------------------------!
          call init_ed_cohort_vars(cpatch,ico,lsl)
 
          !----- Update total patch-level above-ground biomass -----------------------------!
          csite%plant_ag_biomass(ipa) = csite%plant_ag_biomass(ipa)                         &
-                                     + cpatch%nplant(ico) * cpatch%agb(ico)
+                                     + cpatch%costate%nplant(ico) * cpatch%costate%agb(ico)
       end do pftloop
       
       !------------------------------------------------------------------------------------!
@@ -343,53 +343,53 @@ subroutine init_cohorts_by_layers(csite,lsl,ipa_a,ipa_z)
          height = height + dheight
 
          !----- The PFT is the plant functional type. -------------------------------------!
-         cpatch%pft(ico)              = ipft
+         cpatch%costate%pft(ico)              = ipft
 
          !---------------------------------------------------------------------------------!
          !     Define the initial state in such a way that the LAI is always the initial   !
          ! LAI.  We then compute the other biomass quantities using the standard allometry !
          ! for this PFT.                                                                   !
          !---------------------------------------------------------------------------------!
-         cpatch%hite(ico)             = height
+         cpatch%costate%hite(ico)             = height
          cpatch%phenology_status(ico) = 0
-         cpatch%bstorage(ico)         = 0.0
-         cpatch%dbh(ico)              = h2dbh(cpatch%hite(ico),ipft)
-         cpatch%bdead(ico)            = dbh2bd(cpatch%dbh(ico),ipft)
-         cpatch%bleaf(ico)            = dbh2bl(cpatch%dbh(ico),ipft)
+         cpatch%costate%bstorage(ico)         = 0.0
+         cpatch%costate%dbh(ico)              = h2dbh(cpatch%costate%hite(ico),ipft)
+         cpatch%costate%bdead(ico)            = dbh2bd(cpatch%costate%dbh(ico),ipft)
+         cpatch%costate%bleaf(ico)            = dbh2bl(cpatch%costate%dbh(ico),ipft)
          cpatch%sla(ico)              = sla(ipft)
 
 
-         salloc                       = 1.0 + q(ipft) + qsw(ipft) * cpatch%hite(ico)
+         salloc                       = 1.0 + q(ipft) + qsw(ipft) * cpatch%costate%hite(ico)
          salloci                      = 1. / salloc
 
-         cpatch%balive(ico)           = cpatch%bleaf(ico) * salloc
-         cpatch%broot(ico)            = q(ipft) * cpatch%balive(ico) * salloci
-         cpatch%bsapwood(ico)         = qsw(ipft) * cpatch%hite(ico) * cpatch%balive(ico)  &
+         cpatch%costate%balive(ico)           = cpatch%costate%bleaf(ico) * salloc
+         cpatch%costate%broot(ico)            = q(ipft) * cpatch%costate%balive(ico) * salloci
+         cpatch%costate%bsapwood(ico)         = qsw(ipft) * cpatch%costate%hite(ico) * cpatch%costate%balive(ico)  &
                                       * salloci
 
          !----- NPlant is defined such that the cohort LAI is equal to LAI0
-         cpatch%nplant(ico)           = lai0 / (cpatch%bleaf(ico) * cpatch%sla(ico))
+         cpatch%costate%nplant(ico)           = lai0 / (cpatch%costate%bleaf(ico) * cpatch%sla(ico))
 
          !----- Find the initial area indices (LAI, WPA, WAI). ----------------------------!
-         call area_indices(cpatch%nplant(ico),cpatch%bleaf(ico),cpatch%bdead(ico)          &
-                          ,cpatch%balive(ico),cpatch%dbh(ico), cpatch%hite(ico)            &
-                          ,cpatch%pft(ico),cpatch%sla(ico),cpatch%lai(ico)                 &
-                          ,cpatch%wpa(ico),cpatch%wai(ico),cpatch%crown_area(ico)          &
-                          ,cpatch%bsapwood(ico))
+         call area_indices(cpatch%costate%nplant(ico),cpatch%costate%bleaf(ico),cpatch%costate%bdead(ico)          &
+                          ,cpatch%costate%balive(ico),cpatch%costate%dbh(ico), cpatch%costate%hite(ico)            &
+                          ,cpatch%costate%pft(ico),cpatch%sla(ico),cpatch%costate%lai(ico)                 &
+                          ,cpatch%costate%wpa(ico),cpatch%costate%wai(ico),cpatch%costate%crown_area(ico)          &
+                          ,cpatch%costate%bsapwood(ico))
 
          !----- Find the above-ground biomass and basal area. -----------------------------!
-         cpatch%agb(ico) = ed_biomass(cpatch%bdead(ico),cpatch%balive(ico)                 &
-                                     ,cpatch%bleaf(ico),cpatch%pft(ico)                    &
-                                     ,cpatch%hite(ico),cpatch%bstorage(ico)                &
-                                     ,cpatch%bsapwood(ico))
-         cpatch%basarea(ico) = pio4 * cpatch%dbh(ico) * cpatch%dbh(ico)
+         cpatch%costate%agb(ico) = ed_biomass(cpatch%costate%bdead(ico),cpatch%costate%balive(ico)                 &
+                                     ,cpatch%costate%bleaf(ico),cpatch%costate%pft(ico)                    &
+                                     ,cpatch%costate%hite(ico),cpatch%costate%bstorage(ico)                &
+                                     ,cpatch%costate%bsapwood(ico))
+         cpatch%costate%basarea(ico) = pio4 * cpatch%costate%dbh(ico) * cpatch%costate%dbh(ico)
 
          !----- Initialize other cohort-level variables. ----------------------------------!
          call init_ed_cohort_vars(cpatch,ico,lsl)
 
          !----- Update total patch-level above-ground biomass -----------------------------!
          csite%plant_ag_biomass(ipa) = csite%plant_ag_biomass(ipa)                         &
-                                     + cpatch%nplant(ico) * cpatch%agb(ico)
+                                     + cpatch%costate%nplant(ico) * cpatch%costate%agb(ico)
       end do layerloop
       
       !------------------------------------------------------------------------------------!

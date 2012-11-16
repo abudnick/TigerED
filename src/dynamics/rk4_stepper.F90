@@ -799,8 +799,8 @@ module rk4_stepper
                write(unit=*,fmt='(a)')           '========================================'
                write(unit=*,fmt='(a)')           ' + Leaf surface water is off-track...'
                write(unit=*,fmt='(a)')           '========================================'
-               write(unit=*,fmt='(a,1x,i6)')     ' PFT:           ',cpatch%pft(ico)
-               write(unit=*,fmt='(a,1x,es12.4)') ' HEIGHT:        ',cpatch%hite(ico)
+               write(unit=*,fmt='(a,1x,i6)')     ' PFT:           ',cpatch%costate%pft(ico)
+               write(unit=*,fmt='(a,1x,es12.4)') ' HEIGHT:        ',cpatch%costate%hite(ico)
                write(unit=*,fmt='(a,1x,es12.4)') ' LAI:           ',y%lai(ico)
                write(unit=*,fmt='(a,1x,es12.4)') ' WAI:           ',y%wai(ico)
                write(unit=*,fmt='(a,1x,es12.4)') ' WPA:           ',y%wpa(ico)
@@ -838,8 +838,8 @@ module rk4_stepper
                write(unit=*,fmt='(a)')           '========================================'
                write(unit=*,fmt='(a)')           ' + Leaf temperature is off-track...'
                write(unit=*,fmt='(a)')           '========================================'
-               write(unit=*,fmt='(a,1x,i6)')     ' PFT:           ',cpatch%pft(ico)
-               write(unit=*,fmt='(a,1x,es12.4)') ' HEIGHT:        ',cpatch%hite(ico)
+               write(unit=*,fmt='(a,1x,i6)')     ' PFT:           ',cpatch%costate%pft(ico)
+               write(unit=*,fmt='(a,1x,es12.4)') ' HEIGHT:        ',cpatch%costate%hite(ico)
                write(unit=*,fmt='(a,1x,es12.4)') ' LAI:           ',y%lai(ico)
                write(unit=*,fmt='(a,1x,es12.4)') ' WAI:           ',y%wai(ico)
                write(unit=*,fmt='(a,1x,es12.4)') ' WPA:           ',y%wpa(ico)
@@ -894,8 +894,8 @@ module rk4_stepper
                write(unit=*,fmt='(a)')           '========================================'
                write(unit=*,fmt='(a)')           ' + Wood surface water is off-track...'
                write(unit=*,fmt='(a)')           '========================================'
-               write(unit=*,fmt='(a,1x,i6)')     ' PFT:           ',cpatch%pft(ico)
-               write(unit=*,fmt='(a,1x,es12.4)') ' HEIGHT:        ',cpatch%hite(ico)
+               write(unit=*,fmt='(a,1x,i6)')     ' PFT:           ',cpatch%costate%pft(ico)
+               write(unit=*,fmt='(a,1x,es12.4)') ' HEIGHT:        ',cpatch%costate%hite(ico)
                write(unit=*,fmt='(a,1x,es12.4)') ' LAI:           ',y%lai(ico)
                write(unit=*,fmt='(a,1x,es12.4)') ' WAI:           ',y%wai(ico)
                write(unit=*,fmt='(a,1x,es12.4)') ' WPA:           ',y%wpa(ico)
@@ -933,8 +933,8 @@ module rk4_stepper
                write(unit=*,fmt='(a)')           '========================================'
                write(unit=*,fmt='(a)')           ' + Wood temperature is off-track...'
                write(unit=*,fmt='(a)')           '========================================'
-               write(unit=*,fmt='(a,1x,i6)')     ' PFT:           ',cpatch%pft(ico)
-               write(unit=*,fmt='(a,1x,es12.4)') ' HEIGHT:        ',cpatch%hite(ico)
+               write(unit=*,fmt='(a,1x,i6)')     ' PFT:           ',cpatch%costate%pft(ico)
+               write(unit=*,fmt='(a,1x,es12.4)') ' HEIGHT:        ',cpatch%costate%hite(ico)
                write(unit=*,fmt='(a,1x,es12.4)') ' LAI:           ',y%lai(ico)
                write(unit=*,fmt='(a,1x,es12.4)') ' WAI:           ',y%wai(ico)
                write(unit=*,fmt='(a,1x,es12.4)') ' WPA:           ',y%wpa(ico)
@@ -1278,7 +1278,7 @@ module rk4_stepper
       do ico = 1,cpatch%ncohorts
          if(y%leaf_resolvable(ico)) then
             write(unit=*,fmt='(2(i5,1x),8(es12.4,1x))')                                    &
-               ico,cpatch%pft(ico),y%lai(ico),y%wai(ico),y%wpa(ico),y%tai(ico)             &
+               ico,cpatch%costate%pft(ico),y%lai(ico),y%wai(ico),y%wpa(ico),y%tai(ico)             &
                   ,y%leaf_energy(ico),cpatch%leaf_energy(ico),y%leaf_temp(ico)             &
                   ,cpatch%leaf_temp(ico)
          end if
@@ -1293,7 +1293,7 @@ module rk4_stepper
       do ico = 1,cpatch%ncohorts
          if(y%leaf_resolvable(ico)) then
             write(unit=*,fmt='(2(i5,1x),8(es12.4,1x))')                                    &
-               ico,cpatch%pft(ico),y%lai(ico),y%wai(ico),y%wpa(ico),y%tai(ico)             &
+               ico,cpatch%costate%pft(ico),y%lai(ico),y%wai(ico),y%wpa(ico),y%tai(ico)             &
                   ,y%leaf_water(ico),cpatch%leaf_water(ico),cpatch%leaf_hcap(ico)          &
                   ,y%leaf_hcap(ico)
          end if
@@ -1310,7 +1310,7 @@ module rk4_stepper
       do ico = 1,cpatch%ncohorts
          if(y%wood_resolvable(ico)) then
             write(unit=*,fmt='(2(i5,1x),8(es12.4,1x))')                                    &
-               ico,cpatch%pft(ico),y%lai(ico),y%wai(ico),y%wpa(ico),y%tai(ico)             &
+               ico,cpatch%costate%pft(ico),y%lai(ico),y%wai(ico),y%wpa(ico),y%tai(ico)             &
                   ,y%wood_energy(ico),cpatch%wood_energy(ico),y%wood_temp(ico)             &
                   ,cpatch%wood_temp(ico)
          end if
@@ -1325,7 +1325,7 @@ module rk4_stepper
       do ico = 1,cpatch%ncohorts
          if(y%wood_resolvable(ico)) then
             write(unit=*,fmt='(2(i5,1x),8(es12.4,1x))')                                    &
-               ico,cpatch%pft(ico),y%lai(ico),y%wai(ico),y%wpa(ico),y%tai(ico)             &
+               ico,cpatch%costate%pft(ico),y%lai(ico),y%wai(ico),y%wpa(ico),y%tai(ico)             &
                   ,y%wood_water(ico),cpatch%wood_water(ico),cpatch%wood_hcap(ico)          &
                   ,y%wood_hcap(ico)
          end if

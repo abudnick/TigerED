@@ -65,7 +65,7 @@ real :: new_soil_N, new_plant_N, old_soil_N, old_plant_N
    tfact2 = 1.0 / yr_day
 
    !----- Apply events. -------------------------------------------------------------------!
-   call prescribed_event(current_time%year,doy)
+!   call prescribed_event(current_time%year,doy)
 
   
    !---------------------------------------------------------------------------------------!
@@ -85,7 +85,7 @@ real :: new_soil_N, new_plant_N, old_soil_N, old_plant_N
                cpatch => csite%patch(ipa)
                old_plant_N = old_plant_N + csite%area(ipa) * (csite%repro(1,ipa)/c2n_recruit(1)+csite%repro(2,ipa)/c2n_recruit(2)+csite%repro(3,ipa)/c2n_recruit(3)+csite%repro(4,ipa)/c2n_recruit(4))
                do ico=1,cpatch%ncohorts
-                  old_plant_N = old_plant_N + csite%area(ipa) * cpatch%nplant(ico) * (cpatch%balive(ico)/c2n_leaf(cpatch%pft(ico)) + cpatch%bdead(ico)/c2n_stem(cpatch%pft(ico))+cpatch%bstorage(ico)/c2n_storage)
+                  old_plant_N = old_plant_N + csite%area(ipa) * cpatch%costate%nplant(ico) * (cpatch%costate%balive(ico)/c2n_leaf(cpatch%costate%pft(ico)) + cpatch%costate%bdead(ico)/c2n_stem(cpatch%costate%pft(ico))+cpatch%costate%bstorage(ico)/c2n_storage)
                enddo
             enddo
          enddo
@@ -101,7 +101,7 @@ real :: new_soil_N, new_plant_N, old_soil_N, old_plant_N
                cpatch => csite%patch(ipa)
                old_plant_P = old_plant_P + csite%area(ipa) * (csite%repro(1,ipa)/c2p_recruit(1)+csite%repro(2,ipa)/c2p_recruit(2)+csite%repro(3,ipa)/c2p_recruit(3)+csite%repro(4,ipa)/c2p_recruit(4))
                do ico=1,cpatch%ncohorts
-                  old_plant_P = old_plant_P + csite%area(ipa) * cpatch%nplant(ico) * (cpatch%balive(ico)/c2p_alive(cpatch%pft(ico)) + cpatch%bdead(ico)/c2p_dead(cpatch%pft(ico))+cpatch%bstorage(ico)/c2p_storage(cpatch%pft(ico)))
+                  old_plant_P = old_plant_P + csite%area(ipa) * cpatch%costate%nplant(ico) * (cpatch%costate%balive(ico)/c2p_alive(cpatch%costate%pft(ico)) + cpatch%costate%bdead(ico)/c2p_dead(cpatch%costate%pft(ico))+cpatch%costate%bstorage(ico)/c2p_storage(cpatch%costate%pft(ico)))
                enddo
             enddo
          enddo
@@ -151,7 +151,7 @@ real :: new_soil_N, new_plant_N, old_soil_N, old_plant_N
       endif
 
       !------  update dmean and mmean values for NPP allocation terms ---------------------!
-      call normalize_ed_dailyNPP_vars(cgrid)
+!      call normalize_ed_dailyNPP_vars(cgrid)
       
       !------------------------------------------------------------------------------------!
       !     This should be done every day, but after the longer-scale steps.  We update    !
@@ -171,7 +171,7 @@ real :: new_soil_N, new_plant_N, old_soil_N, old_plant_N
                cpatch => csite%patch(ipa)
                new_plant_N = new_plant_N + csite%area(ipa) * (csite%repro(1,ipa)/c2n_recruit(1)+csite%repro(2,ipa)/c2n_recruit(2)+csite%repro(3,ipa)/c2n_recruit(3)+csite%repro(4,ipa)/c2n_recruit(4))
                do ico=1,cpatch%ncohorts
-                  new_plant_N = new_plant_N + csite%area(ipa) * cpatch%nplant(ico) * (cpatch%balive(ico)/c2n_leaf(cpatch%pft(ico)) + cpatch%bdead(ico)/c2n_stem(cpatch%pft(ico))+cpatch%bstorage(ico)/c2n_storage)
+                  new_plant_N = new_plant_N + csite%area(ipa) * cpatch%costate%nplant(ico) * (cpatch%costate%balive(ico)/c2n_leaf(cpatch%costate%pft(ico)) + cpatch%costate%bdead(ico)/c2n_stem(cpatch%costate%pft(ico))+cpatch%costate%bstorage(ico)/c2n_storage)
                enddo
             enddo
          enddo
@@ -187,7 +187,7 @@ real :: new_soil_N, new_plant_N, old_soil_N, old_plant_N
                cpatch => csite%patch(ipa)
                new_plant_P = new_plant_P + csite%area(ipa) * (csite%repro(1,ipa)/c2p_recruit(1)+csite%repro(2,ipa)/c2p_recruit(2)+csite%repro(3,ipa)/c2p_recruit(3)+csite%repro(4,ipa)/c2p_recruit(4))
                do ico=1,cpatch%ncohorts
-                  new_plant_P = new_plant_P + csite%area(ipa) * cpatch%nplant(ico) * (cpatch%balive(ico)/c2p_alive(cpatch%pft(ico)) + cpatch%bdead(ico)/c2p_dead(cpatch%pft(ico))+cpatch%bstorage(ico)/c2p_storage(cpatch%pft(ico)))
+                  new_plant_P = new_plant_P + csite%area(ipa) * cpatch%costate%nplant(ico) * (cpatch%costate%balive(ico)/c2p_alive(cpatch%costate%pft(ico)) + cpatch%costate%bdead(ico)/c2p_dead(cpatch%costate%pft(ico))+cpatch%costate%bstorage(ico)/c2p_storage(cpatch%costate%pft(ico)))
                enddo
             enddo
          enddo

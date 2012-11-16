@@ -129,8 +129,8 @@ nbefore=0.;nafter=0.;pn1=0.;pn2=0.
             cpatch => csite%patch(ipa)
 
 do ico = 1, cpatch%ncohorts
-nbefore = nbefore + cpatch%nplant(ico)*cpatch%bseeds(ico)*csite%area(ipa)*(1.0-seedling_mortality(cpatch%pft(ico)))/c2n_recruit(cpatch%pft(ico))
-pn1=pn1+csite%area(ipa)*cpatch%nplant(ico)*(cpatch%balive(ico)/c2n_leaf(cpatch%pft(ico))+cpatch%bdead(ico)/c2n_stem(cpatch%pft(ico))+cpatch%bstorage(ico)/c2n_storage+cpatch%bseeds(ico)*(1.0-seedling_mortality(cpatch%pft(ico)))/c2n_recruit(cpatch%pft(ico)))
+nbefore = nbefore + cpatch%costate%nplant(ico)*cpatch%costate%bseeds(ico)*csite%area(ipa)*(1.0-seedling_mortality(cpatch%costate%pft(ico)))/c2n_recruit(cpatch%costate%pft(ico))
+pn1=pn1+csite%area(ipa)*cpatch%costate%nplant(ico)*(cpatch%costate%balive(ico)/c2n_leaf(cpatch%costate%pft(ico))+cpatch%costate%bdead(ico)/c2n_stem(cpatch%costate%pft(ico))+cpatch%costate%bstorage(ico)/c2n_storage+cpatch%costate%bseeds(ico)*(1.0-seedling_mortality(cpatch%costate%pft(ico)))/c2n_recruit(cpatch%costate%pft(ico)))
 enddo
             !---- This time we loop over PFTs, not cohorts. -------------------------------!
             pftloop: do ipft = 1, n_pft
@@ -236,9 +236,9 @@ nafter = nafter + csite%repro(ipft,ipa)*csite%area(ipa)/c2n_recruit(ipft)
                   inew = inew + 1
 
                   !----- Copy from recruitment table (I). ---------------------------------!
-                  cpatch%pft(ico)       = recruit(inew)%pft
-                  cpatch%hite(ico)      = recruit(inew)%hite
-                  cpatch%dbh(ico)       = recruit(inew)%dbh
+                  cpatch%costate%pft(ico)       = recruit(inew)%pft
+                  cpatch%costate%hite(ico)      = recruit(inew)%hite
+                  cpatch%costate%dbh(ico)       = recruit(inew)%dbh
                   !------------------------------------------------------------------------!
 
                   !----- Carry out standard initialization. -------------------------------!
@@ -247,8 +247,8 @@ nafter = nafter + csite%repro(ipft,ipa)*csite%area(ipa)/c2n_recruit(ipft)
 
 
                   !----- Copy from recruitment table (II). --------------------------------!
-                  cpatch%bdead(ico)     = recruit(inew)%bdead
-                  cpatch%nplant(ico)    = recruit(inew)%nplant
+                  cpatch%costate%bdead(ico)     = recruit(inew)%bdead
+                  cpatch%costate%nplant(ico)    = recruit(inew)%nplant
                   !------------------------------------------------------------------------!
 
 
@@ -277,11 +277,11 @@ nafter = nafter + csite%repro(ipft,ipa)*csite%area(ipa)/c2n_recruit(ipft)
                   !    Computing initial AGB and Basal Area. Their derivatives will be     !
                   ! zero.                                                                  !
                   !------------------------------------------------------------------------!
-                  cpatch%agb(ico)     = ed_biomass(cpatch%bdead(ico),cpatch%balive(ico)    &
-                                                  ,cpatch%bleaf(ico),cpatch%pft(ico)       &
-                                                  ,cpatch%hite(ico),cpatch%bstorage(ico)   &
-                                                  ,cpatch%bsapwood(ico))
-                  cpatch%basarea(ico) = pio4 * cpatch%dbh(ico)  * cpatch%dbh(ico)
+                  cpatch%costate%agb(ico)     = ed_biomass(cpatch%costate%bdead(ico),cpatch%costate%balive(ico)    &
+                                                  ,cpatch%costate%bleaf(ico),cpatch%costate%pft(ico)       &
+                                                  ,cpatch%costate%hite(ico),cpatch%costate%bstorage(ico)   &
+                                                  ,cpatch%costate%bsapwood(ico))
+                  cpatch%costate%basarea(ico) = pio4 * cpatch%costate%dbh(ico)  * cpatch%costate%dbh(ico)
                   cpatch%dagb_dt(ico) = 0.0
                   cpatch%dba_dt(ico)  = 0.0
                   cpatch%ddbh_dt(ico) = 0.0
@@ -289,21 +289,21 @@ nafter = nafter + csite%repro(ipft,ipa)*csite%area(ipa)/c2n_recruit(ipft)
                   !     Setting new_recruit_flag to 1 indicates that this cohort is        !
                   ! included when we tally agb_recruit, basal_area_recruit.                !
                   !------------------------------------------------------------------------!
-                  cpatch%new_recruit_flag(ico) = 1
+                  cpatch%costate%new_recruit_flag(ico) = 1
                   
                   !------------------------------------------------------------------------!
                   !    Obtain derived properties.                                          !
                   !------------------------------------------------------------------------!
                   !----- Find LAI, WPA, WAI. ----------------------------------------------!
-                  call area_indices(cpatch%nplant(ico),cpatch%bleaf(ico),cpatch%bdead(ico) &
-                                   ,cpatch%balive(ico),cpatch%dbh(ico), cpatch%hite(ico)   &
-                                   ,cpatch%pft(ico),cpatch%sla(ico), cpatch%lai(ico)       &
-                                   ,cpatch%wpa(ico),cpatch%wai(ico)                        &
-                                   ,cpatch%crown_area(ico),cpatch%bsapwood(ico))
+                  call area_indices(cpatch%costate%nplant(ico),cpatch%costate%bleaf(ico),cpatch%costate%bdead(ico) &
+                                   ,cpatch%costate%balive(ico),cpatch%costate%dbh(ico), cpatch%costate%hite(ico)   &
+                                   ,cpatch%costate%pft(ico),cpatch%sla(ico), cpatch%costate%lai(ico)       &
+                                   ,cpatch%costate%wpa(ico),cpatch%costate%wai(ico)                        &
+                                   ,cpatch%costate%crown_area(ico),cpatch%costate%bsapwood(ico))
                   !----- Find heat capacity and vegetation internal energy. ---------------!
-                  call calc_veg_hcap(cpatch%bleaf(ico),cpatch%bdead(ico)                   &
-                                    ,cpatch%bsapwood(ico),cpatch%nplant(ico)               &
-                                    ,cpatch%pft(ico)                                       &
+                  call calc_veg_hcap(cpatch%costate%bleaf(ico),cpatch%costate%bdead(ico)                   &
+                                    ,cpatch%costate%bsapwood(ico),cpatch%costate%nplant(ico)               &
+                                    ,cpatch%costate%pft(ico)                                       &
                                     ,cpatch%leaf_hcap(ico),cpatch%wood_hcap(ico))
 
                   cpatch%leaf_energy(ico) = cpatch%leaf_hcap(ico) * cpatch%leaf_temp(ico)
@@ -346,7 +346,7 @@ nafter = nafter + csite%repro(ipft,ipa)*csite%area(ipa)/c2n_recruit(ipft)
 
 pn2 = pn2 + csite%area(ipa) * sum(csite%repro(1:n_pft,ipa)/c2n_recruit(1:n_pft))
 do ico=1,cpatch%ncohorts
-pn2=pn2+csite%area(ipa)*cpatch%nplant(ico)*(cpatch%balive(ico)/c2n_leaf(cpatch%pft(ico))+cpatch%bdead(ico)/c2n_stem(cpatch%pft(ico))+cpatch%bstorage(ico)/c2n_storage)
+pn2=pn2+csite%area(ipa)*cpatch%costate%nplant(ico)*(cpatch%costate%balive(ico)/c2n_leaf(cpatch%costate%pft(ico))+cpatch%costate%bdead(ico)/c2n_stem(cpatch%costate%pft(ico))+cpatch%costate%bstorage(ico)/c2n_storage)
 enddo
          end do update_patch_loop
 
@@ -435,13 +435,13 @@ subroutine seed_dispersal(cpoly,late_spring)
             doncoloop1: do donco = 1, donpatch%ncohorts
 
                !----- Define an alias for PFT. --------------------------------------------!
-               donpft = donpatch%pft(donco)
+               donpft = donpatch%costate%pft(donco)
 
                !---------------------------------------------------------------------------!
                !    Find the density of survivor seedlings.  Units: seedlings/m².          !
                !---------------------------------------------------------------------------!
                if (phenology(donpft) /= 2 .or. late_spring) then
-                  nseedling   = donpatch%nplant(donco) * donpatch%bseeds(donco)            &
+                  nseedling   = donpatch%costate%nplant(donco) * donpatch%costate%bseeds(donco)            &
                               * (1.0 - seedling_mortality(donpft))
                   nseed_stays = nseedling * (1.0 - nonlocal_dispersal(donpft))
                   nseed_maygo = nseedling * nonlocal_dispersal(donpft)
@@ -507,13 +507,13 @@ subroutine seed_dispersal(cpoly,late_spring)
             doncoloop2: do donco = 1, donpatch%ncohorts
 
                !----- Define an alias for PFT. --------------------------------------------!
-               donpft = donpatch%pft(donco)
+               donpft = donpatch%costate%pft(donco)
 
                !---------------------------------------------------------------------------!
                !    Find the density of survivor seedlings.  Units: seedlings/m².          !
                !---------------------------------------------------------------------------!
                if (phenology(donpft) /= 2 .or. late_spring) then
-                  nseedling   = donpatch%nplant(donco) * donpatch%bseeds(donco)            &
+                  nseedling   = donpatch%costate%nplant(donco) * donpatch%costate%bseeds(donco)            &
                               * (1.0 - seedling_mortality(donpft))
                   nseed_stays = nseedling * (1.0 - nonlocal_dispersal(donpft))
                   nseed_maygo = nseedling * nonlocal_dispersal(donpft)

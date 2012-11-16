@@ -19,6 +19,7 @@ OBJ_MODEL =                        \
 	canopy_struct_dynamics.o   \
 	c34constants.o             \
 	charutils.o                \
+	cohort_state.o             \
 	consts_coms.o              \
 	dateutils.o                \
 	decomp_coms.o              \
@@ -57,7 +58,6 @@ OBJ_MODEL =                        \
 	ed_xml_config.o            \
 	ename_coms.o               \
 	euler_driver.o             \
-	events.o                   \
 	farq_leuning.o             \
 	fatal_error.o              \
 	fire.o                     \

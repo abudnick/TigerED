@@ -48,6 +48,11 @@ charutils.o: $(ED_UTILS)/charutils.f90
 	$(F90_COMMAND) $(<F:.f90=.f90)
 	rm -f $(<F:.f90=.f90)
 
+cohort_state.o : $(ED_MEMORY)/cohort_state.f90
+	cp -f $< $(<F:.f90=.f90)
+	$(F90_COMMAND) $(<F:.f90=.f90)
+	rm -f $(<F:.f90=.f90)
+
 consts_coms.o : $(ED_MEMORY)/consts_coms.F90
 	cp -f $< $(<F:.F90=.F90)
 	$(FPP_COMMAND) $(<F:.F90=.F90)
@@ -234,11 +239,6 @@ ename_coms.o : $(ED_MEMORY)/ename_coms.f90
 	rm -f $(<F:.f90=.f90)
 
 euler_driver.o : $(ED_DYNAMICS)/euler_driver.f90
-	cp -f $< $(<F:.f90=.f90)
-	$(F90_COMMAND) $(<F:.f90=.f90)
-	rm -f $(<F:.f90=.f90)
-
-events.o : $(ED_DYNAMICS)/events.f90
 	cp -f $< $(<F:.f90=.f90)
 	$(F90_COMMAND) $(<F:.f90=.f90)
 	rm -f $(<F:.f90=.f90)

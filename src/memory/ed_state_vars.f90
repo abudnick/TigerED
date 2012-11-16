@@ -15,13 +15,11 @@ module ed_state_vars
   use phenology_coms, only: prescribed_phen
   use ed_misc_coms, only: idoutput, imoutput, iqoutput, ndcycle
   use soil_bgc, only: sbgc_vars
+  use cohort_state, only: costate_vars
 
   implicit none
 !============================================================================!
 !============================================================================!
-
-
-
 
 
 !============================================================================!
@@ -51,92 +49,7 @@ module ed_state_vars
      ! Module 2: State variables
      !-------------------------
 
-     !================================================================
-     ! Plant functional type:
-     ! 1 - C4 grass
-     ! 2 - tropical early successional tree
-     ! 3 - tropical mid successional tree
-     ! 4 - tropical late successional tree
-     ! 5 - C3 grass
-     ! 6 - northern pines (temperate)
-     ! 7 - southern pines (temperate)
-     ! 8 - late successional conifers
-     ! 9 - early successional cold-deciduous hardwood
-     ! 10 - mid successional cold-deciduous hardwood
-     ! 11 - late successional cold-deciduous hardwood
-     ! 12 - c3 pasture
-     ! 13 - c3 crop (e.g.,wheat, rice, soybean) 
-     ! 14 - c4 pasture
-     ! 15 - c4 crop (e.g.,corn/maize)
-     ! 16 - tropical C3 grass
-     ! 17 - Araucaria (non-optim. south pine)
-     integer ,pointer,dimension(:) :: pft
-
-     ! Density of plants (number/m2)
-     real ,pointer,dimension(:) :: nplant
-
-     ! Plant height (m)
-     real ,pointer,dimension(:) :: hite
-
-     ! Basal area (cm2)
-     real, pointer, dimension(:) :: basarea
-     
-     ! Plant diameter at breast height (cm)
-     real ,pointer,dimension(:) :: dbh
-
-     ! Above-ground biomass (kgC/plant)
-     real, pointer, dimension(:) :: agb
-
-     ! Biomass of the structural wood (kgC/plant)
-     real ,pointer,dimension(:) :: bdead
-
-     ! Biomass of leaves (kgC/plant)
-     real ,pointer,dimension(:) :: bleaf
-     
-     ! Biomass of live tissue (kgC/plant)
-     real ,pointer,dimension(:) :: balive
-
-     ! Biomass of fine roots (kgC/plant)
-     real, pointer, dimension(:) :: broot
-     
-     ! Biomass of sapwood (kgC/plant)
-     real, pointer, dimension(:) :: bsapwood
-
-     ! Plant storage pool of carbon [kgC/plant]
-     real ,pointer,dimension(:) :: bstorage
-
-     ! Amount of seeds produced for dispersal [kgC/plant]
-     real ,pointer,dimension(:) :: bseeds
-
-     ! Crown area (m2 crown / m2 ground)
-     real ,pointer,dimension(:) :: crown_area
-
-     ! Leaf area index (m2 leaf / m2 ground)
-     real ,pointer,dimension(:) :: lai
-
-     ! Wood projected area (m2 wood / m2 ground)
-     real ,pointer,dimension(:) :: wpa
-
-     ! Wood area index (m2 wood / m2 ground)
-     real ,pointer,dimension(:) :: wai
-
-     ! This specifies the index of the deepest soil layer of which the 
-     ! cohort can access water.
-     integer ,pointer,dimension(:) :: krdepth
-
-     ! Logical test to check whether the cohort leaves can be resolved...
-     logical, pointer, dimension(:) :: leaf_resolvable
-     logical, pointer, dimension(:) :: wood_resolvable
-
-     ! The model reports annual growth, mortality, cut and recruitment.  
-     ! These rates are calculated with respect to two censuses.  This 
-     ! is the flag specifying if a cohort was present at the first
-     ! census.
-     integer ,pointer,dimension(:) :: first_census
-
-     ! Flag specifying if this cohort is a new recruit with respect
-     ! to the first census.
-     integer ,pointer,dimension(:) :: new_recruit_flag
+     type(costate_vars) :: costate
 
      !--------------------------
      ! Module 3: Phenology
@@ -3259,6 +3172,7 @@ contains
 !============================================================================!
   subroutine allocate_patchtype(cpatch,ncohorts)
 
+    use cohort_state, only: allocate_patchtype_state
     implicit none
 
     integer :: ncohorts
@@ -3270,28 +3184,12 @@ contains
     !----- We need to leave the subroutine in case this patch is empty. -------------------!
     if (ncohorts == 0) return
     
-    allocate(cpatch%pft(ncohorts))
-    allocate(cpatch%nplant(ncohorts))
-    allocate(cpatch%hite(ncohorts))
-    allocate(cpatch%agb(ncohorts))
-    allocate(cpatch%basarea(ncohorts))
+    call allocate_patchtype_state(cpatch%costate, ncohorts)
+
     allocate(cpatch%dagb_dt(ncohorts))
     allocate(cpatch%dba_dt(ncohorts))
     allocate(cpatch%ddbh_dt(ncohorts))
-    allocate(cpatch%dbh(ncohorts))
-    allocate(cpatch%bdead(ncohorts))
-    allocate(cpatch%bleaf(ncohorts))
     allocate(cpatch%phenology_status(ncohorts))
-    allocate(cpatch%balive(ncohorts))
-    allocate(cpatch%broot(ncohorts))
-    allocate(cpatch%bsapwood(ncohorts))
-    allocate(cpatch%lai(ncohorts))
-    allocate(cpatch%wpa(ncohorts))
-    allocate(cpatch%wai(ncohorts))
-    allocate(cpatch%crown_area(ncohorts))
-    allocate(cpatch%leaf_resolvable(ncohorts))
-    allocate(cpatch%wood_resolvable(ncohorts))
-    allocate(cpatch%bstorage(ncohorts))
     allocate(cpatch%cb(13,ncohorts))
     allocate(cpatch%cb_max(13,ncohorts))
     allocate(cpatch%cbr_bar(ncohorts))
@@ -3343,9 +3241,6 @@ contains
     allocate(cpatch%old_stoma_vector(n_stoma_atts,ncohorts))
 
     allocate(cpatch%Psi_open(ncohorts))
-    allocate(cpatch%krdepth(ncohorts))
-    allocate(cpatch%first_census(ncohorts))
-    allocate(cpatch%new_recruit_flag(ncohorts))
     allocate(cpatch%light_level(ncohorts))
     allocate(cpatch%light_level_beam(ncohorts))
     allocate(cpatch%light_level_diff(ncohorts))
@@ -3383,7 +3278,6 @@ contains
     allocate(cpatch%leaf_maintenance(ncohorts))
     allocate(cpatch%root_maintenance(ncohorts))
     allocate(cpatch%leaf_drop(ncohorts))
-    allocate(cpatch%bseeds(ncohorts))
     allocate(cpatch%leaf_respiration(ncohorts))
     allocate(cpatch%root_respiration(ncohorts))
     allocate(cpatch%gpp(ncohorts))
@@ -4433,28 +4327,10 @@ contains
 
     type(patchtype),target :: cpatch
     
-    nullify(cpatch%pft)
-    nullify(cpatch%nplant)
-    nullify(cpatch%hite)
-    nullify(cpatch%agb)
-    nullify(cpatch%basarea)
     nullify(cpatch%dagb_dt)
     nullify(cpatch%dba_dt)
     nullify(cpatch%ddbh_dt)
-    nullify(cpatch%dbh)
-    nullify(cpatch%bdead)
-    nullify(cpatch%bleaf)
     nullify(cpatch%phenology_status)
-    nullify(cpatch%balive)
-    nullify(cpatch%broot)
-    nullify(cpatch%bsapwood)
-    nullify(cpatch%lai)
-    nullify(cpatch%wpa)
-    nullify(cpatch%wai)
-    nullify(cpatch%crown_area)
-    nullify(cpatch%leaf_resolvable)
-    nullify(cpatch%wood_resolvable)
-    nullify(cpatch%bstorage)
     nullify(cpatch%cb)
     nullify(cpatch%cb_max)
     nullify(cpatch%cbr_bar)
@@ -4527,9 +4403,6 @@ contains
     nullify(cpatch%old_stoma_data)
     nullify(cpatch%old_stoma_vector)
     nullify(cpatch%Psi_open)
-    nullify(cpatch%krdepth)
-    nullify(cpatch%first_census)
-    nullify(cpatch%new_recruit_flag)
     nullify(cpatch%light_level)
     nullify(cpatch%dmean_light_level)
     nullify(cpatch%mmean_light_level)
@@ -4600,7 +4473,6 @@ contains
     nullify(cpatch%mmean_root_maintenance)
     nullify(cpatch%leaf_drop)
     nullify(cpatch%mmean_leaf_drop)
-    nullify(cpatch%bseeds)
     nullify(cpatch%leaf_respiration)
     nullify(cpatch%root_respiration)
     nullify(cpatch%gpp)
@@ -5602,34 +5474,20 @@ contains
 !============================================================================!
   subroutine deallocate_patchtype(cpatch)
 
+    use cohort_state, only: deallocate_patchtype_state
+
     implicit none
 
     type(patchtype),target :: cpatch
     
     if (cpatch%ncohorts == 0) return
     
-    if(associated(cpatch%pft))                 deallocate(cpatch%pft)
-    if(associated(cpatch%nplant))              deallocate(cpatch%nplant)
-    if(associated(cpatch%hite))                deallocate(cpatch%hite)
-    if(associated(cpatch%agb))                 deallocate(cpatch%agb)
-    if(associated(cpatch%basarea))             deallocate(cpatch%basarea)
+    call deallocate_patchtype_state(cpatch%costate)
+
     if(associated(cpatch%dagb_dt))             deallocate(cpatch%dagb_dt)
     if(associated(cpatch%dba_dt))              deallocate(cpatch%dba_dt)
     if(associated(cpatch%ddbh_dt))             deallocate(cpatch%ddbh_dt)
-    if(associated(cpatch%dbh))                 deallocate(cpatch%dbh)
-    if(associated(cpatch%bdead))               deallocate(cpatch%bdead)
-    if(associated(cpatch%bleaf))               deallocate(cpatch%bleaf)
     if(associated(cpatch%phenology_status))    deallocate(cpatch%phenology_status)
-    if(associated(cpatch%balive))              deallocate(cpatch%balive)
-    if(associated(cpatch%broot))               deallocate(cpatch%broot)
-    if(associated(cpatch%bsapwood))            deallocate(cpatch%bsapwood)
-    if(associated(cpatch%lai))                 deallocate(cpatch%lai)
-    if(associated(cpatch%wpa))                 deallocate(cpatch%wpa)
-    if(associated(cpatch%wai))                 deallocate(cpatch%wai)
-    if(associated(cpatch%crown_area))          deallocate(cpatch%crown_area)
-    if(associated(cpatch%leaf_resolvable))     deallocate(cpatch%leaf_resolvable)
-    if(associated(cpatch%wood_resolvable))     deallocate(cpatch%wood_resolvable)
-    if(associated(cpatch%bstorage))            deallocate(cpatch%bstorage)
     if(associated(cpatch%cb))                  deallocate(cpatch%cb)
     if(associated(cpatch%cb_max))              deallocate(cpatch%cb_max)
     if(associated(cpatch%cbr_bar))             deallocate(cpatch%cbr_bar)
@@ -5703,9 +5561,6 @@ contains
     if(associated(cpatch%old_stoma_data))         deallocate(cpatch%old_stoma_data)
     if(associated(cpatch%old_stoma_vector))       deallocate(cpatch%old_stoma_vector)
     if(associated(cpatch%Psi_open))               deallocate(cpatch%Psi_open)
-    if(associated(cpatch%krdepth))                deallocate(cpatch%krdepth)
-    if(associated(cpatch%first_census))           deallocate(cpatch%first_census)
-    if(associated(cpatch%new_recruit_flag))       deallocate(cpatch%new_recruit_flag)
     if(associated(cpatch%light_level))            deallocate(cpatch%light_level)
     if(associated(cpatch%dmean_light_level))      deallocate(cpatch%dmean_light_level)
     if(associated(cpatch%mmean_light_level))      deallocate(cpatch%mmean_light_level)
@@ -5776,7 +5631,6 @@ contains
     if(associated(cpatch%mmean_root_maintenance)) deallocate(cpatch%mmean_root_maintenance)
     if(associated(cpatch%leaf_drop))              deallocate(cpatch%leaf_drop)
     if(associated(cpatch%mmean_leaf_drop))        deallocate(cpatch%mmean_leaf_drop)
-    if(associated(cpatch%bseeds))                 deallocate(cpatch%bseeds)
     if(associated(cpatch%leaf_respiration))       deallocate(cpatch%leaf_respiration)
     if(associated(cpatch%root_respiration))       deallocate(cpatch%root_respiration)
     if(associated(cpatch%gpp))                    deallocate(cpatch%gpp)
@@ -6519,6 +6373,7 @@ contains
     ! DONOR PATH'S VECTOR SIZES.  DO NOT USE PRE-ALLOCATED
     ! RECIPIENTS
     
+    use cohort_state, only: copy_patchtype_mask_state
     implicit none
 
     type(patchtype),target :: patchin,patchout
@@ -6537,29 +6392,13 @@ contains
     if (inc == 0) return
 
     incmask=pack(imask,mask)   ! List of true elements
+
+    call copy_patchtype_mask_state(patchout%costate, inc, patchin%costate, mask, masksz)
     
-    patchout%pft(1:inc)              = pack(patchin%pft,mask)
-    patchout%nplant(1:inc)           = pack(patchin%nplant,mask)
-    patchout%hite(1:inc)             = pack(patchin%hite,mask)
-    patchout%agb(1:inc)              = pack(patchin%agb,mask)
-    patchout%basarea(1:inc)          = pack(patchin%basarea,mask)
     patchout%dagb_dt(1:inc)          = pack(patchin%dagb_dt,mask)
     patchout%dba_dt(1:inc)           = pack(patchin%dba_dt,mask)
     patchout%ddbh_dt(1:inc)          = pack(patchin%ddbh_dt,mask)
-    patchout%dbh(1:inc)              = pack(patchin%dbh,mask)
-    patchout%bdead(1:inc)            = pack(patchin%bdead,mask)
-    patchout%bleaf(1:inc)            = pack(patchin%bleaf,mask)
     patchout%phenology_status(1:inc) = pack(patchin%phenology_status,mask)
-    patchout%balive(1:inc)           = pack(patchin%balive,mask)
-    patchout%broot(1:inc)            = pack(patchin%broot,mask)
-    patchout%bsapwood(1:inc)         = pack(patchin%bsapwood,mask)
-    patchout%lai(1:inc)              = pack(patchin%lai,mask)
-    patchout%wpa(1:inc)              = pack(patchin%wpa,mask)
-    patchout%wai(1:inc)              = pack(patchin%wai,mask)
-    patchout%crown_area(1:inc)       = pack(patchin%crown_area,mask)
-    patchout%leaf_resolvable(1:inc)  = pack(patchin%leaf_resolvable,mask)
-    patchout%wood_resolvable(1:inc)  = pack(patchin%wood_resolvable,mask)
-    patchout%bstorage(1:inc)         = pack(patchin%bstorage,mask)
     patchout%cbr_bar(1:inc)          = pack(patchin%cbr_bar,mask)
     patchout%leaf_energy(1:inc)      = pack(patchin%leaf_energy,mask)
     patchout%leaf_hcap(1:inc)        = pack(patchin%leaf_hcap,mask)
@@ -6604,9 +6443,6 @@ contains
     patchout%monthly_dndt(1:inc)     = pack(patchin%monthly_dndt,mask)
     
     patchout%Psi_open(1:inc)         = pack(patchin%Psi_open,mask)
-    patchout%krdepth(1:inc)          = pack(patchin%krdepth,mask)
-    patchout%first_census(1:inc)     = pack(patchin%first_census,mask)
-    patchout%new_recruit_flag(1:inc) = pack(patchin%new_recruit_flag,mask)
     patchout%light_level(1:inc)      = pack(patchin%light_level,mask)
     patchout%light_level_beam(1:inc) = pack(patchin%light_level_beam,mask)
     patchout%light_level_diff(1:inc) = pack(patchin%light_level_diff,mask)
@@ -6644,7 +6480,6 @@ contains
     patchout%leaf_maintenance(1:inc) = pack(patchin%leaf_maintenance,mask)
     patchout%root_maintenance(1:inc) = pack(patchin%root_maintenance,mask)
     patchout%leaf_drop(1:inc)        = pack(patchin%leaf_drop,mask)
-    patchout%bseeds(1:inc)           = pack(patchin%bseeds,mask)
     patchout%leaf_respiration(1:inc) = pack(patchin%leaf_respiration,mask)
     patchout%root_respiration(1:inc) = pack(patchin%root_respiration,mask)
     patchout%gpp(1:inc)              = pack(patchin%gpp,mask)
@@ -6793,7 +6628,7 @@ contains
 !============================================================================!
 !============================================================================!
   subroutine copy_patchtype(patchin,patchout,ipin1,ipin2,ipout1,ipout2)
-
+    use cohort_state, only: copy_patchtype_state
     implicit none
     integer :: ipin1,ipin2,ipout1,ipout2
     type(patchtype),target :: patchin,patchout
@@ -6811,31 +6646,15 @@ contains
     ! Copy the stoma data. Added the loop back here because sometimes ipin1 < ipin2
     ! for example, when ncohorts=0
 
+    call copy_patchtype_state(patchin%costate,patchout%costate,ipin1,ipin2,ipout1,ipout2)
+
     iin = ipin1
     do iout=ipout1,ipout2
 
-       patchout%pft(iout)              = patchin%pft(iin)
-       patchout%nplant(iout)           = patchin%nplant(iin)
-       patchout%hite(iout)             = patchin%hite(iin)
-       patchout%agb(iout)              = patchin%agb(iin)
-       patchout%basarea(iout)          = patchin%basarea(iin)
        patchout%dagb_dt(iout)          = patchin%dagb_dt(iin)
        patchout%dba_dt(iout)           = patchin%dba_dt(iin)
        patchout%ddbh_dt(iout)          = patchin%ddbh_dt(iin)
-       patchout%dbh(iout)              = patchin%dbh(iin)
-       patchout%bdead(iout)            = patchin%bdead(iin)
-       patchout%bleaf(iout)            = patchin%bleaf(iin)
        patchout%phenology_status(iout) = patchin%phenology_status(iin)
-       patchout%balive(iout)           = patchin%balive(iin)
-       patchout%broot(iout)            = patchin%broot(iin)
-       patchout%bsapwood(iout)         = patchin%bsapwood(iin)
-       patchout%lai(iout)              = patchin%lai(iin)
-       patchout%wpa(iout)              = patchin%wpa(iin)
-       patchout%wai(iout)              = patchin%wai(iin)
-       patchout%crown_area(iout)       = patchin%crown_area(iin)
-       patchout%leaf_resolvable(iout)  = patchin%leaf_resolvable(iin)
-       patchout%wood_resolvable(iout)  = patchin%wood_resolvable(iin)
-       patchout%bstorage(iout)         = patchin%bstorage(iin)
        patchout%cb(:,iout)             = patchin%cb(:,iin)
        patchout%cb_max(:,iout)         = patchin%cb_max(:,iin)
        patchout%cbr_bar(iout)          = patchin%cbr_bar(iin)
@@ -6883,9 +6702,6 @@ contains
        patchout%mort_rate(:,iout)       = patchin%mort_rate(:,iin)
     
        patchout%Psi_open(iout)         = patchin%Psi_open(iin)
-       patchout%krdepth(iout)          = patchin%krdepth(iin)
-       patchout%first_census(iout)     = patchin%first_census(iin)
-       patchout%new_recruit_flag(iout) = patchin%new_recruit_flag(iin)
        patchout%light_level(iout)      = patchin%light_level(iin)
        patchout%light_level_beam(iout) = patchin%light_level_beam(iin)
        patchout%light_level_diff(iout) = patchin%light_level_diff(iin)
@@ -6923,7 +6739,6 @@ contains
        patchout%leaf_maintenance(iout) = patchin%leaf_maintenance(iin)
        patchout%root_maintenance(iout) = patchin%root_maintenance(iin)
        patchout%leaf_drop(iout)        = patchin%leaf_drop(iin)
-       patchout%bseeds(iout)           = patchin%bseeds(iin)
        patchout%leaf_respiration(iout) = patchin%leaf_respiration(iin)
        patchout%root_respiration(iout) = patchin%root_respiration(iin)
        patchout%gpp(iout)              = patchin%gpp(iin)
@@ -13229,6 +13044,7 @@ contains
                               , vtable_edio_i & ! sub-routine
                               , metadata_edio ! ! sub-routine
 
+      use cohort_state, only: filltab_patchtype_state
       implicit none
       !----- Arguments. -------------------------------------------------------------------!
       integer          , intent(in) :: init
@@ -13318,12 +13134,8 @@ contains
       !------------------------------------------------------------------------------------!
       npts = cpatch%ncohorts
 
-      if (associated(cpatch%pft)) then
-         nvar=nvar+1
-           call vtable_edio_i(npts,cpatch%pft,nvar,igr,init,cpatch%coglob_id, &
-           var_len,var_len_global,max_ptrs,'PFT :40:hist:anal:dail:mont:dcyc:year') 
-         call metadata_edio(nvar,igr,'Plant Functional Type','[-]','NA') 
-      end if
+      call filltab_patchtype_state(nvar, npts, cpatch%costate, igr, init, cpatch%coglob_id, &
+           var_len, var_len_global, max_ptrs)
 
 
       if (associated(cpatch%phenology_status)) then
@@ -13333,55 +13145,6 @@ contains
          call metadata_edio(nvar,igr,'No metadata available','[NA]','NA') 
       end if
 
-      if (associated(cpatch%krdepth)) then
-         nvar=nvar+1
-           call vtable_edio_i(npts,cpatch%krdepth,nvar,igr,init,cpatch%coglob_id, &
-           var_len,var_len_global,max_ptrs,'KRDEPTH :40:hist:anal') 
-         call metadata_edio(nvar,igr,'No metadata available','[NA]','NA') 
-      end if
-
-      if (associated(cpatch%first_census)) then
-         nvar=nvar+1
-           call vtable_edio_i(npts,cpatch%first_census,nvar,igr,init,cpatch%coglob_id, &
-           var_len,var_len_global,max_ptrs,'FIRST_CENSUS :40:hist') 
-         call metadata_edio(nvar,igr,'No metadata available','[NA]','NA') 
-      end if
-
-      if (associated(cpatch%new_recruit_flag)) then
-         nvar=nvar+1
-           call vtable_edio_i(npts,cpatch%new_recruit_flag,nvar,igr,init,cpatch%coglob_id, &
-           var_len,var_len_global,max_ptrs,'NEW_RECRUIT_FLAG :40:hist') 
-         call metadata_edio(nvar,igr,'No metadata available','[NA]','NA') 
-      end if
-
-
-      if (associated(cpatch%nplant)) then
-         nvar=nvar+1
-           call vtable_edio_r(npts,cpatch%nplant,nvar,igr,init,cpatch%coglob_id, &
-           var_len,var_len_global,max_ptrs,'NPLANT :41:hist:anal:dail:mont:dcyc:year') 
-         call metadata_edio(nvar,igr,'Plant density','[plant/m2]','NA') 
-      end if
-
-      if (associated(cpatch%hite)) then
-         nvar=nvar+1
-           call vtable_edio_r(npts,cpatch%hite,nvar,igr,init,cpatch%coglob_id, &
-           var_len,var_len_global,max_ptrs,'HITE :41:hist:anal:dail:mont:dcyc:year') 
-         call metadata_edio(nvar,igr,'No metadata available','[NA]','NA') 
-      end if
-
-      if (associated(cpatch%agb)) then
-         nvar=nvar+1
-           call vtable_edio_r(npts,cpatch%agb,nvar,igr,init,cpatch%coglob_id, &
-           var_len,var_len_global,max_ptrs,'AGB_CO :41:hist:anal:dail:mont:dcyc:year') 
-         call metadata_edio(nvar,igr,'Above-ground biomass','[kgC/plant]','icohort') 
-      end if
-
-      if (associated(cpatch%basarea)) then
-         nvar=nvar+1
-           call vtable_edio_r(npts,cpatch%basarea,nvar,igr,init,cpatch%coglob_id, &
-           var_len,var_len_global,max_ptrs,'BA_CO :41:hist:anal:dail:mont:dcyc:year') 
-         call metadata_edio(nvar,igr,'Basal-area','[cm2]','icohort') 
-      end if
 
       if (associated(cpatch%dagb_dt)) then
          nvar=nvar+1
@@ -13402,83 +13165,6 @@ contains
            call vtable_edio_r(npts,cpatch%ddbh_dt,nvar,igr,init,cpatch%coglob_id, &
            var_len,var_len_global,max_ptrs,'DDBH_DT :41:hist:mont:dcyc:year') 
          call metadata_edio(nvar,igr,'DBH growth','[cm/plant/yr]','icohort') 
-      end if
-
-      if (associated(cpatch%dbh)) then
-         nvar=nvar+1
-           call vtable_edio_r(npts,cpatch%dbh,nvar,igr,init,cpatch%coglob_id, &
-           var_len,var_len_global,max_ptrs,'DBH :41:hist:anal:year:dail:mont:dcyc') 
-         call metadata_edio(nvar,igr,'Diameter at breast height','[cm]','icohort') 
-      end if
-
-      if (associated(cpatch%bdead)) then
-         nvar=nvar+1
-           call vtable_edio_r(npts,cpatch%bdead,nvar,igr,init,cpatch%coglob_id, &
-           var_len,var_len_global,max_ptrs,'BDEAD :41:hist:mont:anal:dail:year:dcyc') 
-         call metadata_edio(nvar,igr,'No metadata available','[NA]','NA') 
-      end if
-
-      if (associated(cpatch%bleaf)) then
-         nvar=nvar+1
-           call vtable_edio_r(npts,cpatch%bleaf,nvar,igr,init,cpatch%coglob_id, &
-           var_len,var_len_global,max_ptrs,'BLEAF :41:hist:year:anal:dail:mont:dcyc') 
-         call metadata_edio(nvar,igr,'No metadata available','[NA]','NA') 
-      end if
-
-      if (associated(cpatch%balive)) then
-         nvar=nvar+1
-           call vtable_edio_r(npts,cpatch%balive,nvar,igr,init,cpatch%coglob_id, &
-           var_len,var_len_global,max_ptrs,'BALIVE :41:hist:year:dail:anal:mont:dcyc') 
-         call metadata_edio(nvar,igr,'No metadata available','[NA]','NA') 
-      end if
-
-      if (associated(cpatch%broot)) then
-         nvar=nvar+1
-           call vtable_edio_r(npts,cpatch%broot,nvar,igr,init,cpatch%coglob_id, &
-           var_len,var_len_global,max_ptrs,'BROOT :41:hist:year:dail:anal:mont:dcyc') 
-         call metadata_edio(nvar,igr,'No metadata available','[NA]','NA') 
-      end if
-
-      if (associated(cpatch%bsapwood)) then
-         nvar=nvar+1
-           call vtable_edio_r(npts,cpatch%bsapwood,nvar,igr,init,cpatch%coglob_id, &
-           var_len,var_len_global,max_ptrs,'BSAPWOOD :41:hist:year:dail:anal:mont:dcyc') 
-         call metadata_edio(nvar,igr,'No metadata available','[NA]','NA') 
-      end if
-
-      if (associated(cpatch%lai)) then
-         nvar=nvar+1
-           call vtable_edio_r(npts,cpatch%lai,nvar,igr,init,cpatch%coglob_id, &
-           var_len,var_len_global,max_ptrs,'LAI_CO :41:hist:dail:anal:mont:year:dcyc') 
-         call metadata_edio(nvar,igr,'No metadata available','[NA]','NA') 
-      end if
-
-      if (associated(cpatch%wpa)) then
-         nvar=nvar+1
-           call vtable_edio_r(npts,cpatch%wpa,nvar,igr,init,cpatch%coglob_id, &
-           var_len,var_len_global,max_ptrs,'WPA_CO :41:hist:dail:anal:mont:year:dcyc') 
-         call metadata_edio(nvar,igr,'No metadata available','[NA]','NA') 
-      end if
-
-      if (associated(cpatch%wai)) then
-         nvar=nvar+1
-           call vtable_edio_r(npts,cpatch%wai,nvar,igr,init,cpatch%coglob_id, &
-           var_len,var_len_global,max_ptrs,'WAI_CO :41:hist:dail:anal:mont:year:dcyc') 
-         call metadata_edio(nvar,igr,'No metadata available','[NA]','NA') 
-      end if
-
-      if (associated(cpatch%crown_area)) then
-         nvar=nvar+1
-           call vtable_edio_r(npts,cpatch%crown_area,nvar,igr,init,cpatch%coglob_id, &
-           var_len,var_len_global,max_ptrs,'CROWN_AREA_CO :41:hist:dail:anal:mont:year:dcyc') 
-         call metadata_edio(nvar,igr,'No metadata available','[NA]','NA') 
-      end if
-
-      if (associated(cpatch%bstorage)) then
-         nvar=nvar+1
-           call vtable_edio_r(npts,cpatch%bstorage,nvar,igr,init,cpatch%coglob_id, &
-           var_len,var_len_global,max_ptrs,'BSTORAGE :41:hist:year:anal:dail:mont:dcyc') 
-         call metadata_edio(nvar,igr,'No metadata available','[NA]','NA') 
       end if
 
       if (associated(cpatch%cbr_bar)) then
@@ -14422,12 +14108,6 @@ contains
          call metadata_edio(nvar,igr,'No metadata available','[NA]','NA') 
       end if
 
-      if (associated(cpatch%bseeds)) then
-         nvar=nvar+1
-           call vtable_edio_r(npts,cpatch%bseeds,nvar,igr,init,cpatch%coglob_id, &
-           var_len,var_len_global,max_ptrs,'BSEEDS_CO :41:hist:dail:mont:dcyc') 
-         call metadata_edio(nvar,igr,'No metadata available','[NA]','NA') 
-      end if
 
       if (associated(cpatch%leaf_respiration)) then
          nvar=nvar+1

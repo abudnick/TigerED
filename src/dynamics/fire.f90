@@ -76,10 +76,10 @@ subroutine fire_frequency(month, cgrid)
             ! be defined as the above-ground biomass per unit area.                        !
             !------------------------------------------------------------------------------!
             cohortloop: do ico = 1,cpatch%ncohorts
-               babove = ed_biomass(cpatch%bdead(ico),cpatch%balive(ico),cpatch%bleaf(ico)  &
-                                  ,cpatch%pft(ico),cpatch%hite(ico),cpatch%bstorage(ico)   &
-                                  ,cpatch%bsapwood(ico))                                   &
-                      * cpatch%nplant(ico)
+               babove = ed_biomass(cpatch%costate%bdead(ico),cpatch%costate%balive(ico),cpatch%costate%bleaf(ico)  &
+                                  ,cpatch%costate%pft(ico),cpatch%costate%hite(ico),cpatch%costate%bstorage(ico)   &
+                                  ,cpatch%costate%bsapwood(ico))                                   &
+                      * cpatch%costate%nplant(ico)
                fuel   = fuel + babove
             end do cohortloop
 

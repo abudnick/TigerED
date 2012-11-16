@@ -156,13 +156,13 @@ module ed_therm_lib
          cpatch%leaf_energy(ico) = 0.
          cpatch%leaf_water(ico)  = 0.
          cpatch%leaf_fliq(ico)   = 0.
-         if (cpatch%hite(ico) > csite%total_sfcw_depth(ipa)) then
+         if (cpatch%costate%hite(ico) > csite%total_sfcw_depth(ipa)) then
             !----- Plant is exposed, set temperature to the canopy temperature. -----------!
             cpatch%leaf_temp(ico) = csite%can_temp(ipa)
          else
             !----- Find the snow layer that is the closest to where the leaves would be. --!
             do k = csite%nlev_sfcwater(ipa), 1, -1
-               if (sum(csite%sfcwater_depth(1:k,ipa)) > cpatch%hite(ico)) then
+               if (sum(csite%sfcwater_depth(1:k,ipa)) > cpatch%costate%hite(ico)) then
                   kclosest = k
                end if
             end do
@@ -224,13 +224,13 @@ module ed_therm_lib
          cpatch%wood_energy(ico) = 0.
          cpatch%wood_water(ico)  = 0.
          cpatch%wood_fliq(ico)   = 0.
-         if (cpatch%hite(ico) > csite%total_sfcw_depth(ipa)) then
+         if (cpatch%costate%hite(ico) > csite%total_sfcw_depth(ipa)) then
             !----- Plant is exposed, set temperature to the canopy temperature. -----------!
             cpatch%wood_temp(ico) = csite%can_temp(ipa)
          else
             !----- Find the snow layer that is the closest to where the leaves would be. --!
             do k = csite%nlev_sfcwater(ipa), 1, -1
-               if (sum(csite%sfcwater_depth(1:k,ipa)) > cpatch%hite(ico)) then
+               if (sum(csite%sfcwater_depth(1:k,ipa)) > cpatch%costate%hite(ico)) then
                   kclosest = k
                end if
             end do

@@ -95,9 +95,9 @@ subroutine update_paw(csite, ipa)
   do ico = 1, cpatch%ncohorts
      cpatch%paw_avg(ico) = 0.0
      do k = 1, 10
-        cpatch%paw_avg(ico) = cpatch%paw_avg(ico) + 0.1 * csite%past_paw(cpatch%krdepth(ico),k,ipa)
+        cpatch%paw_avg(ico) = cpatch%paw_avg(ico) + 0.1 * csite%past_paw(cpatch%costate%krdepth(ico),k,ipa)
      enddo
-!print*,ipa,ico,cpatch%krdepth(ico),cpatch%paw_avg(ico)
+!print*,ipa,ico,cpatch%costate%krdepth(ico),cpatch%paw_avg(ico)
   enddo
 
   return
@@ -262,9 +262,9 @@ subroutine update_phenology(doy, cpoly, isi, lat)
                                ,leaf_out_cold,theta,cpoly%lsl(isi))
 
       cohortloop: do ico = 1,cpatch%ncohorts
-         ipft    = cpatch%pft(ico)
-         kroot   = cpatch%krdepth(ico)
-         salloci = 1. / (1.0 + qsw(ipft) * cpatch%hite(ico) + q(ipft))
+         ipft    = cpatch%costate%pft(ico)
+         kroot   = cpatch%costate%krdepth(ico)
+         salloci = 1. / (1.0 + qsw(ipft) * cpatch%costate%hite(ico) + q(ipft))
          
          !----- Initially, we assume all leaves stay. -------------------------------------!
          cpatch%leaf_drop(ico) = 0.0
@@ -277,8 +277,8 @@ subroutine update_phenology(doy, cpoly, isi, lat)
          case (1)
             !----- Get cohort-specific thresholds for prescribed phenology. ---------------!
             call assign_prescribed_phen(cpoly%green_leaf_factor(ipft,isi)                  &
-                                       ,cpoly%leaf_aging_factor(ipft,isi),cpatch%dbh(ico)  &
-                                       ,cpatch%hite(ico),ipft,drop_cold,leaf_out_cold      &
+                                       ,cpoly%leaf_aging_factor(ipft,isi),cpatch%costate%dbh(ico)  &
+                                       ,cpatch%costate%hite(ico),ipft,drop_cold,leaf_out_cold      &
                                        ,bl_max)
          case default
             !----- Drop_cold is computed in phenology_thresholds for Botta scheme. --------!
@@ -321,31 +321,31 @@ subroutine update_phenology(doy, cpoly, isi, lat)
                if (cpatch%phenology_status(ico) < 2) then
                   !----- Update litter pools. ---------------------------------------------!
                   cpatch%leaf_drop(ico) = (1.0 - retained_carbon_fraction)                 &
-                                        * cpatch%lai(ico) / cpatch%sla(ico)                &
-                                        / cpatch%nplant(ico)
+                                        * cpatch%costate%lai(ico) / cpatch%sla(ico)                &
+                                        / cpatch%costate%nplant(ico)
 
                   csite%fsc_in(ipa) = csite%fsc_in(ipa)                                    &
-                                    + cpatch%nplant(ico) * cpatch%leaf_drop(ico)           &
+                                    + cpatch%costate%nplant(ico) * cpatch%leaf_drop(ico)           &
                                     * f_labile(ipft)
                   csite%fsn_in(ipa) = csite%fsn_in(ipa)                                    &
-                                    + cpatch%nplant(ico) * cpatch%leaf_drop(ico)           &
+                                    + cpatch%costate%nplant(ico) * cpatch%leaf_drop(ico)           &
                                     * f_labile(ipft) / c2n_leaf(ipft)
                   csite%ssc_in(ipa) = csite%ssc_in(ipa) + cpatch%leaf_drop(ico)            &
                                     * (1.0 - f_labile(ipft))
                   csite%ssl_in(ipa) = csite%ssl_in(ipa)                                    &
-                                    + cpatch%nplant(ico) * cpatch%leaf_drop(ico)           &
+                                    + cpatch%costate%nplant(ico) * cpatch%leaf_drop(ico)           &
                                     * (1.0 - f_labile(ipft)) * l2n_stem / c2n_stem(ipft)
 
                   csite%fsp_in(ipa) = csite%fsp_in(ipa)                                    &
-                                    + cpatch%nplant(ico) * cpatch%leaf_drop(ico)           &
+                                    + cpatch%costate%nplant(ico) * cpatch%leaf_drop(ico)           &
                                     * f_labile(ipft) / c2p_alive(ipft)
                   csite%stsp_in(ipa) = csite%stsp_in(ipa) + cpatch%leaf_drop(ico)            &
                                     * (1.0 - f_labile(ipft)) / c2p_dead(ipft)
                   
                   !----- Update plant carbon pools. ---------------------------------------!
-                  cpatch%balive(ico)   = cpatch%balive(ico) - cpatch%bleaf(ico)
+                  cpatch%costate%balive(ico)   = cpatch%costate%balive(ico) - cpatch%costate%bleaf(ico)
 
-                  cpatch%bstorage(ico) = cpatch%bstorage(ico) + cpatch%bleaf(ico)          &
+                  cpatch%costate%bstorage(ico) = cpatch%costate%bstorage(ico) + cpatch%costate%bleaf(ico)          &
                                        * retained_carbon_fraction
 
                   !------------------------------------------------------------------------!
@@ -353,17 +353,17 @@ subroutine update_phenology(doy, cpoly, isi, lat)
                   ! different.                                                             !
                   !------------------------------------------------------------------------!
                   csite%fsn_in(ipa)            = csite%fsn_in(ipa)                         &
-                                               + cpatch%bleaf(ico) * cpatch%nplant(ico)    &
+                                               + cpatch%costate%bleaf(ico) * cpatch%costate%nplant(ico)    &
                                                * retained_carbon_fraction                  &
                                                * (1.0 / c2n_leaf(ipft) - 1.0 / c2n_storage)
 
 
                   csite%fsp_in(ipa) = csite%fsp_in(ipa)                         &
-                       + cpatch%bleaf(ico) * cpatch%nplant(ico)    &
+                       + cpatch%costate%bleaf(ico) * cpatch%costate%nplant(ico)    &
                        * retained_carbon_fraction                  &
                        * (1.0 / c2p_alive(ipft) - 1.0 / c2p_storage(ipft))
 
-                  cpatch%bleaf(ico)            = 0.0
+                  cpatch%costate%bleaf(ico)            = 0.0
                   cpatch%phenology_status(ico) = 2
                   cpatch%elongf(ico)           = 0.
                   cpatch%cb(13,ico)            = cpatch%cb(13,ico)                         &
@@ -396,7 +396,7 @@ subroutine update_phenology(doy, cpoly, isi, lat)
                    bl_max = 0.0
                end if
                
-               delta_bleaf = cpatch%bleaf(ico) - bl_max
+               delta_bleaf = cpatch%costate%bleaf(ico) - bl_max
 
                if (delta_bleaf > 0.0) then
                   !------------------------------------------------------------------------!
@@ -406,28 +406,28 @@ subroutine update_phenology(doy, cpoly, isi, lat)
                   cpatch%phenology_status(ico) = -1
                   cpatch%leaf_drop(ico) = (1.0 - retained_carbon_fraction) * delta_bleaf
                   csite%fsc_in(ipa) = csite%fsc_in(ipa)                                    &
-                                    + cpatch%nplant(ico) * cpatch%leaf_drop(ico)           &
+                                    + cpatch%costate%nplant(ico) * cpatch%leaf_drop(ico)           &
                                     * f_labile(ipft)
                   csite%fsn_in(ipa) = csite%fsn_in(ipa)                                    &
-                                    + cpatch%nplant(ico) * cpatch%leaf_drop(ico)           &
+                                    + cpatch%costate%nplant(ico) * cpatch%leaf_drop(ico)           &
                                     * f_labile(ipft) / c2n_leaf(ipft)
                   csite%ssc_in(ipa) = csite%ssc_in(ipa)                                    &
-                                    + cpatch%nplant(ico) * cpatch%leaf_drop(ico)           &
+                                    + cpatch%costate%nplant(ico) * cpatch%leaf_drop(ico)           &
                                     * (1.0 - f_labile(ipft))
                   csite%ssl_in(ipa) = csite%ssl_in(ipa)                                    &
-                                    + cpatch%nplant(ico) * cpatch%leaf_drop(ico)           &
+                                    + cpatch%costate%nplant(ico) * cpatch%leaf_drop(ico)           &
                                     * (1.0 - f_labile(ipft)) * l2n_stem / c2n_stem(ipft)
                   
                   csite%fsp_in(ipa) = csite%fsp_in(ipa)                                    &
-                                    + cpatch%nplant(ico) * cpatch%leaf_drop(ico)           &
+                                    + cpatch%costate%nplant(ico) * cpatch%leaf_drop(ico)           &
                                     * f_labile(ipft) / c2p_alive(ipft)
                   csite%stsp_in(ipa) = csite%stsp_in(ipa)                                    &
-                                    + cpatch%nplant(ico) * cpatch%leaf_drop(ico)           &
+                                    + cpatch%costate%nplant(ico) * cpatch%leaf_drop(ico)           &
                                     * (1.0 - f_labile(ipft)) / c2p_dead(ipft)
 
                   !----- Adjust plant carbon pools. ---------------------------------------!
-                  cpatch%balive(ico)   = cpatch%balive(ico) - delta_bleaf
-                  cpatch%bstorage(ico) = cpatch%bstorage(ico)                              &
+                  cpatch%costate%balive(ico)   = cpatch%costate%balive(ico) - delta_bleaf
+                  cpatch%costate%bstorage(ico) = cpatch%costate%bstorage(ico)                              &
                                        + retained_carbon_fraction * delta_bleaf
 
                   !------------------------------------------------------------------------!
@@ -435,16 +435,16 @@ subroutine update_phenology(doy, cpoly, isi, lat)
                   ! different.                                                             !
                   !------------------------------------------------------------------------!
                   csite%fsn_in(ipa)     = csite%fsn_in(ipa)                                &
-                                        + delta_bleaf * cpatch%nplant(ico)                 &
+                                        + delta_bleaf * cpatch%costate%nplant(ico)                 &
                                         * retained_carbon_fraction                         &
                                         * (1.0 / c2n_leaf(ipft) - 1.0/c2n_storage)
 
 
                   csite%fsp_in(ipa)     = csite%fsp_in(ipa)                                &
-                                        + delta_bleaf * cpatch%nplant(ico)                 &
+                                        + delta_bleaf * cpatch%costate%nplant(ico)                 &
                                         * retained_carbon_fraction                         &
                                         * (1.0 / c2p_alive(ipft) - 1.0/c2p_storage(ipft))
-                  cpatch%bleaf(ico)     = bl_max
+                  cpatch%costate%bleaf(ico)     = bl_max
                   cpatch%cb(13,ico)     = cpatch%cb(13,ico) - cpatch%leaf_drop(ico)
                   cpatch%cb_max(13,ico) = cpatch%cb_max(13,ico) - cpatch%leaf_drop(ico)
                end if
@@ -477,58 +477,58 @@ subroutine update_phenology(doy, cpoly, isi, lat)
             !    moist conditions. Given this situation, leaves can start growing again.   !
             !------------------------------------------------------------------------------!
             cpatch%elongf(ico) = max(0.0, min (1.0, cpatch%paw_avg(ico)/theta_crit))
-            bl_max             = cpatch%elongf(ico) * dbh2bl(cpatch%dbh(ico),ipft)
+            bl_max             = cpatch%elongf(ico) * dbh2bl(cpatch%costate%dbh(ico),ipft)
 !print*,ico,cpatch%elongf(ico),cpatch%paw_avg(ico)               
             !----- In case it is too dry, drop all the leaves... --------------------------!
             if (cpatch%elongf(ico) < elongf_min) then
                bl_max = 0.0
             end if
             
-            delta_bleaf = cpatch%bleaf(ico) - bl_max
+            delta_bleaf = cpatch%costate%bleaf(ico) - bl_max
 
             if (delta_bleaf > 0.0 .and. cpatch%phenology_status(ico) < 2) then
                cpatch%phenology_status(ico) = -1 
                cpatch%leaf_drop(ico) = (1.0 - retained_carbon_fraction) * delta_bleaf
                csite%fsc_in(ipa) = csite%fsc_in(ipa)                                       &
-                                 + cpatch%nplant(ico) * cpatch%leaf_drop(ico)              &
+                                 + cpatch%costate%nplant(ico) * cpatch%leaf_drop(ico)              &
                                  * f_labile(ipft)
                csite%fsn_in(ipa) = csite%fsn_in(ipa)                                       &
-                                 + cpatch%nplant(ico) * cpatch%leaf_drop(ico)              &
+                                 + cpatch%costate%nplant(ico) * cpatch%leaf_drop(ico)              &
                                  * f_labile(ipft) / c2n_leaf(ipft)
                csite%ssc_in(ipa) = csite%ssc_in(ipa)                                       &
-                                 + cpatch%nplant(ico) * cpatch%leaf_drop(ico)              &
+                                 + cpatch%costate%nplant(ico) * cpatch%leaf_drop(ico)              &
                                  * (1.0-f_labile(ipft))
                csite%ssl_in(ipa) = csite%ssl_in(ipa)                                       &
-                                 + cpatch%nplant(ico) * cpatch%leaf_drop(ico)              &
+                                 + cpatch%costate%nplant(ico) * cpatch%leaf_drop(ico)              &
                                  * (1.0 - f_labile(ipft)) * l2n_stem / c2n_stem(ipft)
 
                csite%fsp_in(ipa) = csite%fsp_in(ipa)                                       &
-                                 + cpatch%nplant(ico) * cpatch%leaf_drop(ico)              &
+                                 + cpatch%costate%nplant(ico) * cpatch%leaf_drop(ico)              &
                                  * f_labile(ipft) / c2p_alive(ipft)
                csite%stsp_in(ipa) = csite%stsp_in(ipa)                                       &
-                                 + cpatch%nplant(ico) * cpatch%leaf_drop(ico)              &
+                                 + cpatch%costate%nplant(ico) * cpatch%leaf_drop(ico)              &
                                  * (1.0-f_labile(ipft)) / c2p_dead(ipft)
 
 
                !----- Adjust plant carbon pools. ------------------------------------------!
-               cpatch%balive(ico)   = cpatch%balive(ico) - delta_bleaf
-               cpatch%bstorage(ico) = cpatch%bstorage(ico) + retained_carbon_fraction      &
+               cpatch%costate%balive(ico)   = cpatch%costate%balive(ico) - delta_bleaf
+               cpatch%costate%bstorage(ico) = cpatch%costate%bstorage(ico) + retained_carbon_fraction      &
                                     * delta_bleaf
                !---------------------------------------------------------------------------!
                !     Contribution due to the fact that c2n_leaf and c2n_storage may be     !
                ! different.                                                                !
                !---------------------------------------------------------------------------!
-               csite%fsn_in(ipa)     = csite%fsn_in(ipa) + delta_bleaf*cpatch%nplant(ico)  &
+               csite%fsn_in(ipa)     = csite%fsn_in(ipa) + delta_bleaf*cpatch%costate%nplant(ico)  &
                                      * retained_carbon_fraction                            &
                                      * (1.0 / c2n_leaf(ipft) - 1.0/c2n_storage)
 
-               csite%fsp_in(ipa)     = csite%fsp_in(ipa) + delta_bleaf*cpatch%nplant(ico)  &
+               csite%fsp_in(ipa)     = csite%fsp_in(ipa) + delta_bleaf*cpatch%costate%nplant(ico)  &
                                      * retained_carbon_fraction                            &
                                      * (1.0 / c2p_alive(ipft) - 1.0/c2p_storage(ipft))
                
-               cpatch%bleaf(ico)     = bl_max
+               cpatch%costate%bleaf(ico)     = bl_max
                
-               if (cpatch%bleaf(ico) == 0.0) then
+               if (cpatch%costate%bleaf(ico) == 0.0) then
                   !----- No leaves. -------------------------------------------------------!
                   cpatch%phenology_status(ico) = 2
                   cpatch%elongf(ico) = 0.
@@ -549,17 +549,17 @@ subroutine update_phenology(doy, cpoly, isi, lat)
          !---------------------------------------------------------------------------------!
 
          !----- Update LAI, WPA, and WAI accordingly. -------------------------------------!
-         call area_indices(cpatch%nplant(ico),cpatch%bleaf(ico),cpatch%bdead(ico)          &
-                          ,cpatch%balive(ico),cpatch%dbh(ico),cpatch%hite(ico)             &
-                          ,cpatch%pft(ico),cpatch%sla(ico),cpatch%lai(ico)                 &
-                          ,cpatch%wpa(ico),cpatch%wai(ico),cpatch%crown_area(ico)          &
-                          ,cpatch%bsapwood(ico))
+         call area_indices(cpatch%costate%nplant(ico),cpatch%costate%bleaf(ico),cpatch%costate%bdead(ico)          &
+                          ,cpatch%costate%balive(ico),cpatch%costate%dbh(ico),cpatch%costate%hite(ico)             &
+                          ,cpatch%costate%pft(ico),cpatch%sla(ico),cpatch%costate%lai(ico)                 &
+                          ,cpatch%costate%wpa(ico),cpatch%costate%wai(ico),cpatch%costate%crown_area(ico)          &
+                          ,cpatch%costate%bsapwood(ico))
 
          !----- Update above-ground biomass. ----------------------------------------------!
-         cpatch%agb(ico) = ed_biomass(cpatch%bdead(ico),cpatch%balive(ico)                 &
-                                     ,cpatch%bleaf(ico),cpatch%pft(ico)                    &
-                                     ,cpatch%hite(ico) ,cpatch%bstorage(ico)               &
-                                     ,cpatch%bsapwood(ico)) 
+         cpatch%costate%agb(ico) = ed_biomass(cpatch%costate%bdead(ico),cpatch%costate%balive(ico)                 &
+                                     ,cpatch%costate%bleaf(ico),cpatch%costate%pft(ico)                    &
+                                     ,cpatch%costate%hite(ico) ,cpatch%costate%bstorage(ico)               &
+                                     ,cpatch%costate%bsapwood(ico)) 
 
          !---------------------------------------------------------------------------------!
          !    The leaf biomass of the cohort has changed, update the vegetation energy -   !
@@ -567,15 +567,15 @@ subroutine update_phenology(doy, cpoly, isi, lat)
          !---------------------------------------------------------------------------------!
          old_leaf_hcap       = cpatch%leaf_hcap(ico)
          old_wood_hcap       = cpatch%wood_hcap(ico)
-         call calc_veg_hcap(cpatch%bleaf(ico),cpatch%bdead(ico),cpatch%bsapwood(ico)       &
-                           ,cpatch%nplant(ico),cpatch%pft(ico)                             &
+         call calc_veg_hcap(cpatch%costate%bleaf(ico),cpatch%costate%bdead(ico),cpatch%costate%bsapwood(ico)       &
+                           ,cpatch%costate%nplant(ico),cpatch%costate%pft(ico)                             &
                            ,cpatch%leaf_hcap(ico),cpatch%wood_hcap(ico) )
          call update_veg_energy_cweh(csite,ipa,ico,old_leaf_hcap,old_wood_hcap)
          call is_resolvable(csite,ipa,ico,cpoly%green_leaf_factor(:,isi))
 
          !----- Printing some debugging stuff if the code is set for it. ------------------!
          if (printphen) then
-            ipft=cpatch%pft(ico)
+            ipft=cpatch%costate%pft(ico)
             if (first_time(ipft)) then
                first_time(ipft) = .false.
                write (unit=40+ipft,fmt='(a10,6(1x,a12))')                                  &
@@ -585,7 +585,7 @@ subroutine update_phenology(doy, cpoly, isi, lat)
          
             write (unit=40+ipft,fmt='(2(i2.2,a1),i4.4,2(1x,i12),4(1x,es12.5))')            &
                  current_time%month,'/',current_time%date,'/',current_time%year,ipa,ico    &
-                ,cpatch%nplant(ico),cpatch%leaf_drop(ico),theta(kroot),theta_crit
+                ,cpatch%costate%nplant(ico),cpatch%leaf_drop(ico),theta(kroot),theta_crit
          end if
       end do cohortloop
    end do patchloop

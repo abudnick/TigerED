@@ -611,9 +611,9 @@ plantP1=0.;plantP2=0.;soilP1=0.;soilP2=0.;totalP1=0.;totalP2=0.
                   !------------------------------------------------------------------------!
                   if (mature_plantation .or. mature_secondary) then
                      cohortloop: do ico=1,cpatch%ncohorts
-                        ipft = cpatch%pft(ico)
-                        if (cpatch%dbh(ico) >= cpoly%mindbh_secondary(ipft,isi)) then
-                           weight    = cpatch%nplant(ico) * csite%area(ipa)
+                        ipft = cpatch%costate%pft(ico)
+                        if (cpatch%costate%dbh(ico) >= cpoly%mindbh_secondary(ipft,isi)) then
+                           weight    = cpatch%costate%nplant(ico) * csite%area(ipa)
                            pharvest  = pharvest                                            &
                                      + cpoly%probharv_secondary(ipft,isi) * weight
                            sumweight = sumweight + weight
@@ -922,7 +922,7 @@ plantP1=0.;plantP2=0.;soilP1=0.;soilP2=0.;totalP1=0.;totalP2=0.
                               , iqoutput   & ! intent(in)
                               , imoutput   ! ! intent(in)
       use ed_max_dims  , only : n_pft      ! ! intent(in)
-    
+      use cohort_state, only: insert_survivors_state
       implicit none
       !----- Arguments. -------------------------------------------------------------------!
       type(sitetype)                  , target      :: csite
@@ -960,7 +960,7 @@ plantP1=0.;plantP2=0.;soilP1=0.;soilP2=0.;totalP1=0.;totalP2=0.
       survivalloop: do ico = 1,cpatch%ncohorts
          survival_fac = survivorship(q,poly_dest_type, mindbh_harvest, csite, cp, ico)     &
                       * area_fac
-         n_survivors     = cpatch%nplant(ico) * survival_fac
+         n_survivors     = cpatch%costate%nplant(ico) * survival_fac
 
          !----- If something survived, make a new cohort. ---------------------------------!
          mask(ico) = n_survivors > 0.0
@@ -987,7 +987,7 @@ plantP1=0.;plantP2=0.;soilP1=0.;soilP2=0.;totalP1=0.;totalP2=0.
          
          survival_fac = survivorship(q,poly_dest_type, mindbh_harvest, csite, cp, ico)     &
                       * area_fac
-         n_survivors  = cpatch%nplant(ico) * survival_fac
+         n_survivors  = cpatch%costate%nplant(ico) * survival_fac
 
          !----- If mask is true, at least some of this cohort survived. -------------------!
          if (mask(ico)) then
@@ -1002,28 +1002,15 @@ plantP1=0.;plantP2=0.;soilP1=0.;soilP2=0.;totalP1=0.;totalP2=0.
             !            be rescaled.  Variables whose units are per plant should _NOT_ be !
             !            included here.                                                    !
             !------------------------------------------------------------------------------!
-            tpatch%lai                (nco) = tpatch%lai              (nco) * survival_fac
-            tpatch%wai                (nco) = tpatch%wai              (nco) * survival_fac
-            tpatch%wpa                (nco) = tpatch%wpa              (nco) * survival_fac
-            tpatch%nplant             (nco) = tpatch%nplant           (nco) * survival_fac
+
+            call insert_survivors_state(tpatch%costate, nco, survival_fac)
+
             tpatch%mean_gpp           (nco) = tpatch%mean_gpp         (nco) * survival_fac
             tpatch%mean_leaf_resp     (nco) = tpatch%mean_leaf_resp   (nco) * survival_fac
             tpatch%mean_root_resp     (nco) = tpatch%mean_root_resp   (nco) * survival_fac
             tpatch%mean_growth_resp   (nco) = tpatch%mean_growth_resp (nco) * survival_fac
             tpatch%mean_storage_resp  (nco) = tpatch%mean_storage_resp(nco) * survival_fac
             tpatch%mean_vleaf_resp    (nco) = tpatch%mean_vleaf_resp  (nco) * survival_fac
-!            tpatch%today_gpp          (nco) = tpatch%today_gpp        (nco) * survival_fac
-!            tpatch%today_nppleaf      (nco) = tpatch%today_nppleaf    (nco) * survival_fac
-!            tpatch%today_nppfroot     (nco) = tpatch%today_nppfroot   (nco) * survival_fac
-!            tpatch%today_nppsapwood   (nco) = tpatch%today_nppsapwood (nco) * survival_fac
-!            tpatch%today_nppcroot     (nco) = tpatch%today_nppcroot   (nco) * survival_fac
-!            tpatch%today_nppseeds     (nco) = tpatch%today_nppseeds   (nco) * survival_fac
-!            tpatch%today_nppwood      (nco) = tpatch%today_nppwood    (nco) * survival_fac
-!            tpatch%today_nppdaily     (nco) = tpatch%today_nppdaily   (nco) * survival_fac
-!            tpatch%today_gpp_pot      (nco) = tpatch%today_gpp_pot    (nco) * survival_fac
-!            tpatch%today_gpp_max      (nco) = tpatch%today_gpp_max    (nco) * survival_fac
-!            tpatch%today_leaf_resp    (nco) = tpatch%today_leaf_resp  (nco) * survival_fac
-!            tpatch%today_root_resp    (nco) = tpatch%today_root_resp  (nco) * survival_fac
             tpatch%Psi_open           (nco) = tpatch%Psi_open         (nco) * survival_fac
             tpatch%gpp                (nco) = tpatch%gpp              (nco) * survival_fac
             tpatch%leaf_respiration   (nco) = tpatch%leaf_respiration (nco) * survival_fac
@@ -1035,8 +1022,7 @@ plantP1=0.;plantP2=0.;soilP1=0.;soilP2=0.;totalP1=0.;totalP2=0.
             tpatch%wood_water         (nco) = tpatch%wood_water       (nco) * survival_fac
             tpatch%wood_hcap          (nco) = tpatch%wood_hcap        (nco) * survival_fac
             tpatch%wood_energy        (nco) = tpatch%wood_energy      (nco) * survival_fac
-            !----- Crown area shall not exceed 1. -----------------------------------------!
-            tpatch%crown_area         (nco) = min(1.,tpatch%crown_area(nco) * survival_fac)
+
             !----- Carbon flux monthly means are extensive, we must convert them. ---------!
             if (idoutput > 0 .or. imoutput > 0 .or. iqoutput > 0) then
                tpatch%dmean_par_l     (nco) = tpatch%dmean_par_l      (nco) * survival_fac
@@ -1136,39 +1122,39 @@ plantP1=0.;plantP2=0.;soilP1=0.;soilP2=0.;totalP1=0.;totalP2=0.
       npatch => csite%patch(np)
 
       do ico = 1,cpatch%ncohorts
-         ipft = cpatch%pft(ico)
+         ipft = cpatch%costate%pft(ico)
 
          fast_litter   = fast_litter                                                       &
                        + (1. - survivorship(q,poly_dest_type,mindbh_harvest,csite,cp,ico)) &
-                       * ( f_labile(ipft) * cpatch%balive(ico) + cpatch%bstorage(ico))     &
-                       * cpatch%nplant(ico)
+                       * ( f_labile(ipft) * cpatch%costate%balive(ico) + cpatch%costate%bstorage(ico))     &
+                       * cpatch%costate%nplant(ico)
          fast_litter_n = fast_litter_n                                                     &
                        + (1. - survivorship(q,poly_dest_type,mindbh_harvest,csite,cp,ico)) &
-                       * ( f_labile(ipft) * cpatch%balive(ico) / c2n_leaf(ipft)            &
-                         + cpatch%bstorage(ico) / c2n_storage )                            &
-                       * cpatch%nplant(ico)
+                       * ( f_labile(ipft) * cpatch%costate%balive(ico) / c2n_leaf(ipft)            &
+                         + cpatch%costate%bstorage(ico) / c2n_storage )                            &
+                       * cpatch%costate%nplant(ico)
          fast_litter_p = fast_litter_p                                                     &
                        + (1. - survivorship(q,poly_dest_type,mindbh_harvest,csite,cp,ico)) &
-                       * ( f_labile(ipft) * cpatch%balive(ico) / c2p_alive(ipft)            &
-                         + cpatch%bstorage(ico) / c2p_storage(ipft) )                            &
-                       * cpatch%nplant(ico)
+                       * ( f_labile(ipft) * cpatch%costate%balive(ico) / c2p_alive(ipft)            &
+                         + cpatch%costate%bstorage(ico) / c2p_storage(ipft) )                            &
+                       * cpatch%costate%nplant(ico)
 
          
 
-         struct_cohort = cpatch%nplant(ico)                                                &
+         struct_cohort = cpatch%costate%nplant(ico)                                                &
                        * (1. - survivorship(q,poly_dest_type,mindbh_harvest,csite,cp,ico)) &
-                       * ( (1. - loss_fraction ) * cpatch%bdead(ico)                       &
-                         + (1. - f_labile(ipft)) * cpatch%balive(ico) )
+                       * ( (1. - loss_fraction ) * cpatch%costate%bdead(ico)                       &
+                         + (1. - f_labile(ipft)) * cpatch%costate%balive(ico) )
 
-         struct_cohort_n = cpatch%nplant(ico)                                                &
+         struct_cohort_n = cpatch%costate%nplant(ico)                                                &
                        * (1. - survivorship(q,poly_dest_type,mindbh_harvest,csite,cp,ico)) &
-                       * ( (1. - loss_fraction ) * cpatch%bdead(ico)                       &
-                         + (1. - f_labile(ipft)) * cpatch%balive(ico) ) / c2n_stem(ipft)
+                       * ( (1. - loss_fraction ) * cpatch%costate%bdead(ico)                       &
+                         + (1. - f_labile(ipft)) * cpatch%costate%balive(ico) ) / c2n_stem(ipft)
 
-         struct_cohort_p = cpatch%nplant(ico)                                                &
+         struct_cohort_p = cpatch%costate%nplant(ico)                                                &
                        * (1. - survivorship(q,poly_dest_type,mindbh_harvest,csite,cp,ico)) &
-                       * ( (1. - loss_fraction ) * cpatch%bdead(ico)                       &
-                         + (1. - f_labile(ipft)) * cpatch%balive(ico) ) / c2p_dead(ipft)
+                       * ( (1. - loss_fraction ) * cpatch%costate%bdead(ico)                       &
+                         + (1. - f_labile(ipft)) * cpatch%costate%balive(ico) ) / c2p_dead(ipft)
 
          struct_litter = struct_litter + struct_cohort
          struct_litter_p = struct_litter_p + struct_cohort_p
@@ -1224,7 +1210,7 @@ plantP1=0.;plantP2=0.;soilP1=0.;soilP2=0.;totalP1=0.;totalP2=0.
 
 
       cpatch => csite%patch(ipa)
-      ipft = cpatch%pft(ico)
+      ipft = cpatch%costate%pft(ico)
 
       !----- Base the survivorship rates on the destination type. -------------------------!
       select case(dest_type)
@@ -1245,7 +1231,7 @@ plantP1=0.;plantP2=0.;soilP1=0.;soilP2=0.;totalP1=0.;totalP2=0.
             ! should be zero, otherwise, we assume survivorship similar to the treefall    !
             ! disturbance rate for short trees.                                            ! 
             !------------------------------------------------------------------------------!
-            if (cpatch%dbh(ico) >= mindbh_harvest(ipft)) then
+            if (cpatch%costate%dbh(ico) >= mindbh_harvest(ipft)) then
                survivorship = 0.0
             else
                survivorship = treefall_s_ltht(ipft)
@@ -1257,7 +1243,7 @@ plantP1=0.;plantP2=0.;soilP1=0.;soilP2=0.;totalP1=0.;totalP2=0.
          !----- Decide the fate based on the type of natural disturbance. -----------------!
          select case (poly_dest_type)
          case (0) !----- Treefall, we must check the cohort height. -----------------------!
-            if (cpatch%hite(ico) < treefall_hite_threshold) then
+            if (cpatch%costate%hite(ico) < treefall_hite_threshold) then
                survivorship =  treefall_s_ltht(ipft)
             else
                survivorship = treefall_s_gtht(ipft)
@@ -1359,9 +1345,9 @@ plantP1=0.;plantP2=0.;soilP1=0.;soilP2=0.;totalP1=0.;totalP2=0.
       ! cohort, it will soon be split at the splitting call of apply_disturbances().  This !
       ! new cohort will always be the last here, they will be sorted afterwards too.       !
       !------------------------------------------------------------------------------------!
-      cpatch%pft(nc)    = pft
-      cpatch%nplant(nc) = density
-      cpatch%hite(nc)   = hgt_min(cpatch%pft(nc)) * min(1.0,height_factor)
+      cpatch%costate%pft(nc)    = pft
+      cpatch%costate%nplant(nc) = density
+      cpatch%costate%hite(nc)   = hgt_min(cpatch%costate%pft(nc)) * min(1.0,height_factor)
       !------------------------------------------------------------------------------------!
 
       !----- Initialise other cohort-level variables. -------------------------------------!
@@ -1370,8 +1356,8 @@ plantP1=0.;plantP2=0.;soilP1=0.;soilP2=0.;totalP1=0.;totalP2=0.
 
 
       !----- Find DBH and the maximum leaf biomass. ---------------------------------------!
-      cpatch%dbh(nc)   = h2dbh(cpatch%hite(nc),cpatch%pft(nc))
-      cpatch%bdead(nc) = dbh2bd(cpatch%dbh(nc),cpatch%pft(nc))
+      cpatch%costate%dbh(nc)   = h2dbh(cpatch%costate%hite(nc),cpatch%costate%pft(nc))
+      cpatch%costate%bdead(nc) = dbh2bd(cpatch%costate%dbh(nc),cpatch%costate%pft(nc))
 
       !------------------------------------------------------------------------------------!
       !      Initialise the active and storage biomass scaled by the leaf drought phenology (or start with 1.0 if the plant doesn't !
@@ -1383,17 +1369,17 @@ plantP1=0.;plantP2=0.;soilP1=0.;soilP2=0.;totalP1=0.;totalP2=0.
 
 
       !----- Compute all area indices needed. ---------------------------------------------!
-      call area_indices(cpatch%nplant(nc),cpatch%bleaf(nc),cpatch%bdead(nc)                &
-                       ,cpatch%balive(nc),cpatch%dbh(nc),cpatch%hite(nc),cpatch%pft(nc)    &
-                       ,cpatch%sla(nc),cpatch%lai(nc),cpatch%wpa(nc),cpatch%wai(nc)        &
-                       ,cpatch%crown_area(nc),cpatch%bsapwood(nc))
+      call area_indices(cpatch%costate%nplant(nc),cpatch%costate%bleaf(nc),cpatch%costate%bdead(nc)                &
+                       ,cpatch%costate%balive(nc),cpatch%costate%dbh(nc),cpatch%costate%hite(nc),cpatch%costate%pft(nc)    &
+                       ,cpatch%sla(nc),cpatch%costate%lai(nc),cpatch%costate%wpa(nc),cpatch%costate%wai(nc)        &
+                       ,cpatch%costate%crown_area(nc),cpatch%costate%bsapwood(nc))
 
 
       !----- Find the new basal area and above-ground biomass. ----------------------------!
-      cpatch%basarea(nc) = pio4 * cpatch%dbh(nc) * cpatch%dbh(nc)
-      cpatch%agb(nc)     = ed_biomass(cpatch%bdead(nc),cpatch%balive(nc),cpatch%bleaf(nc)  &
-                                     ,cpatch%pft(nc),cpatch%hite(nc) ,cpatch%bstorage(nc)  &
-                                     ,cpatch%bsapwood(nc))
+      cpatch%costate%basarea(nc) = pio4 * cpatch%costate%dbh(nc) * cpatch%costate%dbh(nc)
+      cpatch%costate%agb(nc)     = ed_biomass(cpatch%costate%bdead(nc),cpatch%costate%balive(nc),cpatch%costate%bleaf(nc)  &
+                                     ,cpatch%costate%pft(nc),cpatch%costate%hite(nc) ,cpatch%costate%bstorage(nc)  &
+                                     ,cpatch%costate%bsapwood(nc))
 
       cpatch%leaf_temp(nc)  = csite%can_temp(np)
       cpatch%leaf_water(nc) = 0.0
@@ -1403,8 +1389,8 @@ plantP1=0.;plantP2=0.;soilP1=0.;soilP2=0.;totalP1=0.;totalP2=0.
       cpatch%wood_fliq(nc)  = 0.0
 
       !----- Because we assigned no water, the internal energy is simply hcap*T. ----------!
-      call calc_veg_hcap(cpatch%bleaf(nc),cpatch%bdead(nc),cpatch%bsapwood(nc)             &
-                        ,cpatch%nplant(nc),cpatch%pft(nc)                                  &
+      call calc_veg_hcap(cpatch%costate%bleaf(nc),cpatch%costate%bdead(nc),cpatch%costate%bsapwood(nc)             &
+                        ,cpatch%costate%nplant(nc),cpatch%costate%pft(nc)                                  &
                         ,cpatch%leaf_hcap(nc),cpatch%wood_hcap(nc))
 
       cpatch%leaf_energy(nc) = cpatch%leaf_hcap(nc) * cpatch%leaf_temp(nc)
@@ -1413,7 +1399,7 @@ plantP1=0.;plantP2=0.;soilP1=0.;soilP2=0.;totalP1=0.;totalP2=0.
       call is_resolvable(csite,np,nc,green_leaf_factor)
 
       !----- Should plantations be considered recruits? -----------------------------------!
-      cpatch%new_recruit_flag(nc) = 1
+      cpatch%costate%new_recruit_flag(nc) = 1
 
       !----- Sort the cohorts so that the new cohort is at the correct height bin. --------!
       call sort_cohorts(cpatch)

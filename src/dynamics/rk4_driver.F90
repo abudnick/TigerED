@@ -628,14 +628,14 @@ module rk4_driver
             cpatch%psi_open  (ico) = sngloff(initp%psi_open  (ico),tiny_offset) / hdid
             cpatch%psi_closed(ico) = sngloff(initp%psi_closed(ico),tiny_offset) / hdid
 
-         elseif (cpatch%hite(ico) <=  csite%total_sfcw_depth(ipa)) then
+         elseif (cpatch%costate%hite(ico) <=  csite%total_sfcw_depth(ipa)) then
             !------------------------------------------------------------------------------!
             !    For plants buried in snow, fix the leaf temperature to the snow temper-   !
             ! ature of the layer that is the closest to the leaves.                        !
             !------------------------------------------------------------------------------!
             kclosest = 1
             do k = csite%nlev_sfcwater(ipa), 1, -1
-               if (sum(csite%sfcwater_depth(1:k,ipa)) > cpatch%hite(ico)) kclosest = k
+               if (sum(csite%sfcwater_depth(1:k,ipa)) > cpatch%costate%hite(ico)) kclosest = k
             end do
             cpatch%leaf_temp(ico)   = csite%sfcwater_tempk(kclosest,ipa)
             cpatch%leaf_fliq(ico)   = 0.
@@ -708,14 +708,14 @@ module rk4_driver
             cpatch%wood_gbw       (ico) = sngloff(initp%wood_gbw       (ico), tiny_offset)
             !------------------------------------------------------------------------------!
 
-         elseif (cpatch%hite(ico) <=  csite%total_sfcw_depth(ipa)) then
+         elseif (cpatch%costate%hite(ico) <=  csite%total_sfcw_depth(ipa)) then
             !------------------------------------------------------------------------------!
             !    For plants buried in snow, fix the wood temperature to the snow temper-   !
             ! ature of the layer that is the closest to the branches.                      !
             !------------------------------------------------------------------------------!
             kclosest = 1
             do k = csite%nlev_sfcwater(ipa), 1, -1
-               if (sum(csite%sfcwater_depth(1:k,ipa)) > cpatch%hite(ico)) kclosest = k
+               if (sum(csite%sfcwater_depth(1:k,ipa)) > cpatch%costate%hite(ico)) kclosest = k
             end do
             cpatch%wood_temp(ico)   = csite%sfcwater_tempk(kclosest,ipa)
             cpatch%wood_fliq(ico)   = 0.
@@ -737,7 +737,7 @@ module rk4_driver
 
 
             !----- Copy the meteorological wind to here. ----------------------------------!
-            if (.not. cpatch%leaf_resolvable(ico)) then
+            if (.not. cpatch%costate%leaf_resolvable(ico)) then
                cpatch%veg_wind(ico) = sngloff(rk4site%vels, tiny_offset)
             end if
          end if

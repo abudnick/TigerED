@@ -85,9 +85,9 @@ subroutine canopy_photosynthesis(csite,cmet,mzg,ipa,lsl,ntext_soil              
    csite%wpa(ipa) = 0.0
    csite%wai(ipa) = 0.0
    do ico=1,cpatch%ncohorts
-      csite%lai(ipa)  = csite%lai(ipa)  + cpatch%lai(ico)
-      csite%wpa(ipa)  = csite%wpa(ipa)  + cpatch%wpa(ico)
-      csite%wai(ipa)  = csite%wai(ipa)  + cpatch%wai(ico)
+      csite%lai(ipa)  = csite%lai(ipa)  + cpatch%costate%lai(ico)
+      csite%wpa(ipa)  = csite%wpa(ipa)  + cpatch%costate%wpa(ico)
+      csite%wai(ipa)  = csite%wai(ipa)  + cpatch%costate%wai(ico)
    end do
 
 
@@ -171,7 +171,7 @@ subroutine canopy_photosynthesis(csite,cmet,mzg,ipa,lsl,ntext_soil              
    las = .false.
    do ico = 1,cpatch%ncohorts
       !----- If this is the tallest cohort to be used, we save its index. -----------------!
-      if (.not. las .and. cpatch%leaf_resolvable(ico)) then
+      if (.not. las .and. cpatch%costate%leaf_resolvable(ico)) then
          las  = .true.
          tuco = ico
       end if
@@ -192,7 +192,7 @@ subroutine canopy_photosynthesis(csite,cmet,mzg,ipa,lsl,ntext_soil              
             !------------------------------------------------------------------------------!
             !    Scale photosynthetically active radiation per unit of leaf.               !
             !------------------------------------------------------------------------------!
-            leaf_par = csite%par_l_max(ipa) / cpatch%lai(tuco)
+            leaf_par = csite%par_l_max(ipa) / cpatch%costate%lai(tuco)
 
             !------------------------------------------------------------------------------!
             !    Call the photosynthesis for maximum photosynthetic rates.  The units      !
@@ -262,15 +262,15 @@ subroutine canopy_photosynthesis(csite,cmet,mzg,ipa,lsl,ntext_soil              
       !     Only need to worry about photosyn if radiative transfer has been  done for     !
       ! this cohort.                                                                       !
       !------------------------------------------------------------------------------------!
-      if (cpatch%leaf_resolvable(ico)) then
+      if (cpatch%costate%leaf_resolvable(ico)) then
 
             !----- Alias for PFT ----------------------------------------------------------!
-            ipft = cpatch%pft(ico)
+            ipft = cpatch%costate%pft(ico)
 
             !------------------------------------------------------------------------------!
             !    Scale photosynthetically active radiation per unit of leaf.               !
             !------------------------------------------------------------------------------!
-            leaf_par = cpatch%par_l(ico) / cpatch%lai(ico) 
+            leaf_par = cpatch%par_l(ico) / cpatch%costate%lai(ico) 
 
 
             !------------------------------------------------------------------------------!
@@ -312,24 +312,24 @@ subroutine canopy_photosynthesis(csite,cmet,mzg,ipa,lsl,ntext_soil              
              )
 
             !----- Convert leaf respiration to [µmol/m²ground/s] --------------------------!
-            cpatch%leaf_respiration(ico) = leaf_resp * cpatch%lai(ico)
+            cpatch%leaf_respiration(ico) = leaf_resp * cpatch%costate%lai(ico)
             cpatch%mean_leaf_resp(ico)   = cpatch%mean_leaf_resp(ico)                      &
                                          + cpatch%leaf_respiration(ico)
             cpatch%dmean_leaf_resp(ico)  = cpatch%dmean_leaf_resp(ico)                     &
-                                         + cpatch%leaf_respiration(ico) / cpatch%nplant(ico) * umol_2_kgC * dtlsm
+                                         + cpatch%leaf_respiration(ico) / cpatch%costate%nplant(ico) * umol_2_kgC * dtlsm
 
             !----- Root biomass [kg/m2]. --------------------------------------------------!
-            broot_loc = cpatch%broot(ico)  * cpatch%nplant(ico)
+            broot_loc = cpatch%costate%broot(ico)  * cpatch%costate%nplant(ico)
 
             !----- Supply of water. -------------------------------------------------------!
             cpatch%water_supply(ico) = water_conductance(ipft)                             &
-                                     * available_liquid_water(cpatch%krdepth(ico))         &
+                                     * available_liquid_water(cpatch%costate%krdepth(ico))         &
                                      * broot_loc
 
-            root_depth_indices(cpatch%krdepth(ico)) = .true.
+            root_depth_indices(cpatch%costate%krdepth(ico)) = .true.
             broot_tot = broot_tot + broot_loc
             pss_available_water = pss_available_water                                      &
-                                + available_liquid_water(cpatch%krdepth(ico)) * broot_loc
+                                + available_liquid_water(cpatch%costate%krdepth(ico)) * broot_loc
 
             !------------------------------------------------------------------------------!
             !     Determine the fraction of open stomata due to water limitation.          !
@@ -354,7 +354,7 @@ subroutine canopy_photosynthesis(csite,cmet,mzg,ipa,lsl,ntext_soil              
                ! have the root profile up to now, assume they are evenly distributed       !
                ! through all layers that have roots.                                       !
                !---------------------------------------------------------------------------!
-               cpatch%fsw(ico) = wilting_factor(cpatch%krdepth(ico))
+               cpatch%fsw(ico) = wilting_factor(cpatch%costate%krdepth(ico))
 
             end select
             !------------------------------------------------------------------------------!
@@ -378,14 +378,14 @@ subroutine canopy_photosynthesis(csite,cmet,mzg,ipa,lsl,ntext_soil              
                                              * cpatch%gsw_closed(ico)
 
             !----- GPP, averaged over frqstate. -------------------------------------------!
-            cpatch%gpp(ico)       = cpatch%lai(ico)                                        &
+            cpatch%gpp(ico)       = cpatch%costate%lai(ico)                                        &
                                   * ( cpatch%fs_open(ico) * cpatch%A_open(ico)             &
                                     + (1.0 - cpatch%fs_open(ico)) * cpatch%A_closed(ico) ) &
                                   + cpatch%leaf_respiration(ico)
             cpatch%mean_gpp(ico)  = cpatch%mean_gpp(ico) + cpatch%gpp(ico)
 
             !----- GPP, summed over 1 day. [kgC/plant/day] --------------------------------!
-            cpatch%today_gpp(ico) = cpatch%today_gpp(ico) + cpatch%gpp(ico) / cpatch%nplant(ico) * umol_2_kgC * dtlsm
+            cpatch%today_gpp(ico) = cpatch%today_gpp(ico) + cpatch%gpp(ico) / cpatch%costate%nplant(ico) * umol_2_kgC * dtlsm
 
             !----- Potential GPP if no N limitation. [µmol/m²ground] ----------------------!
 !            cpatch%today_gpp_pot(ico) = cpatch%today_gpp_pot(ico)                          &
@@ -394,10 +394,10 @@ subroutine canopy_photosynthesis(csite,cmet,mzg,ipa,lsl,ntext_soil              
 !                                        + (1.0 - cpatch%fsw(ico)) * cpatch%A_closed(ico))  &
 !                                      + cpatch%leaf_respiration(ico)
             cpatch%today_gpp_pot(ico) = cpatch%today_gpp_pot(ico)                          &
-                                      + (cpatch%lai(ico)                                    &
+                                      + (cpatch%costate%lai(ico)                                    &
                                       * ( cpatch%fsw(ico) * cpatch%A_open(ico)             &
                                         + (1.0 - cpatch%fsw(ico)) * cpatch%A_closed(ico))  &
-                                      + cpatch%leaf_respiration(ico)) / cpatch%nplant(ico) * umol_2_kgC * dtlsm
+                                      + cpatch%leaf_respiration(ico)) / cpatch%costate%nplant(ico) * umol_2_kgC * dtlsm
 
             !----- Maximum GPP if at the top of the canopy [µmol/m²ground] ----------------!
 !            cpatch%today_gpp_max(ico) = cpatch%today_gpp_max(ico)                          &
@@ -407,11 +407,11 @@ subroutine canopy_photosynthesis(csite,cmet,mzg,ipa,lsl,ntext_soil              
 !                                          * csite%A_c_max(ipft,ipa))                       &
 !                                      + cpatch%leaf_respiration(ico)
             cpatch%today_gpp_max(ico) = cpatch%today_gpp_max(ico)                          &
-                                      + (cpatch%lai(ico)                                    &
+                                      + (cpatch%costate%lai(ico)                                    &
                                       * ( cpatch%fs_open(ico) * csite%A_o_max(ipft,ipa)    &
                                         + (1.0 - cpatch%fs_open(ico))                      &
                                           * csite%A_c_max(ipft,ipa))                       &
-                                      + cpatch%leaf_respiration(ico)) / cpatch%nplant(ico) * umol_2_kgC * dtlsm
+                                      + cpatch%leaf_respiration(ico)) / cpatch%costate%nplant(ico) * umol_2_kgC * dtlsm
 
       else
          !----- If the cohort wasn't solved, we must assign some zeroes. ------------------!
@@ -439,13 +439,13 @@ subroutine canopy_photosynthesis(csite,cmet,mzg,ipa,lsl,ntext_soil              
       !------------------------------------------------------------------------------------!
       cpatch%mean_growth_resp (ico) = cpatch%mean_growth_resp (ico)                        &
                                     + cpatch%growth_respiration (ico) * kgCday_2_umols     &
-                                    * cpatch%nplant(ico)
+                                    * cpatch%costate%nplant(ico)
       cpatch%mean_storage_resp(ico) = cpatch%mean_storage_resp(ico)                        &
                                     + cpatch%storage_respiration(ico) * kgCday_2_umols     &
-                                    * cpatch%nplant(ico)
+                                    * cpatch%costate%nplant(ico)
       cpatch%mean_vleaf_resp  (ico) = cpatch%mean_vleaf_resp  (ico)                        &
                                     + cpatch%vleaf_respiration  (ico) * kgCday_2_umols     &
-                                    * cpatch%nplant(ico)                                    
+                                    * cpatch%costate%nplant(ico)                                    
       !------------------------------------------------------------------------------------!
 
       if (print_photo_debug) then
@@ -525,14 +525,14 @@ subroutine print_photo_details(cmet,csite,ipa,ico,limit_flag,vm,compp)
 
    !----- Make some aliases. --------------------------------------------------------------!
    cpatch      => csite%patch(ipa)
-   ipft        =  cpatch%pft(ico)
+   ipft        =  cpatch%costate%pft(ico)
    leaf_resp   =  cpatch%leaf_respiration(ico)
    stom_condct =  cpatch%stomatal_conductance(ico)
    !---------------------------------------------------------------------------------------!
 
-   if (cpatch%leaf_resolvable(ico)) then
+   if (cpatch%costate%leaf_resolvable(ico)) then
       par_area   = cpatch%par_l(ico) * Watts_2_Ein * mol_2_umol
-      parv       = par_area / cpatch%lai(ico)
+      parv       = par_area / cpatch%costate%lai(ico)
       
       
       !------------------------------------------------------------------------------------!
@@ -629,9 +629,9 @@ subroutine print_photo_details(cmet,csite,ipa,ico,limit_flag,vm,compp)
    open (unit=57,file=trim(photo_fout),status='old',action='write',position='append')
    write(unit=57,fmt=bfmt)                                                                 &
      current_time%year          , current_time%month         , current_time%date           &
-   , current_time%time          , cpatch%pft(ico)            , limit_flag                  &
-   , cpatch%hite(ico)           , cpatch%nplant(ico)         , cpatch%bleaf(ico)           &
-   , cpatch%lai(ico)            , cpatch%leaf_hcap(ico)      , cpatch%leaf_water(ico)      &
+   , current_time%time          , cpatch%costate%pft(ico)            , limit_flag                  &
+   , cpatch%costate%hite(ico)           , cpatch%costate%nplant(ico)         , cpatch%costate%bleaf(ico)           &
+   , cpatch%costate%lai(ico)            , cpatch%leaf_hcap(ico)      , cpatch%leaf_water(ico)      &
    , cpatch%leaf_temp(ico)      , cpatch%wood_temp(ico)      , csite%can_temp(ipa)         &
    , cmet%atm_tmp               , csite%ground_temp(ipa)     , csite%can_shv(ipa)          &
    , cmet%atm_shv               , csite%ground_shv(ipa)      , cpatch%lsfc_shv_open(ico)   &

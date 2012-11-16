@@ -1109,8 +1109,8 @@ subroutine canopy_derivs_two(mzg,initp,dinitp,csite,ipa,hflxgc,wflxgc,qwflxgc,de
       if (initp%leaf_resolvable(ico)) then
 
          !------ Defining some shortcuts to indices ---------------------------------------!
-         ipft  = cpatch%pft(ico)
-         kroot = cpatch%krdepth(ico)
+         ipft  = cpatch%costate%pft(ico)
+         kroot = cpatch%costate%krdepth(ico)
 
 
          !------  Calculate leaf-level CO2 flux -------------------------------------------!
@@ -1357,7 +1357,7 @@ subroutine canopy_derivs_two(mzg,initp,dinitp,csite,ipa,hflxgc,wflxgc,qwflxgc,de
       if (initp%wood_resolvable(ico)) then
 
          !------ Define some aliases to indices -------------------------------------------!
-         ipft  = cpatch%pft(ico)
+         ipft  = cpatch%costate%pft(ico)
 
          !---------------------------------------------------------------------------------!
          !     Define the minimum wood water to be considered, and the maximum amount      !

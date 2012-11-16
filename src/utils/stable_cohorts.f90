@@ -91,13 +91,13 @@ subroutine is_resolvable(csite,ipa,ico,green_leaf_factor)
 
    cpatch => csite%patch(ipa)
 
-   ipft      = cpatch%pft(ico)
+   ipft      = cpatch%costate%pft(ico)
 
    !---------------------------------------------------------------------------------------!
    ! 1.  Check for cohort height relative to snow/water depth.  If the cohort is buried in !
    !     snow or has drowned in the standing water, we can't solve it.                     !
    !---------------------------------------------------------------------------------------!
-   exposed      = cpatch%hite(ico)  > csite%total_sfcw_depth(ipa)
+   exposed      = cpatch%costate%hite(ico)  > csite%total_sfcw_depth(ipa)
    !---------------------------------------------------------------------------------------!
 
 
@@ -107,8 +107,8 @@ subroutine is_resolvable(csite,ipa,ico,green_leaf_factor)
    !      set to zero when branch thermodynamics is turned off, so this will always be     !
    !      false in this case.                                                              !
    !---------------------------------------------------------------------------------------!
-   leaf_enough  = cpatch%lai(ico) > lai_min(ipft)
-   wood_enough  = cpatch%wai(ico) > lai_min(ipft)
+   leaf_enough  = cpatch%costate%lai(ico) > lai_min(ipft)
+   wood_enough  = cpatch%costate%wai(ico) > lai_min(ipft)
    !---------------------------------------------------------------------------------------!
 
 
@@ -125,8 +125,8 @@ subroutine is_resolvable(csite,ipa,ico,green_leaf_factor)
    !---------------------------------------------------------------------------------------!
    !     Save the tests in the cohort variable, so the checks are done consistently.       !
    !---------------------------------------------------------------------------------------!
-   cpatch%leaf_resolvable(ico) = exposed .and. leaf_enough .and. green
-   cpatch%wood_resolvable(ico) = exposed .and. wood_enough
+   cpatch%costate%leaf_resolvable(ico) = exposed .and. leaf_enough .and. green
+   cpatch%costate%wood_resolvable(ico) = exposed .and. wood_enough
    !---------------------------------------------------------------------------------------!
 
 

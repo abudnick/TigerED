@@ -1836,12 +1836,12 @@ subroutine updateHydroParms (cgrid)
            n4    = 0.0   
            sigma = 0.0
            do ico=1,cpatch%ncohorts
-              if(include_pft_ag(cpatch%pft(ico))) then
+              if(include_pft_ag(cpatch%costate%pft(ico))) then
                  !! update non-woody correction
-                 n4 = n4 + 0.01*cpatch%LAI(ico)/GrassLAImax
+                 n4 = n4 + 0.01*cpatch%costate%LAI(ico)/GrassLAImax
               else
                  !! update woody cross-sectional area (ft)
-                 sigma = sigma + cpatch%nplant(ico)*cpatch%DBH(ico)*m2f
+                 sigma = sigma + cpatch%costate%nplant(ico)*cpatch%costate%DBH(ico)*m2f
               end if
            end do ! cohort
            n0 = nb + n3 + n4 

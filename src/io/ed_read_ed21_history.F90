@@ -524,10 +524,10 @@ subroutine read_ed21_history_file
                      memsize(1)  = int(cpatch%ncohorts,8)
                      memoffs(1)  = 0_8
 
-                     call hdf_getslab_r(cpatch%dbh   ,'DBH '   ,dsetrank,iparallel,.true.)
-                     call hdf_getslab_r(cpatch%bdead ,'BDEAD ' ,dsetrank,iparallel,.true.)
-                     call hdf_getslab_i(cpatch%pft   ,'PFT '   ,dsetrank,iparallel,.true.)
-                     call hdf_getslab_r(cpatch%nplant,'NPLANT ',dsetrank,iparallel,.true.)
+                     call hdf_getslab_r(cpatch%costate%dbh   ,'DBH '   ,dsetrank,iparallel,.true.)
+                     call hdf_getslab_r(cpatch%costate%bdead ,'BDEAD ' ,dsetrank,iparallel,.true.)
+                     call hdf_getslab_i(cpatch%costate%pft   ,'PFT '   ,dsetrank,iparallel,.true.)
+                     call hdf_getslab_r(cpatch%costate%nplant,'NPLANT ',dsetrank,iparallel,.true.)
 
                      !---------------------------------------------------------------------!
                      !    Find derived properties from Bdead.  In the unlikely case that   !
@@ -535,26 +535,26 @@ subroutine read_ed21_history_file
                      ! cases we assume that plants are in allometry.                       !
                      !---------------------------------------------------------------------!
                      do ico=1,cpatch%ncohorts
-                        ipft = cpatch%pft(ico)
+                        ipft = cpatch%costate%pft(ico)
 
-                        if (cpatch%bdead(ico) > 0.0) then
-                           cpatch%dbh(ico)   = bd2dbh(cpatch%pft(ico),cpatch%bdead(ico))
-                           cpatch%hite(ico)  = dbh2h (cpatch%pft(ico),cpatch%dbh  (ico))
+                        if (cpatch%costate%bdead(ico) > 0.0) then
+                           cpatch%costate%dbh(ico)   = bd2dbh(cpatch%costate%pft(ico),cpatch%costate%bdead(ico))
+                           cpatch%costate%hite(ico)  = dbh2h (cpatch%costate%pft(ico),cpatch%costate%dbh  (ico))
                         else
-                           cpatch%hite(ico)  = dbh2h (cpatch%pft(ico),cpatch%dbh  (ico))
-                           cpatch%bdead(ico) = dbh2bd(cpatch%dbh(ico),cpatch%pft  (ico))
+                           cpatch%costate%hite(ico)  = dbh2h (cpatch%costate%pft(ico),cpatch%costate%dbh  (ico))
+                           cpatch%costate%bdead(ico) = dbh2bd(cpatch%costate%dbh(ico),cpatch%costate%pft  (ico))
                         end if
 
-                        cpatch%bleaf(ico)  = dbh2bl(cpatch%dbh(ico),cpatch%pft(ico))
+                        cpatch%costate%bleaf(ico)  = dbh2bl(cpatch%costate%dbh(ico),cpatch%costate%pft(ico))
 
                         !----- Find the other pools. --------------------------------------!
-                        salloc  = (1.0 + q(ipft) + qsw(ipft) * cpatch%hite(ico))
+                        salloc  = (1.0 + q(ipft) + qsw(ipft) * cpatch%costate%hite(ico))
                         salloci = 1.0 / salloc
-                        cpatch%balive  (ico) = cpatch%bleaf(ico) * salloc
-                        cpatch%broot   (ico) = cpatch%balive(ico) * q(ipft) * salloci
-                        cpatch%bsapwood(ico) = cpatch%balive(ico) * qsw(ipft)              &
-                                             * cpatch%hite(ico) * salloci
-                        cpatch%bstorage(ico) = 0.0
+                        cpatch%costate%balive  (ico) = cpatch%costate%bleaf(ico) * salloc
+                        cpatch%costate%broot   (ico) = cpatch%costate%balive(ico) * q(ipft) * salloci
+                        cpatch%costate%bsapwood(ico) = cpatch%costate%balive(ico) * qsw(ipft)              &
+                                             * cpatch%costate%hite(ico) * salloci
+                        cpatch%costate%bstorage(ico) = 0.0
                         cpatch%phenology_status(ico) = 0
                      end do
 
@@ -590,12 +590,12 @@ subroutine read_ed21_history_file
                         ! if this is a valid PFT.  If not, then we must decide what we     !
                         ! should do...                                                     !
                         !------------------------------------------------------------------!
-                        if (.not. include_pft(cpatch%pft(ico))) then
+                        if (.not. include_pft(cpatch%costate%pft(ico))) then
                            select case(pft_1st_check)
                            case (0)
                               !----- Stop the run. ----------------------------------------!
                               write (unit=*,fmt='(a,1x,i5,1x,a)')                          &
-                                    'I found a cohort with PFT=',cpatch%pft(ico)           &
+                                    'I found a cohort with PFT=',cpatch%costate%pft(ico)           &
                                    ,' and it is not in your include_these_pft...'
                               call fatal_error('Invalid PFT in history file'               &
                                               ,'read_ed21_history_file'                    &
@@ -604,28 +604,28 @@ subroutine read_ed21_history_file
                            case (1)
                               !----- Include the unexpected PFT in the list. --------------!
                               write (unit=*,fmt='(a,1x,i5,1x,a)')                          &
-                                    'I found a cohort with PFT=',cpatch%pft(ico)           &
+                                    'I found a cohort with PFT=',cpatch%costate%pft(ico)           &
                                    ,'... Including this PFT in your include_these_pft...'
-                              include_pft(cpatch%pft(ico))          = .true.
-                              include_these_pft(count(include_pft)) = cpatch%pft(ico)
+                              include_pft(cpatch%costate%pft(ico))          = .true.
+                              include_these_pft(count(include_pft)) = cpatch%costate%pft(ico)
 
                               call sort_up(include_these_pft,n_pft)
 
-                              if (is_grass(cpatch%pft(ico))) then
-                                 include_pft_ag(cpatch%pft(ico)) = .true.
+                              if (is_grass(cpatch%costate%pft(ico))) then
+                                 include_pft_ag(cpatch%costate%pft(ico)) = .true.
                               end if
 
                            case (2)
                               !----- Ignore the unexpect PFT. -----------------------------!
                               write (unit=*,fmt='(a,1x,i5,1x,a)')                          &
-                                    'I found a cohort with PFT=',cpatch%pft(ico)           &
+                                    'I found a cohort with PFT=',cpatch%costate%pft(ico)           &
                                    ,'... Ignoring it...'
                               !------------------------------------------------------------!
                               !    The way we will ignore this cohort is by setting its    !
                               ! nplant to zero, and calling the "terminate_cohorts"        !
                               ! subroutine right after this.                               !
                               !------------------------------------------------------------!
-                              cpatch%nplant(ico) = 0.
+                              cpatch%costate%nplant(ico) = 0.
                            end select
                         end if
 
@@ -636,29 +636,29 @@ subroutine read_ed21_history_file
                         ! the model initialises with stable numbers whilst ensuring        !
                         ! that the cohorts will be eliminated.                             !
                         !------------------------------------------------------------------!
-                        if (cpatch%balive(ico) > 0.            .and.                       &
-                            cpatch%balive(ico) < tiny_biomass) then
-                           cpatch%balive(ico) = tiny_biomass
+                        if (cpatch%costate%balive(ico) > 0.            .and.                       &
+                            cpatch%costate%balive(ico) < tiny_biomass) then
+                           cpatch%costate%balive(ico) = tiny_biomass
                         end if
-                        if (cpatch%bleaf(ico) > 0.            .and.                        &
-                            cpatch%bleaf(ico) < tiny_biomass) then
-                           cpatch%bleaf(ico) = tiny_biomass
+                        if (cpatch%costate%bleaf(ico) > 0.            .and.                        &
+                            cpatch%costate%bleaf(ico) < tiny_biomass) then
+                           cpatch%costate%bleaf(ico) = tiny_biomass
                         end if
-                        if (cpatch%broot(ico) > 0.            .and.                        &
-                            cpatch%broot(ico) < tiny_biomass) then
-                           cpatch%broot(ico) = tiny_biomass
+                        if (cpatch%costate%broot(ico) > 0.            .and.                        &
+                            cpatch%costate%broot(ico) < tiny_biomass) then
+                           cpatch%costate%broot(ico) = tiny_biomass
                         end if
-                        if (cpatch%bsapwood(ico) > 0.            .and.                     &
-                            cpatch%bsapwood(ico) < tiny_biomass) then
-                           cpatch%bsapwood(ico) = tiny_biomass
+                        if (cpatch%costate%bsapwood(ico) > 0.            .and.                     &
+                            cpatch%costate%bsapwood(ico) < tiny_biomass) then
+                           cpatch%costate%bsapwood(ico) = tiny_biomass
                         end if
-                        if (cpatch%bdead(ico) > 0.            .and.                        &
-                            cpatch%bdead(ico) < tiny_biomass) then
-                           cpatch%bdead(ico) = tiny_biomass
+                        if (cpatch%costate%bdead(ico) > 0.            .and.                        &
+                            cpatch%costate%bdead(ico) < tiny_biomass) then
+                           cpatch%costate%bdead(ico) = tiny_biomass
                         end if
-                        if (cpatch%bstorage(ico) > 0.            .and.                     &
-                            cpatch%bstorage(ico) < tiny_biomass) then
-                           cpatch%bstorage(ico) = tiny_biomass
+                        if (cpatch%costate%bstorage(ico) > 0.            .and.                     &
+                            cpatch%costate%bstorage(ico) < tiny_biomass) then
+                           cpatch%costate%bstorage(ico) = tiny_biomass
                         end if
                         !------------------------------------------------------------------!
 
@@ -666,29 +666,29 @@ subroutine read_ed21_history_file
 
 
                         !----- Compute the above-ground biomass. --------------------------!
-                        cpatch%agb(ico) = ed_biomass(cpatch%bdead(ico),cpatch%balive(ico)  &
-                                                    ,cpatch%bleaf(ico),cpatch%pft(ico)     &
-                                                    ,cpatch%hite(ico),cpatch%bstorage(ico) &
-                                                    ,cpatch%bsapwood(ico))
+                        cpatch%costate%agb(ico) = ed_biomass(cpatch%costate%bdead(ico),cpatch%costate%balive(ico)  &
+                                                    ,cpatch%costate%bleaf(ico),cpatch%costate%pft(ico)     &
+                                                    ,cpatch%costate%hite(ico),cpatch%costate%bstorage(ico) &
+                                                    ,cpatch%costate%bsapwood(ico))
 
-                        cpatch%basarea(ico)  = pio4 * cpatch%dbh(ico) * cpatch%dbh(ico)
+                        cpatch%costate%basarea(ico)  = pio4 * cpatch%costate%dbh(ico) * cpatch%costate%dbh(ico)
 
                          
                         !----- Assign LAI, WPA, and WAI -----------------------------------!
-                        call area_indices(cpatch%nplant(ico),cpatch%bleaf(ico)             &
-                                         ,cpatch%bdead(ico),cpatch%balive(ico)             &
-                                         ,cpatch%dbh(ico), cpatch%hite(ico)                &
-                                         ,cpatch%pft(ico), SLA(cpatch%pft(ico))            &
-                                         ,cpatch%lai(ico),cpatch%wpa(ico), cpatch%wai(ico) &
-                                         ,cpatch%crown_area(ico),cpatch%bsapwood(ico))
+                        call area_indices(cpatch%costate%nplant(ico),cpatch%costate%bleaf(ico)             &
+                                         ,cpatch%costate%bdead(ico),cpatch%costate%balive(ico)             &
+                                         ,cpatch%costate%dbh(ico), cpatch%costate%hite(ico)                &
+                                         ,cpatch%costate%pft(ico), SLA(cpatch%costate%pft(ico))            &
+                                         ,cpatch%costate%lai(ico),cpatch%costate%wpa(ico), cpatch%costate%wai(ico) &
+                                         ,cpatch%costate%crown_area(ico),cpatch%costate%bsapwood(ico))
 
 
                         !----- Update the derived patch-level variables. ------------------!
-                        csite%lai(ipa)  = csite%lai(ipa) + cpatch%lai(ico)
-                        csite%wpa(ipa)  = csite%wpa(ipa) + cpatch%wpa(ico)
-                        csite%wai(ipa)  = csite%wai(ipa) + cpatch%wai(ico)
+                        csite%lai(ipa)  = csite%lai(ipa) + cpatch%costate%lai(ico)
+                        csite%wpa(ipa)  = csite%wpa(ipa) + cpatch%costate%wpa(ico)
+                        csite%wai(ipa)  = csite%wai(ipa) + cpatch%costate%wai(ico)
                         csite%plant_ag_biomass(ipa) = csite%plant_ag_biomass(ipa)          &
-                                                    + cpatch%agb(ico)*cpatch%nplant(ico)
+                                                    + cpatch%costate%agb(ico)*cpatch%costate%nplant(ico)
 
                         !----- Initialise the other cohort level variables. ---------------!
                         call init_ed_cohort_vars(cpatch,ico,cpoly%lsl(isi))
@@ -1572,13 +1572,13 @@ subroutine read_ed21_history_unstruct
                         memsize(1)  = int(cpatch%ncohorts,8)
                         memoffs(1)  = 0_8
 
-                        call hdf_getslab_r(cpatch%dbh             ,'DBH '                  &
+                        call hdf_getslab_r(cpatch%costate%dbh             ,'DBH '                  &
                                           ,dsetrank,iparallel,.true.)
-                        call hdf_getslab_r(cpatch%bdead           ,'BDEAD '                &
+                        call hdf_getslab_r(cpatch%costate%bdead           ,'BDEAD '                &
                                           ,dsetrank,iparallel,.true.)
-                        call hdf_getslab_i(cpatch%pft             ,'PFT '                  &
+                        call hdf_getslab_i(cpatch%costate%pft             ,'PFT '                  &
                                           ,dsetrank,iparallel,.true.)
-                        call hdf_getslab_r(cpatch%nplant          ,'NPLANT '               &
+                        call hdf_getslab_r(cpatch%costate%nplant          ,'NPLANT '               &
                                           ,dsetrank,iparallel,.true.)
 
                         !------------------------------------------------------------------!
@@ -1587,26 +1587,26 @@ subroutine read_ed21_history_unstruct
                         ! both cases we assume that plants are in allometry.               !
                         !------------------------------------------------------------------!
                         do ico=1,cpatch%ncohorts
-                           ipft = cpatch%pft(ico)
+                           ipft = cpatch%costate%pft(ico)
 
-                           if (cpatch%bdead(ico) > 0.0) then
-                              cpatch%dbh(ico)   = bd2dbh(cpatch%pft(ico),cpatch%bdead(ico))
-                              cpatch%hite(ico)  = dbh2h (cpatch%pft(ico),cpatch%dbh  (ico))
+                           if (cpatch%costate%bdead(ico) > 0.0) then
+                              cpatch%costate%dbh(ico)   = bd2dbh(cpatch%costate%pft(ico),cpatch%costate%bdead(ico))
+                              cpatch%costate%hite(ico)  = dbh2h (cpatch%costate%pft(ico),cpatch%costate%dbh  (ico))
                            else
-                              cpatch%hite(ico)  = dbh2h (cpatch%pft(ico),cpatch%dbh  (ico))
-                              cpatch%bdead(ico) = dbh2bd(cpatch%dbh(ico),cpatch%pft  (ico))
+                              cpatch%costate%hite(ico)  = dbh2h (cpatch%costate%pft(ico),cpatch%costate%dbh  (ico))
+                              cpatch%costate%bdead(ico) = dbh2bd(cpatch%costate%dbh(ico),cpatch%costate%pft  (ico))
                            end if
 
-                           cpatch%bleaf(ico)  = dbh2bl(cpatch%dbh(ico),cpatch%pft(ico))
+                           cpatch%costate%bleaf(ico)  = dbh2bl(cpatch%costate%dbh(ico),cpatch%costate%pft(ico))
 
                            !----- Find the other pools. -----------------------------------!
-                           salloc  = (1.0 + q(ipft) + qsw(ipft) * cpatch%hite(ico))
+                           salloc  = (1.0 + q(ipft) + qsw(ipft) * cpatch%costate%hite(ico))
                            salloci = 1.0 / salloc
-                           cpatch%balive  (ico) = cpatch%bleaf(ico) * salloc
-                           cpatch%broot   (ico) = cpatch%balive(ico) * q(ipft) * salloci
-                           cpatch%bsapwood(ico) = cpatch%balive(ico) * qsw(ipft)           &
-                                                * cpatch%hite(ico) * salloci
-                           cpatch%bstorage(ico) = 0.0
+                           cpatch%costate%balive  (ico) = cpatch%costate%bleaf(ico) * salloc
+                           cpatch%costate%broot   (ico) = cpatch%costate%balive(ico) * q(ipft) * salloci
+                           cpatch%costate%bsapwood(ico) = cpatch%costate%balive(ico) * qsw(ipft)           &
+                                                * cpatch%costate%hite(ico) * salloci
+                           cpatch%costate%bstorage(ico) = 0.0
                            cpatch%phenology_status(ico) = 0
                         end do
 
@@ -1646,12 +1646,12 @@ subroutine read_ed21_history_unstruct
                            ! if this is a valid PFT.  If not, then we must decide what we  !
                            ! should do...                                                  !
                            !---------------------------------------------------------------!
-                           if (.not. include_pft(cpatch%pft(ico))) then
+                           if (.not. include_pft(cpatch%costate%pft(ico))) then
                               select case(pft_1st_check)
                               case (0)
                                  !----- Stop the run. -------------------------------------!
                                  write (unit=*,fmt='(a,1x,i5,1x,a)')                       &
-                                       'I found a cohort with PFT=',cpatch%pft(ico)        &
+                                       'I found a cohort with PFT=',cpatch%costate%pft(ico)        &
                                       ,' and it is not in your include_these_pft...'
                                  call fatal_error('Invalid PFT in history file'            &
                                                  ,'read_ed21_history_file'                 &
@@ -1660,28 +1660,28 @@ subroutine read_ed21_history_unstruct
                               case (1)
                                  !----- Include the unexpected PFT in the list. -----------!
                                  write (unit=*,fmt='(a,1x,i5,1x,a)')                       &
-                                      'I found a cohort with PFT=',cpatch%pft(ico)         &
+                                      'I found a cohort with PFT=',cpatch%costate%pft(ico)         &
                                      ,'... Including this PFT in your include_these_pft...'
-                                 include_pft(cpatch%pft(ico))          = .true.
-                                 include_these_pft(count(include_pft)) = cpatch%pft(ico)
+                                 include_pft(cpatch%costate%pft(ico))          = .true.
+                                 include_these_pft(count(include_pft)) = cpatch%costate%pft(ico)
 
                                  call sort_up(include_these_pft,n_pft)
 
-                                 if (is_grass(cpatch%pft(ico))) then
-                                    include_pft_ag(cpatch%pft(ico)) = .true.
+                                 if (is_grass(cpatch%costate%pft(ico))) then
+                                    include_pft_ag(cpatch%costate%pft(ico)) = .true.
                                  end if
 
                               case (2)
                                  !----- Ignore the unexpect PFT. --------------------------!
                                  write (unit=*,fmt='(a,1x,i5,1x,a)')                       &
-                                       'I found a cohort with PFT=',cpatch%pft(ico)        &
+                                       'I found a cohort with PFT=',cpatch%costate%pft(ico)        &
                                       ,'... Ignoring it...'
                                  !---------------------------------------------------------!
                                  !    The way we will ignore this cohort is by setting its !
                                  ! nplant to zero, and calling the "terminate_cohorts"     !
                                  ! subroutine right after this.                            !
                                  !---------------------------------------------------------!
-                                 cpatch%nplant(ico) = 0.
+                                 cpatch%costate%nplant(ico) = 0.
                               end select
                            end if
 
@@ -1692,59 +1692,59 @@ subroutine read_ed21_history_unstruct
                            ! the model initialises with stable numbers whilst ensuring     !
                            ! that the cohorts will be eliminated.                          !
                            !---------------------------------------------------------------!
-                           if (cpatch%balive(ico) > 0.            .and.                    &
-                               cpatch%balive(ico) < tiny_biomass) then
-                              cpatch%balive(ico) = tiny_biomass
+                           if (cpatch%costate%balive(ico) > 0.            .and.                    &
+                               cpatch%costate%balive(ico) < tiny_biomass) then
+                              cpatch%costate%balive(ico) = tiny_biomass
                            end if
-                           if (cpatch%bleaf(ico) > 0.            .and.                     &
-                               cpatch%bleaf(ico) < tiny_biomass) then
-                              cpatch%bleaf(ico) = tiny_biomass
+                           if (cpatch%costate%bleaf(ico) > 0.            .and.                     &
+                               cpatch%costate%bleaf(ico) < tiny_biomass) then
+                              cpatch%costate%bleaf(ico) = tiny_biomass
                            end if
-                           if (cpatch%broot(ico) > 0.            .and.                     &
-                               cpatch%broot(ico) < tiny_biomass) then
-                              cpatch%broot(ico) = tiny_biomass
+                           if (cpatch%costate%broot(ico) > 0.            .and.                     &
+                               cpatch%costate%broot(ico) < tiny_biomass) then
+                              cpatch%costate%broot(ico) = tiny_biomass
                            end if
-                           if (cpatch%bsapwood(ico) > 0.            .and.                  &
-                               cpatch%bsapwood(ico) < tiny_biomass) then
-                              cpatch%bsapwood(ico) = tiny_biomass
+                           if (cpatch%costate%bsapwood(ico) > 0.            .and.                  &
+                               cpatch%costate%bsapwood(ico) < tiny_biomass) then
+                              cpatch%costate%bsapwood(ico) = tiny_biomass
                            end if
-                           if (cpatch%bdead(ico) > 0.            .and.                     &
-                               cpatch%bdead(ico) < tiny_biomass) then
-                              cpatch%bdead(ico) = tiny_biomass
+                           if (cpatch%costate%bdead(ico) > 0.            .and.                     &
+                               cpatch%costate%bdead(ico) < tiny_biomass) then
+                              cpatch%costate%bdead(ico) = tiny_biomass
                            end if
-                           if (cpatch%bstorage(ico) > 0.            .and.                  &
-                               cpatch%bstorage(ico) < tiny_biomass) then
-                              cpatch%bstorage(ico) = tiny_biomass
+                           if (cpatch%costate%bstorage(ico) > 0.            .and.                  &
+                               cpatch%costate%bstorage(ico) < tiny_biomass) then
+                              cpatch%costate%bstorage(ico) = tiny_biomass
                            end if
                            !---------------------------------------------------------------!
 
 
                            !----- Compute the above-ground biomass. -----------------------!
-                           cpatch%agb(ico) = ed_biomass(cpatch%bdead(ico)                  &
-                                                       ,cpatch%balive(ico)                 &
-                                                       ,cpatch%bleaf(ico),cpatch%pft(ico)  &
-                                                       ,cpatch%hite(ico)                   &
-                                                       ,cpatch%bstorage(ico)               &
-                                                       ,cpatch%bsapwood(ico))
+                           cpatch%costate%agb(ico) = ed_biomass(cpatch%costate%bdead(ico)                  &
+                                                       ,cpatch%costate%balive(ico)                 &
+                                                       ,cpatch%costate%bleaf(ico),cpatch%costate%pft(ico)  &
+                                                       ,cpatch%costate%hite(ico)                   &
+                                                       ,cpatch%costate%bstorage(ico)               &
+                                                       ,cpatch%costate%bsapwood(ico))
 
-                           cpatch%basarea(ico)  = pio4 * cpatch%dbh(ico) * cpatch%dbh(ico)
+                           cpatch%costate%basarea(ico)  = pio4 * cpatch%costate%dbh(ico) * cpatch%costate%dbh(ico)
 
                            !----- Assign LAI, WPA, and WAI --------------------------------!
-                           call area_indices(cpatch%nplant(ico),cpatch%bleaf(ico)          &
-                                            ,cpatch%bdead(ico),cpatch%balive(ico)          &
-                                            ,cpatch%dbh(ico),cpatch%hite(ico)              &
-                                            ,cpatch%pft(ico),SLA(cpatch%pft(ico))          &
-                                            ,cpatch%lai(ico),cpatch%wpa(ico)               &
-                                            ,cpatch%wai(ico),cpatch%crown_area(ico)        &
-                                            ,cpatch%bsapwood(ico))
+                           call area_indices(cpatch%costate%nplant(ico),cpatch%costate%bleaf(ico)          &
+                                            ,cpatch%costate%bdead(ico),cpatch%costate%balive(ico)          &
+                                            ,cpatch%costate%dbh(ico),cpatch%costate%hite(ico)              &
+                                            ,cpatch%costate%pft(ico),SLA(cpatch%costate%pft(ico))          &
+                                            ,cpatch%costate%lai(ico),cpatch%costate%wpa(ico)               &
+                                            ,cpatch%costate%wai(ico),cpatch%costate%crown_area(ico)        &
+                                            ,cpatch%costate%bsapwood(ico))
 
 
                            !----- Update the derived patch-level variables. ---------------!
-                           csite%lai(ipa)  = csite%lai(ipa) + cpatch%lai(ico)
-                           csite%wpa(ipa)  = csite%wpa(ipa) + cpatch%wpa(ico)
-                           csite%wai(ipa)  = csite%wai(ipa) + cpatch%wai(ico)
+                           csite%lai(ipa)  = csite%lai(ipa) + cpatch%costate%lai(ico)
+                           csite%wpa(ipa)  = csite%wpa(ipa) + cpatch%costate%wpa(ico)
+                           csite%wai(ipa)  = csite%wai(ipa) + cpatch%costate%wai(ico)
                            csite%plant_ag_biomass(ipa) = csite%plant_ag_biomass(ipa)       &
-                                                       + cpatch%agb(ico)*cpatch%nplant(ico)
+                                                       + cpatch%costate%agb(ico)*cpatch%costate%nplant(ico)
 
                            !----- Initialise the other cohort level variables. ------------!
                            call init_ed_cohort_vars(cpatch,ico,cpoly%lsl(isi))

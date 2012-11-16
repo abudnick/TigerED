@@ -653,7 +653,7 @@ subroutine read_ed10_ed20_history_file
                          add_this_cohort(ic)                              ) then
 
                         ic2 = ic2 + 1
-                        cpatch%pft(ic2) = ipft(ic)
+                        cpatch%costate%pft(ic2) = ipft(ic)
 
 
                         !------------------------------------------------------------------!
@@ -663,9 +663,9 @@ subroutine read_ed10_ed20_history_file
                         !------------------------------------------------------------------!
                         !----- Plant density, it should be in [plants/m2]. ----------------!
                         if(ied_init_mode == 1) then
-                           cpatch%nplant(ic2) = nplant(ic) / (csite%area(ipa) )
+                           cpatch%costate%nplant(ic2) = nplant(ic) / (csite%area(ipa) )
                         else
-                           cpatch%nplant(ic2) = nplant(ic)
+                           cpatch%costate%nplant(ic2) = nplant(ic)
                         end if
 
 
@@ -678,9 +678,9 @@ subroutine read_ed10_ed20_history_file
                         select case(ied_init_mode)
                         case (6)
                            !----- Inventory.  Read DBH and find the other stuff. ----------!
-                           cpatch%dbh(ic2)   = dbh(ic)
-                           cpatch%hite(ic2)  = dbh2h(ipft(ic),dbh(ic))
-                           cpatch%bdead(ic2) = dbh2bd(dbh(ic),ipft(ic))
+                           cpatch%costate%dbh(ic2)   = dbh(ic)
+                           cpatch%costate%hite(ic2)  = dbh2h(ipft(ic),dbh(ic))
+                           cpatch%costate%bdead(ic2) = dbh2bd(dbh(ic),ipft(ic))
 
                         case default
                            !---------------------------------------------------------------!
@@ -691,13 +691,13 @@ subroutine read_ed10_ed20_history_file
                            ! equations.                                                    !
                            !---------------------------------------------------------------!
                            if (bdead(ic) > 0.0) then
-                              cpatch%bdead(ic2) = bdead(ic)
-                              cpatch%dbh(ic2)   = bd2dbh(ipft(ic),bdead(ic))
-                              cpatch%hite(ic2)  = dbh2h(ipft(ic),dbh(ic))
+                              cpatch%costate%bdead(ic2) = bdead(ic)
+                              cpatch%costate%dbh(ic2)   = bd2dbh(ipft(ic),bdead(ic))
+                              cpatch%costate%hite(ic2)  = dbh2h(ipft(ic),dbh(ic))
                            else
-                              cpatch%dbh(ic2)   = dbh(ic)
-                              cpatch%hite(ic2)  = dbh2h(ipft(ic),dbh(ic))
-                              cpatch%bdead(ic2) = dbh2bd(dbh(ic),ipft(ic))
+                              cpatch%costate%dbh(ic2)   = dbh(ic)
+                              cpatch%costate%hite(ic2)  = dbh2h(ipft(ic),dbh(ic))
+                              cpatch%costate%bdead(ic2) = dbh2bd(dbh(ic),ipft(ic))
                            end if
                         end select
                         !------------------------------------------------------------------!
@@ -708,16 +708,16 @@ subroutine read_ed10_ed20_history_file
                         !     Use allometry to define leaf and the other live biomass      !
                         ! pools.                                                           !
                         !------------------------------------------------------------------!
-                        cpatch%bleaf(ic2) = dbh2bl(dbh(ic),ipft(ic))
-                        cpatch%balive(ic2) = cpatch%bleaf(ic2) * (1.0 + q(ipft(ic))        &
-                                           + qsw(ipft(ic)) * cpatch%hite(ic2))
-                        cpatch%broot(ic2)  = cpatch%balive(ic2) * q(ipft(ic))              &
+                        cpatch%costate%bleaf(ic2) = dbh2bl(dbh(ic),ipft(ic))
+                        cpatch%costate%balive(ic2) = cpatch%costate%bleaf(ic2) * (1.0 + q(ipft(ic))        &
+                                           + qsw(ipft(ic)) * cpatch%costate%hite(ic2))
+                        cpatch%costate%broot(ic2)  = cpatch%costate%balive(ic2) * q(ipft(ic))              &
                                            / ( 1.0 + q(ipft(ic)) + qsw(ipft(ic))           &
-                                             * cpatch%hite(ic2))
-                        cpatch%bsapwood(ic2) = cpatch%balive(ic2)                          &
-                                             * qsw(ipft(ic))* cpatch%hite(ic2)             &
+                                             * cpatch%costate%hite(ic2))
+                        cpatch%costate%bsapwood(ic2) = cpatch%costate%balive(ic2)                          &
+                                             * qsw(ipft(ic))* cpatch%costate%hite(ic2)             &
                                              / ( 1.0 + q(ipft(ic)) + qsw(ipft(ic))         &
-                                               * cpatch%hite(ic2))
+                                               * cpatch%costate%hite(ic2))
 
 
                         !------------------------------------------------------------------!
@@ -725,18 +725,18 @@ subroutine read_ed10_ed20_history_file
                         ! phenology after this sub-routine.                                !
                         !------------------------------------------------------------------!
                         cpatch%phenology_status(ic2) = 0
-                        cpatch%bstorage        (ic2) = 0.0
+                        cpatch%costate%bstorage        (ic2) = 0.0
                         !------------------------------------------------------------------!
 
 
 
                         !----- Assign LAI, WPA, and WAI -----------------------------------!
-                        call area_indices(cpatch%nplant(ic2),cpatch%bleaf(ic2)             &
-                                         ,cpatch%bdead(ic2),cpatch%balive(ic2)             &
-                                         ,cpatch%dbh(ic2), cpatch%hite(ic2)                &
-                                         ,cpatch%pft(ic2), SLA(cpatch%pft(ic2))            &
-                                         ,cpatch%lai(ic2),cpatch%wpa(ic2), cpatch%wai(ic2) &
-                                         ,cpatch%crown_area(ic2),cpatch%bsapwood(ic2))
+                        call area_indices(cpatch%costate%nplant(ic2),cpatch%costate%bleaf(ic2)             &
+                                         ,cpatch%costate%bdead(ic2),cpatch%costate%balive(ic2)             &
+                                         ,cpatch%costate%dbh(ic2), cpatch%costate%hite(ic2)                &
+                                         ,cpatch%costate%pft(ic2), SLA(cpatch%costate%pft(ic2))            &
+                                         ,cpatch%costate%lai(ic2),cpatch%costate%wpa(ic2), cpatch%costate%wai(ic2) &
+                                         ,cpatch%costate%crown_area(ic2),cpatch%costate%bsapwood(ic2))
 
                         !----- Initialise the carbon balance. -----------------------------!
                         cpatch%cb    (1:12,ic2) = cb(1:12,ic)
@@ -745,11 +745,11 @@ subroutine read_ed10_ed20_history_file
                         cpatch%cb_max(  13,ic2) = 0.0
 
                         !----- Above ground biomass, use the allometry. -------------------!
-                        cpatch%agb(ic2) = ed_biomass(cpatch%bdead(ic2),cpatch%balive(ic2)  &
-                                                    ,cpatch%bleaf(ic2),cpatch%pft(ic2)     &
-                                                    ,cpatch%hite(ic2),cpatch%bstorage(ic2) &
-                                                    ,cpatch%bsapwood(ic2))
-                        cpatch%basarea(ic2)  = pio4 * cpatch%dbh(ic2) * cpatch%dbh(ic2)
+                        cpatch%costate%agb(ic2) = ed_biomass(cpatch%costate%bdead(ic2),cpatch%costate%balive(ic2)  &
+                                                    ,cpatch%costate%bleaf(ic2),cpatch%costate%pft(ic2)     &
+                                                    ,cpatch%costate%hite(ic2),cpatch%costate%bstorage(ic2) &
+                                                    ,cpatch%costate%bsapwood(ic2))
+                        cpatch%costate%basarea(ic2)  = pio4 * cpatch%costate%dbh(ic2) * cpatch%costate%dbh(ic2)
 
                         !----- Growth rates, start with zero. -----------------------------!
                         cpatch%dagb_dt(ic2)  = 0.
@@ -766,7 +766,7 @@ subroutine read_ed10_ed20_history_file
 
                         !----- Update the patch level above-ground biomass. ---------------!
                         csite%plant_ag_biomass(ipa) = csite%plant_ag_biomass(ipa)          &
-                                                    + cpatch%agb(ic2) * cpatch%nplant(ic2)
+                                                    + cpatch%costate%agb(ic2) * cpatch%costate%nplant(ic2)
                      end if
                   end do
                end if
@@ -797,9 +797,9 @@ subroutine read_ed10_ed20_history_file
                
                cpatch => csite%patch(ipa)
                do ico = 1,cpatch%ncohorts
-                  csite%lai(ipa)  = csite%lai(ipa) + cpatch%lai(ico)
-                  csite%wpa(ipa)  = csite%wpa(ipa) + cpatch%wpa(ico)
-                  csite%wai(ipa)  = csite%wai(ipa) + cpatch%wai(ico)
+                  csite%lai(ipa)  = csite%lai(ipa) + cpatch%costate%lai(ico)
+                  csite%wpa(ipa)  = csite%wpa(ipa) + cpatch%costate%wpa(ico)
+                  csite%wai(ipa)  = csite%wai(ipa) + cpatch%costate%wai(ico)
                   ncohorts        = ncohorts + 1
                end do
                site_lai = site_lai + csite%area(ipa) * csite%lai(ipa)
@@ -845,10 +845,10 @@ subroutine read_ed10_ed20_history_file
                do ico = 1,cpatch%ncohorts
                   ncohorts        = ncohorts+1
                   npatchco        = npatchco+1
-                  csite%lai(ipa)  = csite%lai(ipa)  + cpatch%lai(ico)
-                  csite%wpa(ipa)  = csite%wpa(ipa)  + cpatch%wpa(ico)
-                  csite%wai(ipa)  = csite%wai(ipa)  + cpatch%wai(ico)
-!print*,'pft',cpatch%pft(ico)
+                  csite%lai(ipa)  = csite%lai(ipa)  + cpatch%costate%lai(ico)
+                  csite%wpa(ipa)  = csite%wpa(ipa)  + cpatch%costate%wpa(ico)
+                  csite%wai(ipa)  = csite%wai(ipa)  + cpatch%costate%wai(ico)
+!print*,'pft',cpatch%costate%pft(ico)
                end do
 
                poly_lai = poly_lai + cpoly%area(isi) * csite%area(ipa) * csite%lai(ipa)

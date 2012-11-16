@@ -106,23 +106,23 @@ subroutine update_patch_derived_props(csite,lsl,prss,ipa)
    !----- Loop over cohorts and integrate the patch-level properties. ---------------------!
    do ico = 1,cpatch%ncohorts
 
-      ipft = cpatch%pft(ico)
+      ipft = cpatch%costate%pft(ico)
 
       !----- Update the patch-level area indices. -----------------------------------------!
-      csite%lai(ipa)  = csite%lai(ipa)  + cpatch%lai(ico)
-      csite%wpa(ipa)  = csite%wpa(ipa)  + cpatch%wpa(ico)
-      csite%wai(ipa)  = csite%wai(ipa)  + cpatch%wai(ico)
+      csite%lai(ipa)  = csite%lai(ipa)  + cpatch%costate%lai(ico)
+      csite%wpa(ipa)  = csite%wpa(ipa)  + cpatch%costate%wpa(ico)
+      csite%wai(ipa)  = csite%wai(ipa)  + cpatch%costate%wai(ico)
       !------------------------------------------------------------------------------------!
 
 
 
       !----- Compute the patch-level above-ground biomass
       csite%plant_ag_biomass(ipa) = csite%plant_ag_biomass(ipa)                            &
-                                  + ed_biomass(cpatch%bdead(ico),cpatch%balive(ico)        &
-                                              ,cpatch%bleaf(ico),cpatch%pft(ico)           &
-                                              ,cpatch%hite(ico),cpatch%bstorage(ico)       &
-                                              ,cpatch%bsapwood(ico))                       &
-                                  * cpatch%nplant(ico)           
+                                  + ed_biomass(cpatch%costate%bdead(ico),cpatch%costate%balive(ico)        &
+                                              ,cpatch%costate%bleaf(ico),cpatch%costate%pft(ico)           &
+                                              ,cpatch%costate%hite(ico),cpatch%costate%bstorage(ico)       &
+                                              ,cpatch%costate%bsapwood(ico))                       &
+                                  * cpatch%costate%nplant(ico)           
       !------------------------------------------------------------------------------------!
 
 
@@ -135,10 +135,10 @@ subroutine update_patch_derived_props(csite,lsl,prss,ipa)
       ! or snow, because this will make the plants "shorter".                              !
       !------------------------------------------------------------------------------------!
       if (csite%opencan_frac(ipa) > 0.0) then
-         weight                  = cpatch%nplant(ico) * cpatch%basarea(ico)
+         weight                  = cpatch%costate%nplant(ico) * cpatch%costate%basarea(ico)
          weight_sum              = weight_sum + weight
-         csite%veg_height(ipa)   = csite%veg_height(ipa) + cpatch%hite(ico) * weight
-         csite%opencan_frac(ipa) = csite%opencan_frac(ipa) * (1.0 - cpatch%crown_area(ico))
+         csite%veg_height(ipa)   = csite%veg_height(ipa) + cpatch%costate%hite(ico) * weight
+         csite%opencan_frac(ipa) = csite%opencan_frac(ipa) * (1.0 - cpatch%costate%crown_area(ico))
       end if
       !------------------------------------------------------------------------------------!
 
@@ -318,17 +318,17 @@ subroutine update_site_derived_props(cpoly,census_flag,isi)
 
       !----- Loop over cohorts. -----------------------------------------------------------!
       do ico = 1,cpatch%ncohorts
-         ipft = cpatch%pft(ico)
+         ipft = cpatch%costate%pft(ico)
 
          !----- Update basal area and above-ground biomass. -------------------------------!
-         if(census_flag == 0 .or. cpatch%first_census(ico) == 1)then
-            bdbh = max(0,min( int(cpatch%dbh(ico) * 0.1), 10)) + 1
+         if(census_flag == 0 .or. cpatch%costate%first_census(ico) == 1)then
+            bdbh = max(0,min( int(cpatch%costate%dbh(ico) * 0.1), 10)) + 1
 
             cpoly%basal_area(ipft,bdbh,isi) = cpoly%basal_area(ipft, bdbh,isi)             &
-                                            + cpatch%basarea(ico) * cpatch%nplant(ico)     &
+                                            + cpatch%costate%basarea(ico) * cpatch%costate%nplant(ico)     &
                                             * csite%area(ipa)   
             cpoly%agb(ipft,bdbh,isi)        = cpoly%agb(ipft, bdbh,isi)                    &
-                                            + cpatch%agb(ico)     * cpatch%nplant(ico)     &
+                                            + cpatch%costate%agb(ico)     * cpatch%costate%nplant(ico)     &
                                             * csite%area(ipa)
          end if
       end do

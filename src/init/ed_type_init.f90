@@ -17,6 +17,7 @@ subroutine init_ed_cohort_vars(cpatch,ico, lsl)
                             , vm_slop             & ! intent(in)
                             , vm_amp              & ! intent(in)
                             , vm_min              ! ! intent(in)
+   use cohort_state, only: init_cohort_vars_state
    implicit none
    !----- Arguments. ----------------------------------------------------------------------!
    type(patchtype), target     :: cpatch     ! Current patch
@@ -24,16 +25,7 @@ subroutine init_ed_cohort_vars(cpatch,ico, lsl)
    integer        , intent(in) :: lsl        ! Lowest soil level layer
    !---------------------------------------------------------------------------------------!
 
-
-   !---------------------------------------------------------------------------------------!
-   !    Set all cohorts to not have enough leaf area index or wood area index to be        !
-   ! resolved.  The code will update this every time step, but we must assign an initial   !
-   ! value so the debugger won't complain.                                                 !
-   !---------------------------------------------------------------------------------------!
-   cpatch%leaf_resolvable(ico) = .false.
-   cpatch%wood_resolvable(ico) = .false.
-   !---------------------------------------------------------------------------------------!
-
+   call init_cohort_vars_state(cpatch%costate, ico, lsl)
 
    cpatch%mean_gpp(ico)          = 0.0
    cpatch%mean_leaf_resp(ico)    = 0.0
@@ -44,13 +36,6 @@ subroutine init_ed_cohort_vars(cpatch,ico, lsl)
    cpatch%today_leaf_resp(ico)   = 0.0
    cpatch%today_root_resp(ico)   = 0.0
    cpatch%today_gpp(ico)         = 0.0
-!   cpatch%today_nppleaf(ico)     = 0.0
-!   cpatch%today_nppfroot(ico)    = 0.0
-!   cpatch%today_nppsapwood(ico)  = 0.0
-!   cpatch%today_nppcroot(ico)    = 0.0
-!   cpatch%today_nppseeds(ico)    = 0.0
-!   cpatch%today_nppwood(ico)     = 0.0
-!   cpatch%today_nppdaily(ico)    = 0.0
    cpatch%today_gpp_pot(ico)     = 0.0
    cpatch%today_gpp_max(ico)     = 0.0
 
@@ -138,53 +123,6 @@ subroutine init_ed_cohort_vars(cpatch,ico, lsl)
    cpatch%cb_max(13,ico)   = 0.0
    !---------------------------------------------------------------------------------------!
 
-
-   !---------------------------------------------------------------------------------------!
-   !    The stomate structure.  This is initialised with zeroes except for the "recalc"    !
-   ! element, which should be set to 1 so the photosynthesis will be solved exactly at the !
-   ! first time.                                                                           !
-   !---------------------------------------------------------------------------------------!
-   cpatch%old_stoma_data(ico)%recalc           = 1
-   cpatch%old_stoma_data(ico)%T_L              = 0.0
-   cpatch%old_stoma_data(ico)%e_A              = 0.0
-   cpatch%old_stoma_data(ico)%PAR              = 0.0
-   cpatch%old_stoma_data(ico)%rb_factor        = 0.0
-   cpatch%old_stoma_data(ico)%prss             = 0.0
-   cpatch%old_stoma_data(ico)%phenology_factor = 0.0
-   cpatch%old_stoma_data(ico)%gsw_open         = 0.0
-   cpatch%old_stoma_data(ico)%ilimit           = 0
-   cpatch%old_stoma_data(ico)%T_L_residual     = 0.0
-   cpatch%old_stoma_data(ico)%e_a_residual     = 0.0
-   cpatch%old_stoma_data(ico)%par_residual     = 0.0
-   cpatch%old_stoma_data(ico)%rb_residual      = 0.0
-   cpatch%old_stoma_data(ico)%leaf_residual    = 0.0
-   cpatch%old_stoma_data(ico)%gsw_residual     = 0.0
-   cpatch%old_stoma_vector(:,ico) = 0.
-   cpatch%old_stoma_vector(1,ico) = 1.
-   !---------------------------------------------------------------------------------------!
-
-
-
-
-   !---------------------------------------------------------------------------------------!
-   !      The root depth should be the actual level for the roots.                         !
-   !---------------------------------------------------------------------------------------!
-   cpatch%krdepth(ico) = dbh2krdepth(cpatch%hite(ico),cpatch%dbh(ico),cpatch%pft(ico),lsl)
-   !---------------------------------------------------------------------------------------!
-
-
-
-   !---------------------------------------------------------------------------------------!
-   !       First census must be 1.  Not sure what this variable does, though.              !
-   !---------------------------------------------------------------------------------------!
-   cpatch%first_census(ico) = 1
-   !---------------------------------------------------------------------------------------!
-
-
-
-   cpatch%new_recruit_flag(ico) = 0
-   cpatch%bseeds(ico)           = 0.0
-
    cpatch%leaf_energy(ico)      = 0.
    cpatch%leaf_hcap(ico)        = 0.
    cpatch%leaf_temp(ico)        = 0.
@@ -222,13 +160,6 @@ subroutine init_ed_cohort_vars(cpatch,ico, lsl)
       cpatch%mmean_par_l_beam       (ico) = 0.0
       cpatch%mmean_par_l_diff       (ico) = 0.0
       cpatch%mmean_gpp              (ico) = 0.0
-!      cpatch%mmean_nppleaf          (ico) = 0.0
-!      cpatch%mmean_nppfroot         (ico) = 0.0
-!      cpatch%mmean_nppsapwood       (ico) = 0.0
-!      cpatch%mmean_nppcroot         (ico) = 0.0
-!      cpatch%mmean_nppseeds         (ico) = 0.0
-!      cpatch%mmean_nppwood          (ico) = 0.0
-!      cpatch%mmean_nppdaily         (ico) = 0.0
       cpatch%mmean_leaf_resp        (ico) = 0.0
       cpatch%mmean_root_resp        (ico) = 0.0
       cpatch%mmean_growth_resp      (ico) = 0.0
@@ -263,16 +194,6 @@ subroutine init_ed_cohort_vars(cpatch,ico, lsl)
       cpatch%dmean_par_l            (ico) = 0.0
       cpatch%dmean_par_l_beam       (ico) = 0.0
       cpatch%dmean_par_l_diff       (ico) = 0.0
-!      cpatch%dmean_gpp              (ico) = 0.0
-!      cpatch%dmean_nppleaf          (ico) = 0.0
-!      cpatch%dmean_nppfroot         (ico) = 0.0
-!      cpatch%dmean_nppsapwood       (ico) = 0.0
-!      cpatch%dmean_nppcroot         (ico) = 0.0
-!      cpatch%dmean_nppseeds         (ico) = 0.0
-!      cpatch%dmean_nppwood          (ico) = 0.0
-!      cpatch%dmean_nppdaily         (ico) = 0.0
-!      cpatch%dmean_leaf_resp        (ico) = 0.0
-!      cpatch%dmean_root_resp        (ico) = 0.0
       cpatch%dmean_light_level      (ico) = 0.0
       cpatch%dmean_light_level_beam (ico) = 0.0
       cpatch%dmean_light_level_diff (ico) = 0.0
@@ -319,8 +240,8 @@ subroutine init_ed_cohort_vars(cpatch,ico, lsl)
    ! do not define the turnover rate (temperate cold-deciduous for example), in which case !
    ! we assign a meaningless number just to make sure the variable is initialised.         !
    !---------------------------------------------------------------------------------------!
-   if (leaf_turnover_rate(cpatch%pft(ico)) > 0.0) then
-      cpatch%llspan(ico) = 12.0/leaf_turnover_rate(cpatch%pft(ico))
+   if (leaf_turnover_rate(cpatch%costate%pft(ico)) > 0.0) then
+      cpatch%llspan(ico) = 12.0/leaf_turnover_rate(cpatch%costate%pft(ico))
    else
       cpatch%llspan(ico) = 9999.
    end if
@@ -334,7 +255,7 @@ subroutine init_ed_cohort_vars(cpatch,ico, lsl)
    !---------------------------------------------------------------------------------------!
    !cpatch%vm_bar(ico) = Vm0(cpatch%pft(ico))
    cpatch%vm_bar(ico)= vm_amp / (1.0 + (cpatch%llspan(ico)/vm_tran)**vm_slop) + vm_min
-   cpatch%sla(ico) = sla(cpatch%pft(ico))
+   cpatch%sla(ico) = sla(cpatch%costate%pft(ico))
    !---------------------------------------------------------------------------------------!
 
 

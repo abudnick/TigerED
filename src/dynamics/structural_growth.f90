@@ -86,37 +86,37 @@ n1=0.;n2=0.;nup=0.;nloss=0.
 
             cohortloop: do ico = 1,cpatch%ncohorts
                !----- Assigning an alias for PFT type. ------------------------------------!
-               ipft    = cpatch%pft(ico)
+               ipft    = cpatch%costate%pft(ico)
 
-               salloc  = 1.0 + q(ipft) + qsw(ipft) * cpatch%hite(ico)
+               salloc  = 1.0 + q(ipft) + qsw(ipft) * cpatch%costate%hite(ico)
                salloci = 1.0 / salloc
 
                !----- Remember inputs in order to calculate increments later on. ----------!
-               balive_in   = cpatch%balive(ico)
-               bdead_in    = cpatch%bdead(ico)
-               hite_in     = cpatch%hite(ico)
-               dbh_in      = cpatch%dbh(ico)
-               nplant_in   = cpatch%nplant(ico)
-               bstorage_in = cpatch%bstorage(ico)
-               agb_in      = cpatch%agb(ico)
-               ba_in       = cpatch%basarea(ico)
-n1=n1+csite%area(ipa)*cpatch%nplant(ico)*(cpatch%balive(ico)/c2n_leaf(ipft)+cpatch%bstorage(ico)/c2n_storage+cpatch%bdead(ico)/c2n_stem(cpatch%pft(ico)))
-!n1=n1+csite%area(ipa)*cpatch%nplant(ico)*cpatch%bstorage(ico)/c2n_storage
-!print*,cpatch%nplant(ico)*cpatch%bstorage(ico)/150.
+               balive_in   = cpatch%costate%balive(ico)
+               bdead_in    = cpatch%costate%bdead(ico)
+               hite_in     = cpatch%costate%hite(ico)
+               dbh_in      = cpatch%costate%dbh(ico)
+               nplant_in   = cpatch%costate%nplant(ico)
+               bstorage_in = cpatch%costate%bstorage(ico)
+               agb_in      = cpatch%costate%agb(ico)
+               ba_in       = cpatch%costate%basarea(ico)
+n1=n1+csite%area(ipa)*cpatch%costate%nplant(ico)*(cpatch%costate%balive(ico)/c2n_leaf(ipft)+cpatch%costate%bstorage(ico)/c2n_storage+cpatch%costate%bdead(ico)/c2n_stem(cpatch%costate%pft(ico)))
+!n1=n1+csite%area(ipa)*cpatch%costate%nplant(ico)*cpatch%costate%bstorage(ico)/c2n_storage
+!print*,cpatch%costate%nplant(ico)*cpatch%costate%bstorage(ico)/150.
                !---------------------------------------------------------------------------!
                !    Apply mortality, and do not allow nplant < negligible_nplant (such a   !
                ! sparse cohort is about to be terminated, anyway).                         !
                ! NB: monthly_dndt may be negative.                                         !
                !---------------------------------------------------------------------------!
                cpatch%monthly_dndt(ico) = max(cpatch%monthly_dndt(ico)                     &
-                                             ,negligible_nplant(ipft) - cpatch%nplant(ico))
+                                             ,negligible_nplant(ipft) - cpatch%costate%nplant(ico))
 !cpatch%monthly_dndt(ico) = 0.
-               cpatch%nplant(ico)       = cpatch%nplant(ico) + cpatch%monthly_dndt(ico)
+               cpatch%costate%nplant(ico)       = cpatch%costate%nplant(ico) + cpatch%monthly_dndt(ico)
 
                !----- Calculate litter owing to mortality. --------------------------------!
-               balive_mort_litter   = - cpatch%balive(ico)   * cpatch%monthly_dndt(ico)
-               bstorage_mort_litter = - cpatch%bstorage(ico) * cpatch%monthly_dndt(ico)
-               struct_litter        = - cpatch%bdead(ico)    * cpatch%monthly_dndt(ico)
+               balive_mort_litter   = - cpatch%costate%balive(ico)   * cpatch%monthly_dndt(ico)
+               bstorage_mort_litter = - cpatch%costate%bstorage(ico) * cpatch%monthly_dndt(ico)
+               struct_litter        = - cpatch%costate%bdead(ico)    * cpatch%monthly_dndt(ico)
                mort_litter          = balive_mort_litter + bstorage_mort_litter            &
                                     + struct_litter
 
@@ -124,13 +124,13 @@ n1=n1+csite%area(ipa)*cpatch%nplant(ico)*(cpatch%balive(ico)/c2n_leaf(ipft)+cpat
                cpatch%monthly_dndt(ico) = 0.0
 
                !----- Determine how to distribute what is in bstorage. --------------------!
-               call plant_structural_allocation(cpatch%pft(ico),cpatch%hite(ico)           &
+               call plant_structural_allocation(cpatch%costate%pft(ico),cpatch%costate%hite(ico)           &
                                             ,cgrid%lat(ipy),month                          &
                                             ,cpatch%phenology_status(ico),f_bseeds,f_bdead)
 !f_bseeds=1.
 !f_bdead=0.
                !----- Grow plants; bdead gets fraction f_bdead of bstorage. ---------------!
-               cpatch%bdead(ico) = cpatch%bdead(ico) + f_bdead * cpatch%bstorage(ico)
+               cpatch%costate%bdead(ico) = cpatch%costate%bdead(ico) + f_bdead * cpatch%costate%bstorage(ico)
 
 
                !------ NPP allocation to wood and course roots in KgC /m2 -----------------!
@@ -144,22 +144,22 @@ n1=n1+csite%area(ipa)*cpatch%nplant(ico)*(cpatch%balive(ico)/c2n_leaf(ipft)+cpat
                ! ation to structural growth.  This is necessary because c2n_stem does not  !
                ! necessarily equal c2n_storage.                                            !
                !---------------------------------------------------------------------------!
-               net_stem_N_uptake = (cpatch%bdead(ico) - bdead_in) * cpatch%nplant(ico)     &
-                                 * ( 1.0 / c2n_stem(cpatch%pft(ico)) - 1.0 / c2n_storage)
+               net_stem_N_uptake = (cpatch%costate%bdead(ico) - bdead_in) * cpatch%costate%nplant(ico)     &
+                                 * ( 1.0 / c2n_stem(cpatch%costate%pft(ico)) - 1.0 / c2n_storage)
 
-               net_stem_P_uptake = (cpatch%bdead(ico) - bdead_in) * cpatch%nplant(ico)     &
-                                 * ( 1.0 / c2p_dead(cpatch%pft(ico)) - 1.0 / c2p_storage(cpatch%pft(ico)))
+               net_stem_P_uptake = (cpatch%costate%bdead(ico) - bdead_in) * cpatch%costate%nplant(ico)     &
+                                 * ( 1.0 / c2p_dead(cpatch%costate%pft(ico)) - 1.0 / c2p_storage(cpatch%costate%pft(ico)))
 !net_stem_N_uptake=0.               
                !---------------------------------------------------------------------------!
                !      Calculate total seed production and seed litter.  The seed pool gets !
                ! a fraction f_bseeds of bstorage.                                          !
                !---------------------------------------------------------------------------!
-               cpatch%bseeds(ico) = f_bseeds * cpatch%bstorage(ico)
+               cpatch%costate%bseeds(ico) = f_bseeds * cpatch%costate%bstorage(ico)
                
 !               cpatch%today_NPPseeds(ico) = f_bseeds * cpatch%bstorage(ico)                &
 !                                          * cpatch%nplant(ico)
                
-               seed_litter        = cpatch%bseeds(ico) * cpatch%nplant(ico)                &
+               seed_litter        = cpatch%costate%bseeds(ico) * cpatch%costate%nplant(ico)                &
                                   * seedling_mortality(ipft)
 !seed_litter=0.
 nloss=nloss+csite%area(ipa)*seed_litter/c2n_recruit(ipft)               
@@ -169,18 +169,18 @@ nloss=nloss+csite%area(ipa)*seed_litter/c2n_recruit(ipft)
                ! ation to seeds.  This is necessary because c2n_recruit does not have to   !
                ! be equal to c2n_storage.                                                  !
                !---------------------------------------------------------------------------!
-               net_seed_N_uptake = cpatch%bseeds(ico) * cpatch%nplant(ico)                 &
+               net_seed_N_uptake = cpatch%costate%bseeds(ico) * cpatch%costate%nplant(ico)                 &
                                  * (1.0 / c2n_recruit(ipft) - 1.0 / c2n_storage)
 
-               net_seed_P_uptake = cpatch%bseeds(ico) * cpatch%nplant(ico)                 &
+               net_seed_P_uptake = cpatch%costate%bseeds(ico) * cpatch%costate%nplant(ico)                 &
                                  * (1.0 / c2p_recruit(ipft) - 1.0 / c2p_storage(ipft))
 !print*,net_seed_N_uptake,'here',cpatch%bseeds(ico)
                !----- Decrement the storage pool. -----------------------------------------!
 !print*,net_seed_N_uptake
 !print*,cpatch%bseeds(ico)/c2n_recruit(ipft)*cpatch%nplant(ico)-net_seed_N_uptake-cpatch%bstorage(ico)/150.*cpatch%nplant(ico)
-               cpatch%bstorage(ico) = cpatch%bstorage(ico) * (1.0 - f_bdead - f_bseeds)
+               cpatch%costate%bstorage(ico) = cpatch%costate%bstorage(ico) * (1.0 - f_bdead - f_bseeds)
 
-n2=n2+csite%area(ipa)*cpatch%nplant(ico)*(cpatch%balive(ico)/c2n_leaf(cpatch%pft(ico))+cpatch%bdead(ico)/c2n_stem(cpatch%pft(ico))+cpatch%bstorage(ico)/c2n_storage+cpatch%bseeds(ico)/c2n_recruit(ipft))
+n2=n2+csite%area(ipa)*cpatch%costate%nplant(ico)*(cpatch%costate%balive(ico)/c2n_leaf(cpatch%costate%pft(ico))+cpatch%costate%bdead(ico)/c2n_stem(cpatch%costate%pft(ico))+cpatch%costate%bstorage(ico)/c2n_storage+cpatch%costate%bseeds(ico)/c2n_recruit(ipft))
 
 !stop
                !----- Finalize litter inputs. ---------------------------------------------!
@@ -204,7 +204,7 @@ n2=n2+csite%area(ipa)*cpatch%nplant(ico)*(cpatch%balive(ico)/c2n_leaf(cpatch%pft
                                  + (1.0 - f_labile(ipft)) * balive_mort_litter
                csite%ssl_in(ipa) = csite%ssl_in(ipa)                                       &
                                  + ( (1.0 - f_labile(ipft)) * balive_mort_litter           &
-                                    + struct_litter ) * l2n_stem / c2n_stem(cpatch%pft(ico))
+                                    + struct_litter ) * l2n_stem / c2n_stem(cpatch%costate%pft(ico))
                csite%total_plant_nitrogen_uptake(ipa) =                                    &
                       csite%total_plant_nitrogen_uptake(ipa) + net_seed_N_uptake           &
                     + net_stem_N_uptake
@@ -231,8 +231,8 @@ nup=nup+csite%area(ipa)*(net_stem_N_uptake+net_seed_N_uptake)
                !---------------------------------------------------------------------------!
                old_leaf_hcap = cpatch%leaf_hcap(ico)
                old_wood_hcap = cpatch%wood_hcap(ico)
-               call calc_veg_hcap(cpatch%bleaf(ico),cpatch%bdead(ico),cpatch%bsapwood(ico) &
-                                 ,cpatch%nplant(ico),cpatch%pft(ico)                       &
+               call calc_veg_hcap(cpatch%costate%bleaf(ico),cpatch%costate%bdead(ico),cpatch%costate%bsapwood(ico) &
+                                 ,cpatch%costate%nplant(ico),cpatch%costate%pft(ico)                       &
                                  ,cpatch%leaf_hcap(ico),cpatch%wood_hcap(ico) )
                call update_veg_energy_cweh(csite,ipa,ico,old_leaf_hcap,old_wood_hcap)
                call is_resolvable(csite,ipa,ico,cpoly%green_leaf_factor(:,isi))
@@ -378,20 +378,20 @@ subroutine structural_growth_eq_0(cgrid, month)
 
             cohortloop: do ico = 1,cpatch%ncohorts
                !----- Assigning an alias for PFT type. ------------------------------------!
-               ipft    = cpatch%pft(ico)
+               ipft    = cpatch%costate%pft(ico)
 
-               salloc  = 1.0 + q(ipft) + qsw(ipft) * cpatch%hite(ico)
+               salloc  = 1.0 + q(ipft) + qsw(ipft) * cpatch%costate%hite(ico)
                salloci = 1.0 / salloc
 
                !----- Remember inputs in order to calculate increments later on. ----------!
-               balive_in   = cpatch%balive(ico)
-               bdead_in    = cpatch%bdead(ico)
-               hite_in     = cpatch%hite(ico)
-               dbh_in      = cpatch%dbh(ico)
-               nplant_in   = cpatch%nplant(ico)
-               bstorage_in = cpatch%bstorage(ico)
-               agb_in      = cpatch%agb(ico)
-               ba_in       = cpatch%basarea(ico)
+               balive_in   = cpatch%costate%balive(ico)
+               bdead_in    = cpatch%costate%bdead(ico)
+               hite_in     = cpatch%costate%hite(ico)
+               dbh_in      = cpatch%costate%dbh(ico)
+               nplant_in   = cpatch%costate%nplant(ico)
+               bstorage_in = cpatch%costate%bstorage(ico)
+               agb_in      = cpatch%costate%agb(ico)
+               ba_in       = cpatch%costate%basarea(ico)
 
                !----- Reset monthly_dndt. -------------------------------------------------!
                cpatch%monthly_dndt(ico) = 0.0
@@ -401,17 +401,17 @@ subroutine structural_growth_eq_0(cgrid, month)
                ! ation to structural growth.  This is necessary because c2n_stem does not  !
                ! necessarily equal c2n_storage.                                            !
                !---------------------------------------------------------------------------!
-               net_stem_N_uptake = (cpatch%bdead(ico) - bdead_in) * cpatch%nplant(ico)     &
-                                 * ( 1.0 / c2n_stem(cpatch%pft(ico)) - 1.0 / c2n_storage)
+               net_stem_N_uptake = (cpatch%costate%bdead(ico) - bdead_in) * cpatch%costate%nplant(ico)     &
+                                 * ( 1.0 / c2n_stem(cpatch%costate%pft(ico)) - 1.0 / c2n_storage)
 
-               net_stem_P_uptake = (cpatch%bdead(ico) - bdead_in) * cpatch%nplant(ico)     &
-                                 * ( 1.0 / c2p_dead(cpatch%pft(ico)) - 1.0 / c2p_storage(cpatch%pft(ico)))
+               net_stem_P_uptake = (cpatch%costate%bdead(ico) - bdead_in) * cpatch%costate%nplant(ico)     &
+                                 * ( 1.0 / c2p_dead(cpatch%costate%pft(ico)) - 1.0 / c2p_storage(cpatch%costate%pft(ico)))
                
                !---------------------------------------------------------------------------!
                !      Calculate total seed production and seed litter.  The seed pool gets !
                ! a fraction f_bseeds of bstorage.                                          !
                !---------------------------------------------------------------------------!
-               cpatch%bseeds(ico) = 0.
+               cpatch%costate%bseeds(ico) = 0.
                seed_litter        = 0.
                
                !---------------------------------------------------------------------------!
@@ -419,9 +419,9 @@ subroutine structural_growth_eq_0(cgrid, month)
                ! ation to seeds.  This is necessary because c2n_recruit does not have to   !
                ! be equal to c2n_storage.                                                  !
                !---------------------------------------------------------------------------!
-               net_seed_N_uptake = cpatch%bseeds(ico) * cpatch%nplant(ico)                 &
+               net_seed_N_uptake = cpatch%costate%bseeds(ico) * cpatch%costate%nplant(ico)                 &
                                  * (1.0 / c2n_recruit(ipft) - 1.0 / c2n_storage)
-               net_seed_P_uptake = cpatch%bseeds(ico) * cpatch%nplant(ico)                 &
+               net_seed_P_uptake = cpatch%costate%bseeds(ico) * cpatch%costate%nplant(ico)                 &
                                  * (1.0 / c2p_recruit(ipft) - 1.0 / c2p_storage(ipft))
 
                !----- Finalize litter inputs. ---------------------------------------------!
@@ -601,27 +601,27 @@ subroutine update_derived_cohort_props(cpatch,ico,green_leaf_factor,lsl)
    !---------------------------------------------------------------------------------------!
 
    !----- Gett DBH and height from structural biomass. ------------------------------------!
-   cpatch%dbh(ico)  = bd2dbh(cpatch%pft(ico), cpatch%bdead(ico))
-   cpatch%hite(ico) = dbh2h(cpatch%pft(ico), cpatch%dbh(ico))
+   cpatch%costate%dbh(ico)  = bd2dbh(cpatch%costate%pft(ico), cpatch%costate%bdead(ico))
+   cpatch%costate%hite(ico) = dbh2h(cpatch%costate%pft(ico), cpatch%costate%dbh(ico))
    
    !----- Check the phenology status and whether it needs to change. ----------------------!
    select case (cpatch%phenology_status(ico))
    case (0,1)
 
-      select case (phenology(cpatch%pft(ico)))
+      select case (phenology(cpatch%costate%pft(ico)))
       case (4)
          cpatch%elongf(ico)  = max(0.0,min (1.0, cpatch%paw_avg(ico)/theta_crit))
       case default
          cpatch%elongf(ico)  = 1.0
       end select
 
-      bl_max = dbh2bl(cpatch%dbh(ico),cpatch%pft(ico))                                     &
+      bl_max = dbh2bl(cpatch%costate%dbh(ico),cpatch%costate%pft(ico))                                     &
              * green_leaf_factor * cpatch%elongf(ico)
       !------------------------------------------------------------------------------------!
       !     If LEAF biomass is not the maximum, set it to 1 (leaves partially flushed),    !
       ! otherwise, set it to 0 (leaves are fully flushed).                                 !
       !------------------------------------------------------------------------------------!
-      if (cpatch%bleaf(ico) < bl_max) then
+      if (cpatch%costate%bleaf(ico) < bl_max) then
          cpatch%phenology_status(ico) = 1
       else
          cpatch%phenology_status(ico) = 0
@@ -630,19 +630,19 @@ subroutine update_derived_cohort_props(cpatch,ico,green_leaf_factor,lsl)
    end select
       
    !----- Update LAI, WPA, and WAI --------------------------------------------------------!
-   call area_indices(cpatch%nplant(ico),cpatch%bleaf(ico),cpatch%bdead(ico)                &
-              ,cpatch%balive(ico),cpatch%dbh(ico), cpatch%hite(ico),cpatch%pft(ico)        &
-              ,cpatch%sla(ico),cpatch%lai(ico),cpatch%wpa(ico),cpatch%wai(ico)             &
-              ,cpatch%crown_area(ico),cpatch%bsapwood(ico))
+   call area_indices(cpatch%costate%nplant(ico),cpatch%costate%bleaf(ico),cpatch%costate%bdead(ico)                &
+              ,cpatch%costate%balive(ico),cpatch%costate%dbh(ico), cpatch%costate%hite(ico),cpatch%costate%pft(ico)        &
+              ,cpatch%sla(ico),cpatch%costate%lai(ico),cpatch%costate%wpa(ico),cpatch%costate%wai(ico)             &
+              ,cpatch%costate%crown_area(ico),cpatch%costate%bsapwood(ico))
 
    !----- Finding the new basal area and above-ground biomass. ----------------------------!
-   cpatch%basarea(ico) = pio4 * cpatch%dbh(ico) * cpatch%dbh(ico)                
-   cpatch%agb(ico)     = ed_biomass(cpatch%bdead(ico),cpatch%balive(ico),cpatch%bleaf(ico) &
-                                   ,cpatch%pft(ico),cpatch%hite(ico) ,cpatch%bstorage(ico) &
-                                   ,cpatch%bsapwood(ico))
+   cpatch%costate%basarea(ico) = pio4 * cpatch%costate%dbh(ico) * cpatch%costate%dbh(ico)                
+   cpatch%costate%agb(ico)     = ed_biomass(cpatch%costate%bdead(ico),cpatch%costate%balive(ico),cpatch%costate%bleaf(ico) &
+                                   ,cpatch%costate%pft(ico),cpatch%costate%hite(ico) ,cpatch%costate%bstorage(ico) &
+                                   ,cpatch%costate%bsapwood(ico))
 
    !----- Update rooting depth ------------------------------------------------------------!
-   cpatch%krdepth(ico) = dbh2krdepth(cpatch%hite(ico),cpatch%dbh(ico),cpatch%pft(ico),lsl)
+   cpatch%costate%krdepth(ico) = dbh2krdepth(cpatch%costate%hite(ico),cpatch%costate%dbh(ico),cpatch%costate%pft(ico),lsl)
    
    return
 end subroutine update_derived_cohort_props
@@ -701,52 +701,52 @@ subroutine update_vital_rates(cpatch,ico,ilu,dbh_in,bdead_in,balive_in,hite_in,b
 
 
    !----- Make the alias for PFT type. ----------------------------------------------------!
-   ipft = cpatch%pft(ico)
+   ipft = cpatch%costate%pft(ico)
 
    !----- Find the DBH bin. ---------------------------------------------------------------!
    idbh = max(1,min(n_dbh,ceiling(dbh_in*ddbhi)))
 
    !----- Find the new basal area and above-ground biomass. -------------------------------!
-   cpatch%basarea(ico)    = pio4 * cpatch%dbh(ico) * cpatch%dbh(ico)
-   cpatch%agb(ico)        = ed_biomass(cpatch%bdead(ico),cpatch%balive(ico)                &
-                                      ,cpatch%bleaf(ico),cpatch%pft(ico)                   &
-                                      ,cpatch%hite(ico) ,cpatch%bstorage(ico)              &
-                                      ,cpatch%bsapwood(ico) ) 
+   cpatch%costate%basarea(ico)    = pio4 * cpatch%costate%dbh(ico) * cpatch%costate%dbh(ico)
+   cpatch%costate%agb(ico)        = ed_biomass(cpatch%costate%bdead(ico),cpatch%costate%balive(ico)                &
+                                      ,cpatch%costate%bleaf(ico),cpatch%costate%pft(ico)                   &
+                                      ,cpatch%costate%hite(ico) ,cpatch%costate%bstorage(ico)              &
+                                      ,cpatch%costate%bsapwood(ico) ) 
 
    !---------------------------------------------------------------------------------------!
    !     Change the agb growth to kgC/plant/year, basal area to cm2/plant/year, and DBH    !
    ! growth to cm/year.                                                                    !
    !---------------------------------------------------------------------------------------!
-   cpatch%dagb_dt(ico)    = (cpatch%agb(ico)     - agb_in ) * 12.0
-   cpatch%dba_dt(ico)     = (cpatch%basarea(ico) - ba_in  ) * 12.0
-   cpatch%ddbh_dt(ico)    = (cpatch%dbh(ico)     - dbh_in ) * 12.0
+   cpatch%dagb_dt(ico)    = (cpatch%costate%agb(ico)     - agb_in ) * 12.0
+   cpatch%dba_dt(ico)     = (cpatch%costate%basarea(ico) - ba_in  ) * 12.0
+   cpatch%ddbh_dt(ico)    = (cpatch%costate%dbh(ico)     - dbh_in ) * 12.0
 
    !---------------------------------------------------------------------------------------!
    !     These are polygon-level variable, so they are done in kgC/m2.  Update the current !
    ! basal area and above-ground biomass.                                                  !
    !---------------------------------------------------------------------------------------!
    basal_area(ipft, idbh) = basal_area(ipft, idbh)                                         &
-                          + area * cpatch%nplant(ico) * cpatch%basarea(ico)
+                          + area * cpatch%costate%nplant(ico) * cpatch%costate%basarea(ico)
    agb(ipft, idbh)        = agb(ipft, idbh)                                                &
-                          + area * cpatch%nplant(ico) * cpatch%agb(ico)
+                          + area * cpatch%costate%nplant(ico) * cpatch%costate%agb(ico)
 
    !---------------------------------------------------------------------------------------!
    !    The growth and mortality census are applied only on those cohorts present on the   !
    ! first census.                                                                         !
    !---------------------------------------------------------------------------------------!
-   if (cpatch%first_census(ico) /= 1) return
+   if (cpatch%costate%first_census(ico) /= 1) return
 
    !---------------------------------------------------------------------------------------!
    !   Computed for plants alive both at past census and current census.  These will be    !
    ! given in cm2/m2/yr and kgC/m2/yr, respectively.                                       !
    !---------------------------------------------------------------------------------------!
    basal_area_growth(ipft,idbh) = basal_area_growth(ipft,idbh)                             &
-                                + area * cpatch%nplant(ico) * pio4                         &
-                                * (cpatch%dbh(ico) * cpatch%dbh(ico) - dbh_in * dbh_in)    &
+                                + area * cpatch%costate%nplant(ico) * pio4                         &
+                                * (cpatch%costate%dbh(ico) * cpatch%costate%dbh(ico) - dbh_in * dbh_in)    &
                                 * 12.0
    agb_growth(ipft,idbh)        = agb_growth(ipft,idbh)                                    &
-                                + area * cpatch%nplant(ico)                                &
-                                * (cpatch%agb(ico) - agb_in)                               &
+                                + area * cpatch%costate%nplant(ico)                                &
+                                * (cpatch%costate%agb(ico) - agb_in)                               &
                                 * 12.0 
 
    !---------------------------------------------------------------------------------------!
@@ -754,11 +754,11 @@ subroutine update_vital_rates(cpatch,ico,ilu,dbh_in,bdead_in,balive_in,hite_in,b
    ! variables are also given in cm2/m2/yr and kgC/m2/yr, respectively.                    !
    !---------------------------------------------------------------------------------------!
    basal_area_mort(ipft,idbh) = basal_area_mort(ipft,idbh)                                 &
-                              + area * (nplant_in - cpatch%nplant(ico)) * ba_in * 12.0
+                              + area * (nplant_in - cpatch%costate%nplant(ico)) * ba_in * 12.0
 
    !----- Calculation based on mort_litter includes TOTAL biomass, not AGB [[mcd]]. -------!
    agb_mort(ipft,idbh)        = agb_mort(ipft,idbh)                                        &
-                              + area * (nplant_in - cpatch%nplant(ico)) * agb_in * 12.0
+                              + area * (nplant_in - cpatch%costate%nplant(ico)) * agb_in * 12.0
 
    return
 end subroutine update_vital_rates
@@ -912,14 +912,14 @@ subroutine compute_C_and_N_storage(cgrid,ipy, soil_C, soil_N, veg_C, veg_N)
             
             !----- Get the carbon and nitrogen in vegetation. -----------------------------!
             veg_C8 = veg_C8 + area_factor                                                  &
-                            * ( dble(cpatch%balive(ico)) + dble(cpatch%bdead(ico))         &
-                              + dble(cpatch%bstorage(ico)) ) * dble(cpatch%nplant(ico))
+                            * ( dble(cpatch%costate%balive(ico)) + dble(cpatch%costate%bdead(ico))         &
+                              + dble(cpatch%costate%bstorage(ico)) ) * dble(cpatch%costate%nplant(ico))
             
             veg_N8 = veg_N8 + area_factor                                                  &
-                            * ( dble(cpatch%balive(ico)) / dble(c2n_leaf(cpatch%pft(ico))) &
-                              + dble(cpatch%bdead(ico)) / dble(c2n_stem(cpatch%pft(ico)))                   &
-                              + dble(cpatch%bstorage(ico)) / dble(c2n_storage))            &
-                            * dble(cpatch%nplant(ico))
+                            * ( dble(cpatch%costate%balive(ico)) / dble(c2n_leaf(cpatch%costate%pft(ico))) &
+                              + dble(cpatch%costate%bdead(ico)) / dble(c2n_stem(cpatch%costate%pft(ico)))                   &
+                              + dble(cpatch%costate%bstorage(ico)) / dble(c2n_storage))            &
+                            * dble(cpatch%costate%nplant(ico))
          end do cohortloop
       end do patchloop
    end do siteloop

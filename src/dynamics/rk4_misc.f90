@@ -226,8 +226,8 @@ subroutine copy_patch_init(sourcesite,ipa,targetp)
    any_resolvable = .false.
    do ico=1, cpatch%ncohorts
       !----- Copying the flag that determines whether this cohort is numerically stable. --!
-      targetp%leaf_resolvable(ico) = cpatch%leaf_resolvable(ico)
-      targetp%wood_resolvable(ico) = cpatch%wood_resolvable(ico)
+      targetp%leaf_resolvable(ico) = cpatch%costate%leaf_resolvable(ico)
+      targetp%wood_resolvable(ico) = cpatch%costate%wood_resolvable(ico)
       if (targetp%leaf_resolvable(ico) .or. targetp%wood_resolvable(ico)) then
          any_resolvable = .true.
       end if
@@ -240,17 +240,17 @@ subroutine copy_patch_init(sourcesite,ipa,targetp)
    !---------------------------------------------------------------------------------------!
    targetp%opencan_frac   = dble(sourcesite%opencan_frac(ipa))
    do ico = 1,cpatch%ncohorts
-      ipft=cpatch%pft(ico)
+      ipft=cpatch%costate%pft(ico)
 
       !----- Copy the plant density. ------------------------------------------------------!
-      targetp%nplant(ico)     = dble(cpatch%nplant(ico))
+      targetp%nplant(ico)     = dble(cpatch%costate%nplant(ico))
 
       !----- Copy the leaf area index and total (leaf+branch+twig) area index. ------------!
-      targetp%lai(ico)        = dble(cpatch%lai(ico))
-      targetp%wai(ico)        = dble(cpatch%wai(ico))
-      targetp%wpa(ico)        = dble(cpatch%wpa(ico))
+      targetp%lai(ico)        = dble(cpatch%costate%lai(ico))
+      targetp%wai(ico)        = dble(cpatch%costate%wai(ico))
+      targetp%wpa(ico)        = dble(cpatch%costate%wpa(ico))
       targetp%tai(ico)        = targetp%lai(ico) + targetp%wai(ico)
-      targetp%crown_area(ico) = dble(cpatch%crown_area(ico))
+      targetp%crown_area(ico) = dble(cpatch%costate%crown_area(ico))
       targetp%elongf(ico)     = dble(cpatch%elongf(ico)) * rk4site%green_leaf_factor(ipft)
       !------------------------------------------------------------------------------------!
 
@@ -2724,7 +2724,7 @@ subroutine print_errmax(errmax,yerr,yscal,cpatch,y,ytemp)
       if (y%leaf_resolvable(ico)) then
          errmax       = max(errmax,abs(yerr%leaf_water(ico)/yscal%leaf_water(ico)))
          troublemaker = large_error(yerr%leaf_water(ico),yscal%leaf_water(ico))
-         write(unit=*,fmt=cohfmt) 'LEAF_WATER:',cpatch%pft(ico),y%lai(ico),y%wai(ico)      &
+         write(unit=*,fmt=cohfmt) 'LEAF_WATER:',cpatch%costate%pft(ico),y%lai(ico),y%wai(ico)      &
                                                ,y%wpa(ico),y%tai(ico),errmax               &
                                                ,yerr%leaf_water(ico),yscal%leaf_water(ico) &
                                                ,troublemaker
@@ -2732,7 +2732,7 @@ subroutine print_errmax(errmax,yerr,yscal,cpatch,y,ytemp)
 
          errmax       = max(errmax,abs(yerr%leaf_energy(ico)/yscal%leaf_energy(ico)))
          troublemaker = large_error(yerr%leaf_energy(ico),yscal%leaf_energy(ico))
-         write(unit=*,fmt=cohfmt) 'LEAF_ENERGY:',cpatch%pft(ico),cpatch%lai(ico)            &
+         write(unit=*,fmt=cohfmt) 'LEAF_ENERGY:',cpatch%costate%pft(ico),cpatch%costate%lai(ico)            &
                                                 ,y%wai(ico),y%wpa(ico),y%tai(ico),errmax    &
                                                 ,yerr%leaf_energy(ico)                      &
                                                 ,yscal%leaf_energy(ico)                     &
@@ -2753,7 +2753,7 @@ subroutine print_errmax(errmax,yerr,yscal,cpatch,y,ytemp)
       if (y%wood_resolvable(ico)) then
          errmax       = max(errmax,abs(yerr%wood_water(ico)/yscal%wood_water(ico)))
          troublemaker = large_error(yerr%wood_water(ico),yscal%wood_water(ico))
-         write(unit=*,fmt=cohfmt) 'WOOD_WATER:',cpatch%pft(ico),y%lai(ico),y%wai(ico)      &
+         write(unit=*,fmt=cohfmt) 'WOOD_WATER:',cpatch%costate%pft(ico),y%lai(ico),y%wai(ico)      &
                                                ,y%wpa(ico),y%tai(ico),errmax               &
                                                ,yerr%wood_water(ico),yscal%wood_water(ico) &
                                                ,troublemaker
@@ -2761,7 +2761,7 @@ subroutine print_errmax(errmax,yerr,yscal,cpatch,y,ytemp)
 
          errmax       = max(errmax,abs(yerr%wood_energy(ico)/yscal%wood_energy(ico)))
          troublemaker = large_error(yerr%wood_energy(ico),yscal%wood_energy(ico))
-         write(unit=*,fmt=cohfmt) 'WOOD_ENERGY:',cpatch%pft(ico),cpatch%lai(ico)            &
+         write(unit=*,fmt=cohfmt) 'WOOD_ENERGY:',cpatch%costate%pft(ico),cpatch%costate%lai(ico)            &
                                                 ,y%wai(ico),y%wpa(ico),y%tai(ico),errmax    &
                                                 ,yerr%wood_energy(ico)                      &
                                                 ,yscal%wood_energy(ico)                     &
@@ -2905,10 +2905,10 @@ subroutine print_csiteipa(csite, ipa)
          '    PFT','KRDEPTH','      NPLANT','         LAI','         DBH','       BDEAD'   &
                             ,'       BLEAF',' LEAF_ENERGY','   LEAF_TEMP','  LEAF_WATER'
    do ico = 1,cpatch%ncohorts
-      if (cpatch%leaf_resolvable(ico)) then
-         write(unit=*,fmt='(2(i7,1x),8(es12.4,1x))') cpatch%pft(ico), cpatch%krdepth(ico)  &
-              ,cpatch%nplant(ico),cpatch%lai(ico),cpatch%dbh(ico),cpatch%bdead(ico)        &
-              ,cpatch%bleaf(ico),cpatch%leaf_energy(ico),cpatch%leaf_temp(ico)             &
+      if (cpatch%costate%leaf_resolvable(ico)) then
+         write(unit=*,fmt='(2(i7,1x),8(es12.4,1x))') cpatch%costate%pft(ico), cpatch%costate%krdepth(ico)  &
+              ,cpatch%costate%nplant(ico),cpatch%costate%lai(ico),cpatch%costate%dbh(ico),cpatch%costate%bdead(ico)        &
+              ,cpatch%costate%bleaf(ico),cpatch%leaf_energy(ico),cpatch%leaf_temp(ico)             &
               ,cpatch%leaf_water(ico)
       end if
    end do
@@ -2916,9 +2916,9 @@ subroutine print_csiteipa(csite, ipa)
          '    PFT','KRDEPTH','         LAI','     FS_OPEN','         FSW','         FSN'   &
                             ,'         GPP','   LEAF_RESP'
    do ico = 1,cpatch%ncohorts
-      if (cpatch%leaf_resolvable(ico)) then
-         write(unit=*,fmt='(2(i7,1x),6(es12.4,1x))') cpatch%pft(ico), cpatch%krdepth(ico)  &
-              ,cpatch%lai(ico),cpatch%fs_open(ico),cpatch%fsw(ico),cpatch%fsn(ico)         &
+      if (cpatch%costate%leaf_resolvable(ico)) then
+         write(unit=*,fmt='(2(i7,1x),6(es12.4,1x))') cpatch%costate%pft(ico), cpatch%costate%krdepth(ico)  &
+              ,cpatch%costate%lai(ico),cpatch%fs_open(ico),cpatch%fsw(ico),cpatch%fsn(ico)         &
               ,cpatch%gpp(ico),cpatch%leaf_respiration(ico)
       end if
    end do
@@ -2926,16 +2926,16 @@ subroutine print_csiteipa(csite, ipa)
          '    PFT','KRDEPTH','         LAI','   ROOT_RESP',' GROWTH_RESP','   STOR_RESP'   &
                             ,'  VLEAF_RESP'
    do ico = 1,cpatch%ncohorts
-      if (cpatch%leaf_resolvable(ico)) then
-         growth_resp  = cpatch%growth_respiration(ico)  * cpatch%nplant(ico)               &
+      if (cpatch%costate%leaf_resolvable(ico)) then
+         growth_resp  = cpatch%growth_respiration(ico)  * cpatch%costate%nplant(ico)               &
                       / (day_sec * umol_2_kgC)
-         storage_resp = cpatch%storage_respiration(ico) * cpatch%nplant(ico)               &
+         storage_resp = cpatch%storage_respiration(ico) * cpatch%costate%nplant(ico)               &
                       / (day_sec * umol_2_kgC)
-         vleaf_resp   = cpatch%vleaf_respiration(ico)  * cpatch%nplant(ico)                &
+         vleaf_resp   = cpatch%vleaf_respiration(ico)  * cpatch%costate%nplant(ico)                &
                       / (day_sec * umol_2_kgC)
 
-         write(unit=*,fmt='(2(i7,1x),5(es12.4,1x))') cpatch%pft(ico), cpatch%krdepth(ico)  &
-              ,cpatch%lai(ico),cpatch%root_respiration(ico),growth_resp,storage_resp       &
+         write(unit=*,fmt='(2(i7,1x),5(es12.4,1x))') cpatch%costate%pft(ico), cpatch%costate%krdepth(ico)  &
+              ,cpatch%costate%lai(ico),cpatch%root_respiration(ico),growth_resp,storage_resp       &
               ,vleaf_resp
       end if
    end do
@@ -2948,10 +2948,10 @@ subroutine print_csiteipa(csite, ipa)
          '    PFT','KRDEPTH','      NPLANT','         WAI','         DBH','       BDEAD'   &
                             ,'    BSAPWOOD',' WOOD_ENERGY','   WOOD_TEMP','  WOOD_WATER'
    do ico = 1,cpatch%ncohorts
-      if (cpatch%wood_resolvable(ico)) then
-         write(unit=*,fmt='(2(i7,1x),8(es12.4,1x))') cpatch%pft(ico), cpatch%krdepth(ico)  &
-              ,cpatch%nplant(ico),cpatch%wai(ico),cpatch%dbh(ico),cpatch%bdead(ico)        &
-              ,cpatch%bsapwood(ico),cpatch%wood_energy(ico),cpatch%wood_temp(ico)          &
+      if (cpatch%costate%wood_resolvable(ico)) then
+         write(unit=*,fmt='(2(i7,1x),8(es12.4,1x))') cpatch%costate%pft(ico), cpatch%costate%krdepth(ico)  &
+              ,cpatch%costate%nplant(ico),cpatch%costate%wai(ico),cpatch%costate%dbh(ico),cpatch%costate%bdead(ico)        &
+              ,cpatch%costate%bsapwood(ico),cpatch%wood_energy(ico),cpatch%wood_temp(ico)          &
               ,cpatch%wood_water(ico)
       end if
    end do
@@ -3109,10 +3109,10 @@ subroutine print_rk4patch(y,csite,ipa)
          '    PFT','KRDEPTH','      NPLANT','      HEIGHT','         DBH','       BDEAD'   &
                             ,'       BLEAF','     FS_OPEN','         FSW','         FSN'
    do ico = 1,cpatch%ncohorts
-      if (cpatch%leaf_resolvable(ico)) then
-         write(unit=*,fmt='(2(i7,1x),8(es12.4,1x))') cpatch%pft(ico), cpatch%krdepth(ico)  &
-              ,cpatch%nplant(ico),cpatch%hite(ico),cpatch%dbh(ico),cpatch%bdead(ico)       &
-              ,cpatch%bleaf (ico),cpatch%fs_open(ico),cpatch%fsw(ico),cpatch%fsn(ico)
+      if (cpatch%costate%leaf_resolvable(ico)) then
+         write(unit=*,fmt='(2(i7,1x),8(es12.4,1x))') cpatch%costate%pft(ico), cpatch%costate%krdepth(ico)  &
+              ,cpatch%costate%nplant(ico),cpatch%costate%hite(ico),cpatch%costate%dbh(ico),cpatch%costate%bdead(ico)       &
+              ,cpatch%costate%bleaf (ico),cpatch%fs_open(ico),cpatch%fsw(ico),cpatch%fsn(ico)
       end if
    end do
    write (unit=*,fmt='(80a)') ('-',k=1,80)
@@ -3120,8 +3120,8 @@ subroutine print_rk4patch(y,csite,ipa)
          '    PFT','KRDEPTH','         LAI','         GPP','   LEAF_RESP','   ROOT_RESP'   &
                             ,' GROWTH_RESP','   STOR_RESP','  VLEAF_RESP'
    do ico = 1,cpatch%ncohorts
-      if (cpatch%leaf_resolvable(ico)) then
-         write(unit=*,fmt='(2(i7,1x),7(es12.4,1x))') cpatch%pft(ico), cpatch%krdepth(ico)  &
+      if (cpatch%costate%leaf_resolvable(ico)) then
+         write(unit=*,fmt='(2(i7,1x),7(es12.4,1x))') cpatch%costate%pft(ico), cpatch%costate%krdepth(ico)  &
               ,y%lai(ico),y%gpp(ico),y%leaf_resp(ico),y%root_resp(ico),y%growth_resp(ico)  &
               ,y%storage_resp(ico),y%vleaf_resp(ico)
       end if
@@ -3132,7 +3132,7 @@ subroutine print_rk4patch(y,csite,ipa)
              ,'  LEAF_WATER','   LEAF_HCAP','   LEAF_TEMP','   LEAF_FLIQ','    LINT_SHV'
    do ico = 1,cpatch%ncohorts
       if (y%leaf_resolvable(ico)) then
-         write(unit=*,fmt='(2(i7,1x),9(es12.4,1x))') cpatch%pft(ico), cpatch%krdepth(ico)  &
+         write(unit=*,fmt='(2(i7,1x),9(es12.4,1x))') cpatch%costate%pft(ico), cpatch%costate%krdepth(ico)  &
                ,y%lai(ico),y%wai(ico),y%tai(ico),y%leaf_energy(ico),y%leaf_water(ico)      &
                ,y%leaf_hcap(ico),y%leaf_temp(ico),y%leaf_fliq(ico),y%lint_shv(ico)
       end if
@@ -3144,8 +3144,8 @@ subroutine print_rk4patch(y,csite,ipa)
                   ,' LEAF_NUFREE'
    do ico = 1,cpatch%ncohorts
       if (y%leaf_resolvable(ico)) then
-         write(unit=*,fmt='(2(i7,1x),8(es12.4,1x))') cpatch%pft(ico),cpatch%krdepth(ico)   &
-               ,y%lai(ico),cpatch%hite(ico),y%leaf_temp(ico),y%veg_wind(ico)               &
+         write(unit=*,fmt='(2(i7,1x),8(es12.4,1x))') cpatch%costate%pft(ico),cpatch%costate%krdepth(ico)   &
+               ,y%lai(ico),cpatch%costate%hite(ico),y%leaf_temp(ico),y%veg_wind(ico)               &
                ,y%leaf_reynolds(ico),y%leaf_grashof(ico),y%leaf_nussforc(ico)              &
                ,y%leaf_nussfree(ico)
       end if
@@ -3156,8 +3156,8 @@ subroutine print_rk4patch(y,csite,ipa)
                   ,'    LEAF_GBW','  GSW_CLOSED','    GSW_OPEN','     FS_OPEN'
    do ico = 1,cpatch%ncohorts
       if (y%leaf_resolvable(ico)) then
-         write(unit=*,fmt='(2(i7,1x),7(es12.4,1x))') cpatch%pft(ico),cpatch%krdepth(ico)   &
-               ,y%lai(ico),cpatch%hite(ico),y%leaf_gbh(ico),y%leaf_gbw(ico)                &
+         write(unit=*,fmt='(2(i7,1x),7(es12.4,1x))') cpatch%costate%pft(ico),cpatch%costate%krdepth(ico)   &
+               ,y%lai(ico),cpatch%costate%hite(ico),y%leaf_gbh(ico),y%leaf_gbw(ico)                &
                ,y%gsw_closed(ico),y%gsw_open(ico),cpatch%fs_open(ico)
       end if
    end do
@@ -3167,8 +3167,8 @@ subroutine print_rk4patch(y,csite,ipa)
                   ,'     RLONG_L','  PAR_L_BEAM','  PAR_L_DIFF'
    do ico = 1,cpatch%ncohorts
       if (y%leaf_resolvable(ico)) then
-         write(unit=*,fmt='(2(i7,1x),6(es12.4,1x))') cpatch%pft(ico),cpatch%krdepth(ico)   &
-               ,y%lai(ico),cpatch%hite(ico),y%rshort_l(ico),y%rlong_l(ico)                 &
+         write(unit=*,fmt='(2(i7,1x),6(es12.4,1x))') cpatch%costate%pft(ico),cpatch%costate%krdepth(ico)   &
+               ,y%lai(ico),cpatch%costate%hite(ico),y%rshort_l(ico),y%rlong_l(ico)                 &
                ,cpatch%par_l_beam(ico),cpatch%par_l_diffuse(ico)
       end if
    end do
@@ -3183,10 +3183,10 @@ subroutine print_rk4patch(y,csite,ipa)
          '    PFT','KRDEPTH','      NPLANT','      HEIGHT','         DBH','       BDEAD'   &
                             ,'    BSAPWOOD'
    do ico = 1,cpatch%ncohorts
-      if (cpatch%wood_resolvable(ico)) then
-         write(unit=*,fmt='(2(i7,1x),5(es12.4,1x))') cpatch%pft(ico), cpatch%krdepth(ico)  &
-              ,cpatch%nplant(ico),cpatch%hite(ico),cpatch%dbh(ico),cpatch%bdead(ico)       &
-              ,cpatch%bsapwood(ico)
+      if (cpatch%costate%wood_resolvable(ico)) then
+         write(unit=*,fmt='(2(i7,1x),5(es12.4,1x))') cpatch%costate%pft(ico), cpatch%costate%krdepth(ico)  &
+              ,cpatch%costate%nplant(ico),cpatch%costate%hite(ico),cpatch%costate%dbh(ico),cpatch%costate%bdead(ico)       &
+              ,cpatch%costate%bsapwood(ico)
       end if
    end do
    write (unit=*,fmt='(80a)') ('-',k=1,80)
@@ -3195,7 +3195,7 @@ subroutine print_rk4patch(y,csite,ipa)
              ,'  WOOD_WATER','   WOOD_HCAP','   WOOD_TEMP','   WOOD_FLIQ'
    do ico = 1,cpatch%ncohorts
       if (y%wood_resolvable(ico)) then
-         write(unit=*,fmt='(2(i7,1x),8(es12.4,1x))') cpatch%pft(ico), cpatch%krdepth(ico)  &
+         write(unit=*,fmt='(2(i7,1x),8(es12.4,1x))') cpatch%costate%pft(ico), cpatch%costate%krdepth(ico)  &
                ,y%lai(ico),y%wai(ico),y%tai(ico),y%wood_energy(ico),y%wood_water(ico)      &
                ,y%wood_hcap(ico),y%wood_temp(ico),y%wood_fliq(ico)
       end if
@@ -3207,8 +3207,8 @@ subroutine print_rk4patch(y,csite,ipa)
                   ,' WOOD_NUFREE'
    do ico = 1,cpatch%ncohorts
       if (y%wood_resolvable(ico)) then
-         write(unit=*,fmt='(2(i7,1x),8(es12.4,1x))') cpatch%pft(ico),cpatch%krdepth(ico)   &
-               ,y%wai(ico),cpatch%hite(ico),y%wood_temp(ico),y%veg_wind(ico)               &
+         write(unit=*,fmt='(2(i7,1x),8(es12.4,1x))') cpatch%costate%pft(ico),cpatch%costate%krdepth(ico)   &
+               ,y%wai(ico),cpatch%costate%hite(ico),y%wood_temp(ico),y%veg_wind(ico)               &
                ,y%wood_reynolds(ico),y%wood_grashof(ico),y%wood_nussforc(ico)              &
                ,y%wood_nussfree(ico)
       end if
@@ -3219,8 +3219,8 @@ subroutine print_rk4patch(y,csite,ipa)
                   ,'    WOOD_GBW','    RSHORT_W','     RLONG_W'
    do ico = 1,cpatch%ncohorts
       if (y%wood_resolvable(ico)) then
-         write(unit=*,fmt='(2(i7,1x),6(es12.4,1x))') cpatch%pft(ico),cpatch%krdepth(ico)   &
-               ,y%wai(ico),cpatch%hite(ico),y%wood_gbh(ico),y%wood_gbw(ico)                &
+         write(unit=*,fmt='(2(i7,1x),6(es12.4,1x))') cpatch%costate%pft(ico),cpatch%costate%krdepth(ico)   &
+               ,y%wai(ico),cpatch%costate%hite(ico),y%wood_gbh(ico),y%wood_gbw(ico)                &
                ,y%rshort_w(ico),y%rlong_w(ico) 
       end if
    end do
@@ -3667,9 +3667,9 @@ subroutine print_rk4_state(initp,fluxp,csite,ipa,elapsed,hdid)
       open (unit=84,file=trim(detail_fout),status='old',action='write',position='append')
       write(unit=84,fmt=cbfmt)                                                             &
               current_time%year       , current_time%month      , current_time%date        &
-            , elapsec                 , hdid                    , cpatch%pft(ico)          &
+            , elapsec                 , hdid                    , cpatch%costate%pft(ico)          &
             , leaf_resolve            , wood_resolve            , initp%nplant(ico)        &
-            , cpatch%hite(ico)        , initp%lai(ico)          , initp%wai(ico)           &
+            , cpatch%costate%hite(ico)        , initp%lai(ico)          , initp%wai(ico)           &
             , initp%crown_area(ico)   , initp%leaf_energy(ico)  , initp%leaf_water(ico)    &
             , initp%leaf_hcap(ico)    , initp%leaf_temp(ico)    , initp%leaf_fliq(ico)     &
             , initp%wood_energy(ico)  , initp%wood_water(ico)   , initp%wood_hcap(ico)     &

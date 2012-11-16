@@ -621,11 +621,11 @@ subroutine sum_plant_cfluxes(csite,ipa, gpp, gpp_dbh,leaf_resp,root_resp,growth_
    !---------------------------------------------------------------------------------------!
    do ico = 1,cpatch%ncohorts
       !----- Adding GPP and leaf respiration only for those cohorts with enough leaves. ---!
-      if (cpatch%leaf_resolvable(ico)) then
+      if (cpatch%costate%leaf_resolvable(ico)) then
          gpp = gpp + cpatch%gpp(ico)
          !----- Forest cohorts have dbh distribution, add them to gpp_dbh. ----------------!
          if (forest) then 
-            idbh=max(1,min(n_dbh,ceiling(cpatch%dbh(ico)*ddbhi)))
+            idbh=max(1,min(n_dbh,ceiling(cpatch%costate%dbh(ico)*ddbhi)))
             gpp_dbh(idbh) = gpp_dbh(idbh) + cpatch%gpp(ico)
          end if
          leaf_resp = leaf_resp + cpatch%leaf_respiration(ico)
@@ -639,13 +639,13 @@ subroutine sum_plant_cfluxes(csite,ipa, gpp, gpp_dbh,leaf_resp,root_resp,growth_
       ! umol/m2/s.                                                                         !
       !------------------------------------------------------------------------------------!
       growth_resp  = growth_resp                                                           &
-                   + cpatch%growth_respiration(ico)  * cpatch%nplant(ico)                  &
+                   + cpatch%growth_respiration(ico)  * cpatch%costate%nplant(ico)                  &
                    / (day_sec * umol_2_kgC)
       storage_resp = storage_resp                                                          &
-                   + cpatch%storage_respiration(ico) * cpatch%nplant(ico)                  &
+                   + cpatch%storage_respiration(ico) * cpatch%costate%nplant(ico)                  &
                    / (day_sec * umol_2_kgC)
       vleaf_resp   = vleaf_resp                                                            &
-                   + cpatch%vleaf_respiration(ico)   * cpatch%nplant(ico)                  &
+                   + cpatch%vleaf_respiration(ico)   * cpatch%costate%nplant(ico)                  &
                    / (day_sec * umol_2_kgC)
    end do
 

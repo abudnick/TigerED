@@ -43,7 +43,7 @@ module mortality
 
       !----- Assume happy end, all plants survive... --------------------------------------!
       cpatch%mort_rate(:,ico) = 0.0
-      ipft = cpatch%pft(ico)
+      ipft = cpatch%costate%pft(ico)
 
       !------------------------------------------------------------------------------------!
       ! 1.  Ageing, PFT-dependent but otherwise constant.                                  !
@@ -63,7 +63,7 @@ module mortality
       !------------------------------------------------------------------------------------!
       ! 3.  Mortality due to treefall.                                                     !
       !------------------------------------------------------------------------------------!
-      if (cpatch%hite(ico) <= treefall_hite_threshold .and. patch_age > time2canopy) then
+      if (cpatch%costate%hite(ico) <= treefall_hite_threshold .and. patch_age > time2canopy) then
          cpatch%mort_rate(3,ico) = treefall_disturbance_rate
       else
          cpatch%mort_rate(3,ico) = 0.
