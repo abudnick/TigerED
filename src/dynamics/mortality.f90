@@ -42,21 +42,21 @@ module mortality
 
 
       !----- Assume happy end, all plants survive... --------------------------------------!
-      cpatch%mort_rate(:,ico) = 0.0
+      cpatch%comort%mort_rate(:,ico) = 0.0
       ipft = cpatch%costate%pft(ico)
 
       !------------------------------------------------------------------------------------!
       ! 1.  Ageing, PFT-dependent but otherwise constant.                                  !
       !------------------------------------------------------------------------------------!
-      cpatch%mort_rate(1,ico) = mort3(ipft)
+      cpatch%comort%mort_rate(1,ico) = mort3(ipft)
 
 
       !------------------------------------------------------------------------------------!
       ! 2.  Mortality rates due to negative carbon balance.                                !
       !------------------------------------------------------------------------------------!
       expmort                 = max( lnexp_min, min( lnexp_max                             &
-                                                   , mort2(ipft) * cpatch%cbr_bar(ico)))
-      cpatch%mort_rate(2,ico) = mort1(ipft) / (1. + exp(expmort))
+                                                   , mort2(ipft) * cpatch%comort%cbr_bar(ico)))
+      cpatch%comort%mort_rate(2,ico) = mort1(ipft) / (1. + exp(expmort))
       !------------------------------------------------------------------------------------!
 
 
@@ -64,9 +64,9 @@ module mortality
       ! 3.  Mortality due to treefall.                                                     !
       !------------------------------------------------------------------------------------!
       if (cpatch%costate%hite(ico) <= treefall_hite_threshold .and. patch_age > time2canopy) then
-         cpatch%mort_rate(3,ico) = treefall_disturbance_rate
+         cpatch%comort%mort_rate(3,ico) = treefall_disturbance_rate
       else
-         cpatch%mort_rate(3,ico) = 0.
+         cpatch%comort%mort_rate(3,ico) = 0.
       end if
       !------------------------------------------------------------------------------------!
 
@@ -77,14 +77,14 @@ module mortality
       !------------------------------------------------------------------------------------!
       threshtemp = 5.0 + plant_min_temp(ipft)
       if(avg_daily_temp < threshtemp)then
-         cpatch%mort_rate(4,ico) = frost_mort(ipft)
+         cpatch%comort%mort_rate(4,ico) = frost_mort(ipft)
          if (avg_daily_temp > plant_min_temp(ipft)) then
-            cpatch%mort_rate(4,ico) = cpatch%mort_rate(4,ico)                              &
+            cpatch%comort%mort_rate(4,ico) = cpatch%comort%mort_rate(4,ico)                              &
                                     * (1.0 - (avg_daily_temp - plant_min_temp(ipft))       &
                                              / (threshtemp - plant_min_temp(ipft)) )
          end if
       else
-         cpatch%mort_rate(4,ico) = 0.
+         cpatch%comort%mort_rate(4,ico) = 0.
       end if
 
       return

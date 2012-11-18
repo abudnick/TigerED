@@ -373,7 +373,7 @@ module canopy_struct_dynamics
                extinct_full = exp(- 0.50 * cpatch%costate%lai(ico) / cpatch%costate%crown_area(ico))
 
                !----- Assume that wind is at the middle of the thin crown. ----------------!
-               cpatch%veg_wind(ico) = max(ugbmin, uh * extinct_half)
+               cpatch%cotherm%veg_wind(ico) = max(ugbmin, uh * extinct_half)
                uh                   = uh * extinct_full
             end do
             !------------------------------------------------------------------------------!
@@ -394,7 +394,7 @@ module canopy_struct_dynamics
                             + (1. - cpatch%costate%crown_area(ico))
 
                !----- Assume that wind is at the middle of the thin crown. ----------------!
-               cpatch%veg_wind(ico) = max(ugbmin, uh * extinct_half)
+               cpatch%cotherm%veg_wind(ico) = max(ugbmin, uh * extinct_half)
                uh                   = uh * extinct_full
             end do
             !------------------------------------------------------------------------------!
@@ -554,11 +554,11 @@ module canopy_struct_dynamics
                !---------------------------------------------------------------------------!
                !     We simplify things here and just average between the partial layers.  !
                !---------------------------------------------------------------------------!
-               cpatch%veg_wind(ico) = 0.0
+               cpatch%cotherm%veg_wind(ico) = 0.0
                do k=kapartial,kzpartial
-                  cpatch%veg_wind(ico) = cpatch%veg_wind(ico) + windlyr(k) * dzcan(k)
+                  cpatch%cotherm%veg_wind(ico) = cpatch%cotherm%veg_wind(ico) + windlyr(k) * dzcan(k)
                end do
-               cpatch%veg_wind(ico) = cpatch%veg_wind(ico)                                 &
+               cpatch%cotherm%veg_wind(ico) = cpatch%cotherm%veg_wind(ico)                                 &
                                     / (zztop(kzpartial) - zzbot(kapartial))
             end do
             !------------------------------------------------------------------------------!
@@ -582,18 +582,18 @@ module canopy_struct_dynamics
                !    Find the aerodynamic conductances for heat and water at the leaf       !
                ! boundary layer.                                                           !
                !---------------------------------------------------------------------------!
-               call leaf_aerodynamic_conductances(ipft,cpatch%veg_wind(ico)                &
-                                                 ,cpatch%leaf_temp(ico)                    &
+               call leaf_aerodynamic_conductances(ipft,cpatch%cotherm%veg_wind(ico)                &
+                                                 ,cpatch%cotherm%leaf_temp(ico)                    &
                                                  ,csite%can_temp(ipa)                      &
                                                  ,csite%can_shv(ipa)                       &
                                                  ,csite%can_rhos(ipa)                      &
                                                  ,gbhmos_min                               &
-                                                 ,cpatch%leaf_gbh(ico)                     &
-                                                 ,cpatch%leaf_gbw(ico))
+                                                 ,cpatch%cotherm%leaf_gbh(ico)                     &
+                                                 ,cpatch%cotherm%leaf_gbw(ico))
                !---------------------------------------------------------------------------!
             else
-               cpatch%leaf_gbh(ico)      = 0.0
-               cpatch%leaf_gbw(ico)      = 0.0
+               cpatch%cotherm%leaf_gbh(ico)      = 0.0
+               cpatch%cotherm%leaf_gbw(ico)      = 0.0
             end if
             if (cpatch%costate%wood_resolvable(ico)) then
                !---------------------------------------------------------------------------!
@@ -601,18 +601,18 @@ module canopy_struct_dynamics
                ! boundary layer.                                                           !
                !---------------------------------------------------------------------------!
                call wood_aerodynamic_conductances(ipft,cpatch%costate%dbh(ico),cpatch%costate%hite(ico)    &
-                                                 ,cpatch%veg_wind(ico)                     &
-                                                 ,cpatch%wood_temp(ico)                    &
+                                                 ,cpatch%cotherm%veg_wind(ico)                     &
+                                                 ,cpatch%cotherm%wood_temp(ico)                    &
                                                  ,csite%can_temp(ipa)                      &
                                                  ,csite%can_shv(ipa)                       &
                                                  ,csite%can_rhos(ipa)                      &
                                                  ,gbhmos_min                               &
-                                                 ,cpatch%wood_gbh(ico)                     &
-                                                 ,cpatch%wood_gbw(ico))
+                                                 ,cpatch%cotherm%wood_gbh(ico)                     &
+                                                 ,cpatch%cotherm%wood_gbw(ico))
                !---------------------------------------------------------------------------!
             else
-               cpatch%wood_gbh(ico)      = 0.0
-               cpatch%wood_gbw(ico)      = 0.0
+               cpatch%cotherm%wood_gbh(ico)      = 0.0
+               cpatch%cotherm%wood_gbw(ico)      = 0.0
             end if
          end do
          !---------------------------------------------------------------------------------!
@@ -738,7 +738,7 @@ module canopy_struct_dynamics
 
 
             !----- Calculate the wind speed at height z. ----------------------------------!
-            cpatch%veg_wind(ico) = max( ugbmin                                             &
+            cpatch%cotherm%veg_wind(ico) = max( ugbmin                                             &
                                       , uh * exp(-exar * (1.0 - hmidcrown/htop)))
             !------------------------------------------------------------------------------!
 
@@ -749,18 +749,18 @@ module canopy_struct_dynamics
                !    Find the aerodynamic conductances for heat and water at the leaf       !
                ! boundary layer.                                                           !
                !---------------------------------------------------------------------------!
-               call leaf_aerodynamic_conductances(ipft,cpatch%veg_wind(ico)                &
-                                                 ,cpatch%leaf_temp(ico)                    &
+               call leaf_aerodynamic_conductances(ipft,cpatch%cotherm%veg_wind(ico)                &
+                                                 ,cpatch%cotherm%leaf_temp(ico)                    &
                                                  ,csite%can_temp(ipa)                      &
                                                  ,csite%can_shv(ipa)                       &
                                                  ,csite%can_rhos(ipa)                      &
                                                  ,gbhmos_min                               &
-                                                 ,cpatch%leaf_gbh(ico)                     &
-                                                 ,cpatch%leaf_gbw(ico))
+                                                 ,cpatch%cotherm%leaf_gbh(ico)                     &
+                                                 ,cpatch%cotherm%leaf_gbw(ico))
                !---------------------------------------------------------------------------!
             else
-               cpatch%leaf_gbh(ico)      = 0.0
-               cpatch%leaf_gbw(ico)      = 0.0
+               cpatch%cotherm%leaf_gbh(ico)      = 0.0
+               cpatch%cotherm%leaf_gbw(ico)      = 0.0
             end if
             if (cpatch%costate%wood_resolvable(ico)) then
                !---------------------------------------------------------------------------!
@@ -768,18 +768,18 @@ module canopy_struct_dynamics
                ! boundary layer.                                                           !
                !---------------------------------------------------------------------------!
                call wood_aerodynamic_conductances(ipft,cpatch%costate%dbh(ico),cpatch%costate%hite(ico)    &
-                                                 ,cpatch%veg_wind(ico)                     &
-                                                 ,cpatch%wood_temp(ico)                    &
+                                                 ,cpatch%cotherm%veg_wind(ico)                     &
+                                                 ,cpatch%cotherm%wood_temp(ico)                    &
                                                  ,csite%can_temp(ipa)                      &
                                                  ,csite%can_shv(ipa)                       &
                                                  ,csite%can_rhos(ipa)                      &
                                                  ,gbhmos_min                               &
-                                                 ,cpatch%wood_gbh(ico)                     &
-                                                 ,cpatch%wood_gbw(ico))
+                                                 ,cpatch%cotherm%wood_gbh(ico)                     &
+                                                 ,cpatch%cotherm%wood_gbw(ico))
                !---------------------------------------------------------------------------!
             else
-               cpatch%wood_gbh(ico)      = 0.0
-               cpatch%wood_gbw(ico)      = 0.0
+               cpatch%cotherm%wood_gbh(ico)      = 0.0
+               cpatch%cotherm%wood_gbw(ico)      = 0.0
             end if
          end do
          !---------------------------------------------------------------------------------!
@@ -860,7 +860,7 @@ module canopy_struct_dynamics
 
 
                !------ Estimate WAI. ------------------------------------------------------!
-               waiuse = 0.10 * cpatch%costate%nplant(ico) * cpatch%sla(ico)                        &
+               waiuse = 0.10 * cpatch%costate%nplant(ico) * cpatch%cophen%sla(ico)                        &
                       * dbh2bl(cpatch%costate%dbh(ico),ipft)
                !---------------------------------------------------------------------------!
 
@@ -1083,7 +1083,7 @@ module canopy_struct_dynamics
 
 
             !----- Calculate the wind speed at height z. ----------------------------------!
-            cpatch%veg_wind(ico) = max( ugbmin                                             &
+            cpatch%cotherm%veg_wind(ico) = max( ugbmin                                             &
                                       , uh * exp(-nn * (1. - cumldrag(k)/cumldrag(zcan))))
             !------------------------------------------------------------------------------!
 
@@ -1096,18 +1096,18 @@ module canopy_struct_dynamics
                !    Find the aerodynamic conductances for heat and water at the leaf       !
                ! boundary layer.                                                           !
                !---------------------------------------------------------------------------!
-               call leaf_aerodynamic_conductances(ipft,cpatch%veg_wind(ico)                &
-                                                 ,cpatch%leaf_temp(ico)                    &
+               call leaf_aerodynamic_conductances(ipft,cpatch%cotherm%veg_wind(ico)                &
+                                                 ,cpatch%cotherm%leaf_temp(ico)                    &
                                                  ,csite%can_temp(ipa)                      &
                                                  ,csite%can_shv(ipa)                       &
                                                  ,csite%can_rhos(ipa)                      &
                                                  ,gbhmos_min                               &
-                                                 ,cpatch%leaf_gbh(ico)                     &
-                                                 ,cpatch%leaf_gbw(ico))
+                                                 ,cpatch%cotherm%leaf_gbh(ico)                     &
+                                                 ,cpatch%cotherm%leaf_gbw(ico))
                !---------------------------------------------------------------------------!
             else
-               cpatch%leaf_gbh(ico)      = 0.0
-               cpatch%leaf_gbw(ico)      = 0.0
+               cpatch%cotherm%leaf_gbh(ico)      = 0.0
+               cpatch%cotherm%leaf_gbw(ico)      = 0.0
             end if
             if (cpatch%costate%wood_resolvable(ico)) then
                !---------------------------------------------------------------------------!
@@ -1115,18 +1115,18 @@ module canopy_struct_dynamics
                ! boundary layer.                                                           !
                !---------------------------------------------------------------------------!
                call wood_aerodynamic_conductances(ipft,cpatch%costate%dbh(ico),cpatch%costate%hite(ico)    &
-                                                 ,cpatch%veg_wind(ico)                     &
-                                                 ,cpatch%wood_temp(ico)                    &
+                                                 ,cpatch%cotherm%veg_wind(ico)                     &
+                                                 ,cpatch%cotherm%wood_temp(ico)                    &
                                                  ,csite%can_temp(ipa)                      &
                                                  ,csite%can_shv(ipa)                       &
                                                  ,csite%can_rhos(ipa)                      &
                                                  ,gbhmos_min                               &
-                                                 ,cpatch%wood_gbh(ico)                     &
-                                                 ,cpatch%wood_gbw(ico))
+                                                 ,cpatch%cotherm%wood_gbh(ico)                     &
+                                                 ,cpatch%cotherm%wood_gbw(ico))
                !---------------------------------------------------------------------------!
             else
-               cpatch%wood_gbh(ico)      = 0.0
-               cpatch%wood_gbw(ico)      = 0.0
+               cpatch%cotherm%wood_gbh(ico)      = 0.0
+               cpatch%cotherm%wood_gbw(ico)      = 0.0
             end if
             !------------------------------------------------------------------------------!
          end do
@@ -1876,8 +1876,8 @@ module canopy_struct_dynamics
                                                   ,initp%leaf_grashof(ico)                 &
                                                   ,initp%leaf_nussfree(ico)                &
                                                   ,initp%leaf_nussforc(ico) )
-               cpatch%leaf_gbh(ico) = sngloff(initp%leaf_gbh(ico),tiny_offset)
-               cpatch%leaf_gbw(ico) = sngloff(initp%leaf_gbw(ico),tiny_offset)
+               cpatch%cotherm%leaf_gbh(ico) = sngloff(initp%leaf_gbh(ico),tiny_offset)
+               cpatch%cotherm%leaf_gbw(ico) = sngloff(initp%leaf_gbw(ico),tiny_offset)
                !---------------------------------------------------------------------------!
             else
                initp%leaf_reynolds(ico) = 0.d0
@@ -1886,8 +1886,8 @@ module canopy_struct_dynamics
                initp%leaf_nussforc(ico) = 0.d0
                initp%leaf_gbh     (ico) = 0.d0
                initp%leaf_gbw     (ico) = 0.d0
-               cpatch%leaf_gbh    (ico) = 0.0
-               cpatch%leaf_gbw    (ico) = 0.0
+               cpatch%cotherm%leaf_gbh    (ico) = 0.0
+               cpatch%cotherm%leaf_gbw    (ico) = 0.0
             end if
             !------ Wood boundary layer conductance. --------------------------------------!
             if (initp%wood_resolvable(ico)) then
@@ -1904,8 +1904,8 @@ module canopy_struct_dynamics
                                                   ,initp%wood_grashof(ico)                 &
                                                   ,initp%wood_nussfree(ico)                &
                                                   ,initp%wood_nussforc(ico) )
-               cpatch%wood_gbh(ico) = sngloff(initp%wood_gbh(ico),tiny_offset)
-               cpatch%wood_gbw(ico) = sngloff(initp%wood_gbw(ico),tiny_offset)
+               cpatch%cotherm%wood_gbh(ico) = sngloff(initp%wood_gbh(ico),tiny_offset)
+               cpatch%cotherm%wood_gbw(ico) = sngloff(initp%wood_gbw(ico),tiny_offset)
                !---------------------------------------------------------------------------!
             else
                initp%wood_reynolds(ico) = 0.d0
@@ -1914,8 +1914,8 @@ module canopy_struct_dynamics
                initp%wood_nussforc(ico) = 0.d0
                initp%wood_gbh     (ico) = 0.d0
                initp%wood_gbw     (ico) = 0.d0
-               cpatch%wood_gbh    (ico) = 0.0
-               cpatch%wood_gbw    (ico) = 0.0
+               cpatch%cotherm%wood_gbh    (ico) = 0.0
+               cpatch%cotherm%wood_gbw    (ico) = 0.0
             end if
             !------------------------------------------------------------------------------!
          end do
@@ -2036,8 +2036,8 @@ module canopy_struct_dynamics
                                                   ,initp%leaf_grashof(ico)                 &
                                                   ,initp%leaf_nussfree(ico)                &
                                                   ,initp%leaf_nussforc(ico) )
-               cpatch%leaf_gbh(ico) = sngloff(initp%leaf_gbh(ico),tiny_offset)
-               cpatch%leaf_gbw(ico) = sngloff(initp%leaf_gbw(ico),tiny_offset)
+               cpatch%cotherm%leaf_gbh(ico) = sngloff(initp%leaf_gbh(ico),tiny_offset)
+               cpatch%cotherm%leaf_gbw(ico) = sngloff(initp%leaf_gbw(ico),tiny_offset)
                !---------------------------------------------------------------------------!
             else
                initp%leaf_reynolds(ico) = 0.d0
@@ -2046,8 +2046,8 @@ module canopy_struct_dynamics
                initp%leaf_nussforc(ico) = 0.d0
                initp%leaf_gbh     (ico) = 0.d0
                initp%leaf_gbw     (ico) = 0.d0
-               cpatch%leaf_gbh    (ico) = 0.0
-               cpatch%leaf_gbw    (ico) = 0.0
+               cpatch%cotherm%leaf_gbh    (ico) = 0.0
+               cpatch%cotherm%leaf_gbw    (ico) = 0.0
             end if
             !------ Wood boundary layer conductance. --------------------------------------!
             if (initp%wood_resolvable(ico)) then
@@ -2064,8 +2064,8 @@ module canopy_struct_dynamics
                                                   ,initp%wood_grashof(ico)                 &
                                                   ,initp%wood_nussfree(ico)                &
                                                   ,initp%wood_nussforc(ico) )
-               cpatch%wood_gbh(ico) = sngloff(initp%wood_gbh(ico),tiny_offset)
-               cpatch%wood_gbw(ico) = sngloff(initp%wood_gbw(ico),tiny_offset)
+               cpatch%cotherm%wood_gbh(ico) = sngloff(initp%wood_gbh(ico),tiny_offset)
+               cpatch%cotherm%wood_gbw(ico) = sngloff(initp%wood_gbw(ico),tiny_offset)
                !---------------------------------------------------------------------------!
             else
                initp%wood_reynolds(ico) = 0.d0
@@ -2074,8 +2074,8 @@ module canopy_struct_dynamics
                initp%wood_nussforc(ico) = 0.d0
                initp%wood_gbh     (ico) = 0.d0
                initp%wood_gbw     (ico) = 0.d0
-               cpatch%wood_gbh    (ico) = 0.0
-               cpatch%wood_gbw    (ico) = 0.0
+               cpatch%cotherm%wood_gbh    (ico) = 0.0
+               cpatch%cotherm%wood_gbw    (ico) = 0.0
             end if
             !------------------------------------------------------------------------------!
          end do
@@ -2144,7 +2144,7 @@ module canopy_struct_dynamics
 
 
                !------ Estimate WAI. ------------------------------------------------------!
-               waiuse = 1.d-1 * initp%nplant(ico) * dble(cpatch%sla(ico))                  &
+               waiuse = 1.d-1 * initp%nplant(ico) * dble(cpatch%cophen%sla(ico))                  &
                       * dble(dbh2bl(cpatch%costate%dbh(ico),ipft))
                !---------------------------------------------------------------------------!
 
@@ -2384,8 +2384,8 @@ module canopy_struct_dynamics
                                                   ,initp%leaf_grashof(ico)                 &
                                                   ,initp%leaf_nussfree(ico)                &
                                                   ,initp%leaf_nussforc(ico) )
-               cpatch%leaf_gbh(ico) = sngloff(initp%leaf_gbh(ico),tiny_offset)
-               cpatch%leaf_gbw(ico) = sngloff(initp%leaf_gbw(ico),tiny_offset)
+               cpatch%cotherm%leaf_gbh(ico) = sngloff(initp%leaf_gbh(ico),tiny_offset)
+               cpatch%cotherm%leaf_gbw(ico) = sngloff(initp%leaf_gbw(ico),tiny_offset)
                !---------------------------------------------------------------------------!
             else
                initp%leaf_reynolds(ico) = 0.d0
@@ -2394,8 +2394,8 @@ module canopy_struct_dynamics
                initp%leaf_nussforc(ico) = 0.d0
                initp%leaf_gbh     (ico) = 0.d0
                initp%leaf_gbw     (ico) = 0.d0
-               cpatch%leaf_gbh    (ico) = 0.0
-               cpatch%leaf_gbw    (ico) = 0.0
+               cpatch%cotherm%leaf_gbh    (ico) = 0.0
+               cpatch%cotherm%leaf_gbw    (ico) = 0.0
             end if
             !------ Wood boundary layer conductance. --------------------------------------!
             if (initp%wood_resolvable(ico)) then
@@ -2412,8 +2412,8 @@ module canopy_struct_dynamics
                                                   ,initp%wood_grashof(ico)                 &
                                                   ,initp%wood_nussfree(ico)                &
                                                   ,initp%wood_nussforc(ico) )
-               cpatch%wood_gbh(ico) = sngloff(initp%wood_gbh(ico),tiny_offset)
-               cpatch%wood_gbw(ico) = sngloff(initp%wood_gbw(ico),tiny_offset)
+               cpatch%cotherm%wood_gbh(ico) = sngloff(initp%wood_gbh(ico),tiny_offset)
+               cpatch%cotherm%wood_gbw(ico) = sngloff(initp%wood_gbw(ico),tiny_offset)
                !---------------------------------------------------------------------------!
             else
                initp%wood_reynolds(ico) = 0.d0
@@ -2422,8 +2422,8 @@ module canopy_struct_dynamics
                initp%wood_nussforc(ico) = 0.d0
                initp%wood_gbh     (ico) = 0.d0
                initp%wood_gbw     (ico) = 0.d0
-               cpatch%wood_gbh    (ico) = 0.0
-               cpatch%wood_gbw    (ico) = 0.0
+               cpatch%cotherm%wood_gbh    (ico) = 0.0
+               cpatch%cotherm%wood_gbw    (ico) = 0.0
             end if
             !------------------------------------------------------------------------------!
          end do

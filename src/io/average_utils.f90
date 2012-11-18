@@ -238,12 +238,12 @@ subroutine normalize_averaged_vars(cgrid,frqsum,dtlsm)
                ! integral units, so we normalise using tfact.  Their units will become     !
                ! µmol/m²/s.                                                                !
                !---------------------------------------------------------------------------!
-               cpatch%mean_leaf_resp(ico)    = cpatch%mean_leaf_resp(ico)    * tfact
-               cpatch%mean_root_resp(ico)    = cpatch%mean_root_resp(ico)    * tfact
-               cpatch%mean_gpp(ico)          = cpatch%mean_gpp(ico)          * tfact
-               cpatch%mean_storage_resp(ico) = cpatch%mean_storage_resp(ico) * tfact
-               cpatch%mean_growth_resp(ico)  = cpatch%mean_growth_resp(ico)  * tfact
-               cpatch%mean_vleaf_resp(ico)   = cpatch%mean_vleaf_resp(ico)   * tfact
+               cpatch%coresp%mean_leaf_resp(ico)    = cpatch%coresp%mean_leaf_resp(ico)    * tfact
+               cpatch%coresp%mean_root_resp(ico)    = cpatch%coresp%mean_root_resp(ico)    * tfact
+               cpatch%cophoto%mean_gpp(ico)          = cpatch%cophoto%mean_gpp(ico)          * tfact
+               cpatch%coresp%mean_storage_resp(ico) = cpatch%coresp%mean_storage_resp(ico) * tfact
+               cpatch%coresp%mean_growth_resp(ico)  = cpatch%coresp%mean_growth_resp(ico)  * tfact
+               cpatch%coresp%mean_vleaf_resp(ico)   = cpatch%coresp%mean_vleaf_resp(ico)   * tfact
             end do
 
             !------------------------------------------------------------------------------!
@@ -534,15 +534,15 @@ subroutine reset_averaged_vars(cgrid)
             csite%mean_rh(ipa)              = 0.0
          
             cohortloop: do ico=1,cpatch%ncohorts
-               cpatch%leaf_respiration(ico)      = 0.0
-               cpatch%root_respiration(ico)      = 0.0
-               cpatch%gpp(ico)                   = 0.0
-               cpatch%mean_leaf_resp(ico)        = 0.0
-               cpatch%mean_root_resp(ico)        = 0.0
-               cpatch%mean_gpp(ico)              = 0.0
-               cpatch%mean_storage_resp(ico)     = 0.0 
-               cpatch%mean_growth_resp(ico)      = 0.0
-               cpatch%mean_vleaf_resp(ico)       = 0.0
+               cpatch%coresp%leaf_respiration(ico)      = 0.0
+               cpatch%coresp%root_respiration(ico)      = 0.0
+               cpatch%cophoto%gpp(ico)                   = 0.0
+               cpatch%coresp%mean_leaf_resp(ico)        = 0.0
+               cpatch%coresp%mean_root_resp(ico)        = 0.0
+               cpatch%cophoto%mean_gpp(ico)              = 0.0
+               cpatch%coresp%mean_storage_resp(ico)     = 0.0 
+               cpatch%coresp%mean_growth_resp(ico)      = 0.0
+               cpatch%coresp%mean_vleaf_resp(ico)       = 0.0
             end do cohortloop
          end do patchloop
       end do siteloop
@@ -716,12 +716,12 @@ subroutine integrate_ed_daily_output_state(cgrid)
             cpatch => csite%patch(ipa)
 
             if (cpatch%ncohorts > 0) then
-               pss_leaf_energy = pss_leaf_energy + sum(cpatch%leaf_energy)*csite%area(ipa)
-               pss_leaf_water  = pss_leaf_water  + sum(cpatch%leaf_water )*csite%area(ipa)
-               pss_leaf_hcap   = pss_leaf_hcap   + sum(cpatch%leaf_hcap  )*csite%area(ipa)
-               pss_wood_energy = pss_wood_energy + sum(cpatch%wood_energy)*csite%area(ipa)
-               pss_wood_water  = pss_wood_water  + sum(cpatch%wood_water )*csite%area(ipa)
-               pss_wood_hcap   = pss_wood_hcap   + sum(cpatch%wood_hcap  )*csite%area(ipa)
+               pss_leaf_energy = pss_leaf_energy + sum(cpatch%cotherm%leaf_energy)*csite%area(ipa)
+               pss_leaf_water  = pss_leaf_water  + sum(cpatch%cotherm%leaf_water )*csite%area(ipa)
+               pss_leaf_hcap   = pss_leaf_hcap   + sum(cpatch%cotherm%leaf_hcap  )*csite%area(ipa)
+               pss_wood_energy = pss_wood_energy + sum(cpatch%cotherm%wood_energy)*csite%area(ipa)
+               pss_wood_water  = pss_wood_water  + sum(cpatch%cotherm%wood_water )*csite%area(ipa)
+               pss_wood_hcap   = pss_wood_hcap   + sum(cpatch%cotherm%wood_hcap  )*csite%area(ipa)
                patch_lai_i = 1./max(tiny(1.),sum(cpatch%costate%lai,cpatch%costate%leaf_resolvable))
                patch_lai = patch_lai                                                       &
                          + csite%area(ipa) * sum(cpatch%costate%lai,cpatch%costate%leaf_resolvable)
@@ -732,44 +732,24 @@ subroutine integrate_ed_daily_output_state(cgrid)
 
             do ico=1,cpatch%ncohorts
                if (cpatch%costate%leaf_resolvable(ico)) then
-                  cpatch%dmean_par_l       (ico) = cpatch%dmean_par_l       (ico)          &
-                                                 + cpatch%par_l             (ico)
-                  cpatch%dmean_par_l_beam  (ico) = cpatch%dmean_par_l_beam  (ico)          &
-                                                 + cpatch%par_l_beam        (ico)
-                  cpatch%dmean_par_l_diff  (ico) = cpatch%dmean_par_l_diff  (ico)          &
-                                                 + cpatch%par_l_diffuse     (ico)
 
                   !------------------------------------------------------------------------!
                   !    Integrate the photosynthesis-related variables and the light level  !
                   ! only if it is day time.                                                !
                   !------------------------------------------------------------------------!
                   if (rshort_tot > rshort_twilight_min) then
-                     cpatch%dmean_fs_open     (ico) = cpatch%dmean_fs_open     (ico)       &
-                                                    + cpatch%fs_open           (ico)
-                     cpatch%dmean_fsw         (ico) = cpatch%dmean_fsw         (ico)       &
-                                                    + cpatch%fsw               (ico)
-                     cpatch%dmean_fsn         (ico) = cpatch%dmean_fsn         (ico)       &
-                                                    + cpatch%fsn               (ico)
-                     cpatch%dmean_psi_open    (ico) = cpatch%dmean_psi_open    (ico)       &
-                                                    + cpatch%psi_open          (ico)
-                     cpatch%dmean_psi_closed  (ico) = cpatch%dmean_psi_closed  (ico)       &
-                                                    + cpatch%psi_closed        (ico)
-                     cpatch%dmean_water_supply(ico) = cpatch%dmean_water_supply(ico)       &
-                                                    + cpatch%water_supply      (ico)
-                     cpatch%dmean_light_level(ico)  = cpatch%dmean_light_level (ico)       &
-                                                    + cpatch%light_level       (ico)
-                     cpatch%dmean_light_level_beam(ico) =                                  &
-                                               cpatch%dmean_light_level_beam(ico)          &
-                                             + cpatch%light_level_beam(ico)
-                     cpatch%dmean_light_level_diff(ico) =                                  &
-                                               cpatch%dmean_light_level_diff(ico)          &
-                                             + cpatch%light_level_diff(ico)
-                     cpatch%dmean_beamext_level(ico)    = cpatch%dmean_beamext_level(ico)  &
-                                                        + cpatch%beamext_level(ico)
-                     cpatch%dmean_diffext_level(ico)    = cpatch%dmean_diffext_level(ico)  &
-                                                        + cpatch%diffext_level(ico)
-                     cpatch%dmean_lambda_light(ico)     = cpatch%dmean_lambda_light(ico)   &
-                                                        + cpatch%lambda_light(ico)
+                     cpatch%cophoto%dmean_fs_open     (ico) = cpatch%cophoto%dmean_fs_open     (ico)       &
+                                                    + cpatch%cophoto%fs_open           (ico)
+                     cpatch%cophoto%dmean_fsw         (ico) = cpatch%cophoto%dmean_fsw         (ico)       &
+                                                    + cpatch%cophoto%fsw               (ico)
+                     cpatch%cophoto%dmean_fsn         (ico) = cpatch%cophoto%dmean_fsn         (ico)       &
+                                                    + cpatch%cophoto%fsn               (ico)
+                     cpatch%cophoto%dmean_psi_open    (ico) = cpatch%cophoto%dmean_psi_open    (ico)       &
+                                                    + cpatch%cophoto%psi_open          (ico)
+                     cpatch%cophoto%dmean_psi_closed  (ico) = cpatch%cophoto%dmean_psi_closed  (ico)       &
+                                                    + cpatch%cophoto%psi_closed        (ico)
+                     cpatch%cophoto%dmean_water_supply(ico) = cpatch%cophoto%dmean_water_supply(ico)       &
+                                                    + cpatch%cophoto%water_supply      (ico)
                   end if
                   !------------------------------------------------------------------------!
 
@@ -780,24 +760,18 @@ subroutine integrate_ed_daily_output_state(cgrid)
                   ! the day may vary.                                                      !
                   !------------------------------------------------------------------------!
                   if (iqoutput > 0) then
-                     cpatch%qmean_par_l       (it,ico) = cpatch%qmean_par_l       (it,ico) &
-                                                       + cpatch%par_l                (ico)
-                     cpatch%qmean_par_l_beam  (it,ico) = cpatch%qmean_par_l_beam  (it,ico) &
-                                                       + cpatch%par_l_beam           (ico)
-                     cpatch%qmean_par_l_diff  (it,ico) = cpatch%qmean_par_l_diff  (it,ico) &
-                                                       + cpatch%par_l_diffuse        (ico)
-                     cpatch%qmean_fs_open     (it,ico) = cpatch%qmean_fs_open     (it,ico) &
-                                                       + cpatch%fs_open              (ico)
-                     cpatch%qmean_fsw         (it,ico) = cpatch%qmean_fsw         (it,ico) &
-                                                       + cpatch%fsw                  (ico)
-                     cpatch%qmean_fsn         (it,ico) = cpatch%qmean_fsn         (it,ico) &
-                                                       + cpatch%fsn                  (ico)
-                     cpatch%qmean_psi_open    (it,ico) = cpatch%qmean_psi_open    (it,ico) &
-                                                       + cpatch%psi_open             (ico)
-                     cpatch%qmean_psi_closed  (it,ico) = cpatch%qmean_psi_closed  (it,ico) &
-                                                       + cpatch%psi_closed           (ico)
-                     cpatch%qmean_water_supply(it,ico) = cpatch%qmean_water_supply(it,ico) &
-                                                       + cpatch%water_supply         (ico)
+                     cpatch%cophoto%qmean_fs_open     (it,ico) = cpatch%cophoto%qmean_fs_open     (it,ico) &
+                                                       + cpatch%cophoto%fs_open              (ico)
+                     cpatch%cophoto%qmean_fsw         (it,ico) = cpatch%cophoto%qmean_fsw         (it,ico) &
+                                                       + cpatch%cophoto%fsw                  (ico)
+                     cpatch%cophoto%qmean_fsn         (it,ico) = cpatch%cophoto%qmean_fsn         (it,ico) &
+                                                       + cpatch%cophoto%fsn                  (ico)
+                     cpatch%cophoto%qmean_psi_open    (it,ico) = cpatch%cophoto%qmean_psi_open    (it,ico) &
+                                                       + cpatch%cophoto%psi_open             (ico)
+                     cpatch%cophoto%qmean_psi_closed  (it,ico) = cpatch%cophoto%qmean_psi_closed  (it,ico) &
+                                                       + cpatch%cophoto%psi_closed           (ico)
+                     cpatch%cophoto%qmean_water_supply(it,ico) = cpatch%cophoto%qmean_water_supply(it,ico) &
+                                                       + cpatch%cophoto%water_supply         (ico)
                   end if
                   !------------------------------------------------------------------------!
 
@@ -1186,30 +1160,30 @@ subroutine integrate_ed_daily_output_flux(cgrid)
                if (iqoutput > 0) then
                   do ico=1,cpatch%ncohorts
                      if (cpatch%costate%leaf_resolvable(ico)) then
-                        cpatch%qmean_gpp      (it,ico) = cpatch%qmean_gpp         (it,ico) &
-                                                       + cpatch%mean_gpp             (ico) &
+                        cpatch%cophoto%qmean_gpp      (it,ico) = cpatch%cophoto%qmean_gpp         (it,ico) &
+                                                       + cpatch%cophoto%mean_gpp             (ico) &
                                                        * umols_2_kgCyr                     &
                                                        / cpatch%costate%nplant(ico)
-                        cpatch%qmean_leaf_resp(it,ico) = cpatch%qmean_leaf_resp   (it,ico) &
-                                                       + cpatch%mean_leaf_resp       (ico) &
+                        cpatch%coresp%qmean_leaf_resp(it,ico) = cpatch%coresp%qmean_leaf_resp   (it,ico) &
+                                                       + cpatch%coresp%mean_leaf_resp       (ico) &
                                                        * umols_2_kgCyr                     &
                                                        / cpatch%costate%nplant(ico)
-                        cpatch%qmean_root_resp(it,ico) = cpatch%qmean_root_resp   (it,ico) &
-                                                       + cpatch%mean_root_resp       (ico) &
+                        cpatch%coresp%qmean_root_resp(it,ico) = cpatch%coresp%qmean_root_resp   (it,ico) &
+                                                       + cpatch%coresp%mean_root_resp       (ico) &
                                                        * umols_2_kgCyr                     &
                                                        / cpatch%costate%nplant(ico)
                      end if
                   end do
                end if
                patchsum_root_litter  = patchsum_root_litter                                &
-                                     + sum(cpatch%root_maintenance) * csite%area(ipa) 
+                                     + sum(cpatch%coresp%root_maintenance) * csite%area(ipa) 
                patchsum_leaf_litter  = patchsum_leaf_litter                                &
-                                     + sum(cpatch%leaf_maintenance) * csite%area(ipa) 
+                                     + sum(cpatch%coresp%leaf_maintenance) * csite%area(ipa) 
                patchsum_root_litterN = patchsum_root_litterN                               &
-                                     + sum(cpatch%root_maintenance*c2n_leaf(cpatch%costate%pft))   &
+                                     + sum(cpatch%coresp%root_maintenance*c2n_leaf(cpatch%costate%pft))   &
                                      * csite%area(ipa) 
                patchsum_leaf_litterN = patchsum_leaf_litterN                               &
-                                     + sum(cpatch%leaf_maintenance*c2n_leaf(cpatch%costate%pft))   & 
+                                     + sum(cpatch%coresp%leaf_maintenance*c2n_leaf(cpatch%costate%pft))   & 
                                      * csite%area(ipa)
              end if
             csite%dmean_co2_residual      (ipa) = csite%dmean_co2_residual        (ipa)    &
@@ -1687,13 +1661,13 @@ subroutine normalize_ed_daily_vars(cgrid,timefac1)
                !---------------------------------------------------------------------------!
                if (save_daily) then
                   pss_gpp                     = pss_gpp                                    &
-                                              + cpatch%today_gpp(ico)*cpatch%costate%nplant(ico)  &
+                                              + cpatch%cophoto%today_gpp(ico)*cpatch%costate%nplant(ico)  &
                                               * csite%area(ipa)
                   pss_leaf_resp               = pss_leaf_resp                              &
-                                              + cpatch%today_leaf_resp(ico)*cpatch%costate%nplant(ico)  &
+                                              + cpatch%coresp%today_leaf_resp(ico)*cpatch%costate%nplant(ico)  &
                                               * csite%area(ipa)
                   pss_root_resp               = pss_root_resp                              &
-                                              + cpatch%today_root_resp(ico)*cpatch%costate%nplant(ico)  &
+                                              + cpatch%coresp%today_root_resp(ico)*cpatch%costate%nplant(ico)  &
                                               * csite%area(ipa)
                end if
 
@@ -1703,12 +1677,12 @@ subroutine normalize_ed_daily_vars(cgrid,timefac1)
                ! called.                                                                   !
                !---------------------------------------------------------------------------!
                if (save_monthly) then 
-                  cpatch%mmean_gpp(ico)           = cpatch%mmean_gpp(ico)                  &
-                                                  + cpatch%today_gpp(ico)
-                  cpatch%mmean_leaf_resp(ico)     = cpatch%mmean_leaf_resp(ico)            &
-                                                  + cpatch%today_leaf_resp(ico)
-                  cpatch%mmean_root_resp(ico)     = cpatch%mmean_root_resp(ico)            &
-                                                  + cpatch%today_root_resp(ico)
+                  cpatch%cophoto%mmean_gpp(ico)           = cpatch%cophoto%mmean_gpp(ico)                  &
+                                                  + cpatch%cophoto%today_gpp(ico)
+                  cpatch%coresp%mmean_leaf_resp(ico)     = cpatch%coresp%mmean_leaf_resp(ico)            &
+                                                  + cpatch%coresp%today_leaf_resp(ico)
+                  cpatch%coresp%mmean_root_resp(ico)     = cpatch%coresp%mmean_root_resp(ico)            &
+                                                  + cpatch%coresp%today_root_resp(ico)
                end if
             end do cohortloop
          end do patchloop
@@ -2024,62 +1998,31 @@ subroutine normalize_ed_daily_output_vars(cgrid)
             cohortloop: do ico=1,cpatch%ncohorts
 
                !---------------------------------------------------------------------------!
-               !     These variables must be scaled.  They are updated every time step.    !
-               !---------------------------------------------------------------------------!
-               cpatch%dmean_par_l       (ico) = cpatch%dmean_par_l       (ico)             &
-                                              * dtlsm_o_daysec
-               cpatch%dmean_par_l_beam  (ico) = cpatch%dmean_par_l_beam  (ico)             &
-                                              * dtlsm_o_daysec
-               cpatch%dmean_par_l_diff  (ico) = cpatch%dmean_par_l_diff  (ico)             &
-                                              * dtlsm_o_daysec
-               !---------------------------------------------------------------------------!
-
-
-
-               !---------------------------------------------------------------------------!
                !     The light level, the fraction of open stomates, and the water demand  !
                ! and supply variables are averaged over the length of day light only.  We  !
                ! find this variable only if there is any day light (this is to avoid       !
                ! problems with polar nights).                                              !
                !---------------------------------------------------------------------------!
                if (cpoly%daylight(isi) >= dtlsm) then
-                  cpatch%dmean_fs_open         (ico) = cpatch%dmean_fs_open         (ico)  &
+                  cpatch%cophoto%dmean_fs_open         (ico) = cpatch%cophoto%dmean_fs_open         (ico)  &
                                                      * dtlsm_o_daylight
-                  cpatch%dmean_fsw             (ico) = cpatch%dmean_fsw             (ico)  &
+                  cpatch%cophoto%dmean_fsw             (ico) = cpatch%cophoto%dmean_fsw             (ico)  &
                                                      * dtlsm_o_daylight
-                  cpatch%dmean_fsn             (ico) = cpatch%dmean_fsn             (ico)  &
+                  cpatch%cophoto%dmean_fsn             (ico) = cpatch%cophoto%dmean_fsn             (ico)  &
                                                      * dtlsm_o_daylight
-                  cpatch%dmean_psi_open        (ico) = cpatch%dmean_psi_open        (ico)  &
+                  cpatch%cophoto%dmean_psi_open        (ico) = cpatch%cophoto%dmean_psi_open        (ico)  &
                                                      * dtlsm_o_daylight
-                  cpatch%dmean_psi_closed      (ico) = cpatch%dmean_psi_closed      (ico)  &
+                  cpatch%cophoto%dmean_psi_closed      (ico) = cpatch%cophoto%dmean_psi_closed      (ico)  &
                                                      * dtlsm_o_daylight
-                  cpatch%dmean_water_supply    (ico) = cpatch%dmean_water_supply    (ico)  &
-                                                     * dtlsm_o_daylight
-                  cpatch%dmean_light_level     (ico) = cpatch%dmean_light_level     (ico)  &
-                                                     * dtlsm_o_daylight
-                  cpatch%dmean_light_level_beam(ico) = cpatch%dmean_light_level_beam(ico)  &
-                                                     * dtlsm_o_daylight
-                  cpatch%dmean_light_level_diff(ico) = cpatch%dmean_light_level_diff(ico)  &
-                                                     * dtlsm_o_daylight
-                  cpatch%dmean_beamext_level   (ico) = cpatch%dmean_beamext_level   (ico)  &
-                                                     * dtlsm_o_daylight
-                  cpatch%dmean_diffext_level   (ico) = cpatch%dmean_diffext_level   (ico)  &
-                                                     * dtlsm_o_daylight
-                  cpatch%dmean_lambda_light    (ico) = cpatch%dmean_lambda_light    (ico)  &
+                  cpatch%cophoto%dmean_water_supply    (ico) = cpatch%cophoto%dmean_water_supply    (ico)  &
                                                      * dtlsm_o_daylight
                else
-                  cpatch%dmean_fs_open         (ico) = 0.
-                  cpatch%dmean_fsw             (ico) = 0.
-                  cpatch%dmean_fsn             (ico) = 0.
-                  cpatch%dmean_psi_open        (ico) = 0.
-                  cpatch%dmean_psi_closed      (ico) = 0.
-                  cpatch%dmean_water_supply    (ico) = 0.
-                  cpatch%dmean_light_level     (ico) = 0.
-                  cpatch%dmean_light_level_beam(ico) = 0.
-                  cpatch%dmean_light_level_diff(ico) = 0.
-                  cpatch%dmean_beamext_level   (ico) = 0.
-                  cpatch%dmean_diffext_level   (ico) = 0.
-                  cpatch%dmean_lambda_light    (ico) = 0.
+                  cpatch%cophoto%dmean_fs_open         (ico) = 0.
+                  cpatch%cophoto%dmean_fsw             (ico) = 0.
+                  cpatch%cophoto%dmean_fsn             (ico) = 0.
+                  cpatch%cophoto%dmean_psi_open        (ico) = 0.
+                  cpatch%cophoto%dmean_psi_closed      (ico) = 0.
+                  cpatch%cophoto%dmean_water_supply    (ico) = 0.
                end if
             end do cohortloop
 
@@ -2090,13 +2033,13 @@ subroutine normalize_ed_daily_output_vars(cgrid)
             if (any_resolvable) then
                patch_laiall_i = 1./max(tiny(1.),sum(cpatch%costate%lai,cpatch%costate%leaf_resolvable))
                pss_fsn     = pss_fsn + csite%area(ipa)                                     &
-                           * ( sum(cpatch%dmean_fsn * cpatch%costate%lai,cpatch%costate%leaf_resolvable)   &
+                           * ( sum(cpatch%cophoto%dmean_fsn * cpatch%costate%lai,cpatch%costate%leaf_resolvable)   &
                              * patch_laiall_i)
                pss_fsw     = pss_fsw + csite%area(ipa)                                     &
-                           * ( sum(cpatch%dmean_fsw * cpatch%costate%lai,cpatch%costate%leaf_resolvable)   &
+                           * ( sum(cpatch%cophoto%dmean_fsw * cpatch%costate%lai,cpatch%costate%leaf_resolvable)   &
                              * patch_laiall_i)
                pss_fs_open = pss_fs_open + csite%area(ipa)                                 &
-                           * ( sum(cpatch%dmean_fs_open * cpatch%costate%lai                       &
+                           * ( sum(cpatch%cophoto%dmean_fs_open * cpatch%costate%lai                       &
                                   ,cpatch%costate%leaf_resolvable)                                 &
                              * patch_laiall_i)
             end if
@@ -2147,13 +2090,13 @@ subroutine normalize_ed_daily_output_vars(cgrid)
 
             if (cpatch%ncohorts > 0) then
                pss_growth_resp  = pss_growth_resp + csite%area(ipa)                        &
-                                * sum(cpatch%growth_respiration  * cpatch%costate%nplant)          &
+                                * sum(cpatch%coresp%growth_respiration  * cpatch%costate%nplant)          &
                                 * yr_day
                pss_storage_resp = pss_storage_resp + csite%area(ipa)                       &
-                                * sum(cpatch%storage_respiration * cpatch%costate%nplant)          &
+                                * sum(cpatch%coresp%storage_respiration * cpatch%costate%nplant)          &
                                 * yr_day
                pss_vleaf_resp   = pss_vleaf_resp   + csite%area(ipa)                       &
-                                * sum(cpatch%vleaf_respiration   * cpatch%costate%nplant)          &
+                                * sum(cpatch%coresp%vleaf_respiration   * cpatch%costate%nplant)          &
                                 * yr_day
                do ipft=1,n_pft
                   cpoly%lai_pft(ipft,isi)  = cpoly%lai_pft(ipft,isi)                       &
@@ -2278,11 +2221,11 @@ subroutine zero_ed_daily_vars(cgrid)
 
             !----- Reset variables stored in patchtype. -----------------------------------!
             do ico = 1, cpatch%ncohorts
-               cpatch%today_gpp      (ico) = 0.0
-               cpatch%today_gpp_pot  (ico) = 0.0
-               cpatch%today_gpp_max  (ico) = 0.0
-               cpatch%today_leaf_resp(ico) = 0.0
-               cpatch%today_root_resp(ico) = 0.0
+               cpatch%cophoto%today_gpp      (ico) = 0.0
+               cpatch%cophoto%today_gpp_pot  (ico) = 0.0
+               cpatch%cophoto%today_gpp_max  (ico) = 0.0
+               cpatch%coresp%today_leaf_resp(ico) = 0.0
+               cpatch%coresp%today_root_resp(ico) = 0.0
             end do
          end do
       end do
@@ -2423,31 +2366,12 @@ subroutine zero_ed_daily_output_vars(cgrid)
 
             cpatch => csite%patch(ipa)
             do ico=1, cpatch%ncohorts
-!               cpatch%dmean_gpp(ico)              = 0.
-!               cpatch%dmean_nppleaf(ico)          = 0.
-!               cpatch%dmean_nppfroot(ico)         = 0.
-!               cpatch%dmean_nppsapwood(ico)       = 0.
-!               cpatch%dmean_nppcroot(ico)         = 0.
-!               cpatch%dmean_nppseeds(ico)         = 0.
-!               cpatch%dmean_nppwood(ico)          = 0.
-!               cpatch%dmean_nppdaily(ico)         = 0.
-!               cpatch%dmean_leaf_resp(ico)        = 0.
-!               cpatch%dmean_root_resp(ico)        = 0.
-               cpatch%dmean_par_l(ico)            = 0.
-               cpatch%dmean_par_l_beam(ico)       = 0.
-               cpatch%dmean_par_l_diff(ico)       = 0.
-               cpatch%dmean_fs_open(ico)          = 0.
-               cpatch%dmean_fsw(ico)              = 0.
-               cpatch%dmean_fsn(ico)              = 0.
-               cpatch%dmean_psi_open(ico)         = 0.
-               cpatch%dmean_psi_closed(ico)       = 0.
-               cpatch%dmean_water_supply(ico)     = 0.
-               cpatch%dmean_light_level(ico)      = 0.
-               cpatch%dmean_light_level_beam(ico) = 0.
-               cpatch%dmean_light_level_diff(ico) = 0.
-               cpatch%dmean_beamext_level(ico)    = 0.
-               cpatch%dmean_diffext_level(ico)    = 0.
-               cpatch%dmean_lambda_light(ico)     = 0.
+               cpatch%cophoto%dmean_fs_open(ico)          = 0.
+               cpatch%cophoto%dmean_fsw(ico)              = 0.
+               cpatch%cophoto%dmean_fsn(ico)              = 0.
+               cpatch%cophoto%dmean_psi_open(ico)         = 0.
+               cpatch%cophoto%dmean_psi_closed(ico)       = 0.
+               cpatch%cophoto%dmean_water_supply(ico)     = 0.
             end do
          end do
       end do
@@ -2719,67 +2643,43 @@ subroutine integrate_ed_monthly_output_vars(cgrid)
 
             cpatch => csite%patch(ipa)
             cohort_loop: do ico=1,cpatch%ncohorts
-               cpatch%mmean_fs_open     (ico) = cpatch%mmean_fs_open     (ico)             &
-                                              + cpatch%dmean_fs_open     (ico)
-               cpatch%mmean_fsw         (ico) = cpatch%mmean_fsw         (ico)             &
-                                              + cpatch%dmean_fsw         (ico)
-               cpatch%mmean_fsn         (ico) = cpatch%mmean_fsn         (ico)             &
-                                              + cpatch%dmean_fsn         (ico)
-               cpatch%mmean_psi_open    (ico) = cpatch%mmean_psi_open    (ico)             &
-                                              + cpatch%dmean_psi_open    (ico)
-               cpatch%mmean_psi_closed  (ico) = cpatch%mmean_psi_closed  (ico)             &
-                                              + cpatch%dmean_psi_closed  (ico)
-               cpatch%mmean_water_supply(ico) = cpatch%mmean_water_supply(ico)             &
-                                              + cpatch%dmean_water_supply(ico)
-               cpatch%mmean_par_l       (ico) = cpatch%mmean_par_l       (ico)             &
-                                              + cpatch%dmean_par_l       (ico)
-               cpatch%mmean_par_l_beam  (ico) = cpatch%mmean_par_l_beam  (ico)             &
-                                              + cpatch%dmean_par_l_beam  (ico)
-               cpatch%mmean_par_l_diff  (ico) = cpatch%mmean_par_l_diff  (ico)             &
-                                              + cpatch%dmean_par_l_diff  (ico)
-
+               cpatch%cophoto%mmean_fs_open     (ico) = cpatch%cophoto%mmean_fs_open     (ico)             &
+                                              + cpatch%cophoto%dmean_fs_open     (ico)
+               cpatch%cophoto%mmean_fsw         (ico) = cpatch%cophoto%mmean_fsw         (ico)             &
+                                              + cpatch%cophoto%dmean_fsw         (ico)
+               cpatch%cophoto%mmean_fsn         (ico) = cpatch%cophoto%mmean_fsn         (ico)             &
+                                              + cpatch%cophoto%dmean_fsn         (ico)
+               cpatch%cophoto%mmean_psi_open    (ico) = cpatch%cophoto%mmean_psi_open    (ico)             &
+                                              + cpatch%cophoto%dmean_psi_open    (ico)
+               cpatch%cophoto%mmean_psi_closed  (ico) = cpatch%cophoto%mmean_psi_closed  (ico)             &
+                                              + cpatch%cophoto%dmean_psi_closed  (ico)
+               cpatch%cophoto%mmean_water_supply(ico) = cpatch%cophoto%mmean_water_supply(ico)             &
+                                              + cpatch%cophoto%dmean_water_supply(ico)
                !---------------------------------------------------------------------------!
                !     The following variables are all converted to kgC/plant/yr.            !
                !---------------------------------------------------------------------------!
-               cpatch%mmean_leaf_maintenance(ico) = cpatch%mmean_leaf_maintenance(ico)     &
-                                                  + cpatch%leaf_maintenance(ico)           &
+               cpatch%coresp%mmean_leaf_maintenance(ico) = cpatch%coresp%mmean_leaf_maintenance(ico)     &
+                                                  + cpatch%coresp%leaf_maintenance(ico)           &
                                                   * yr_day
-               cpatch%mmean_root_maintenance(ico) = cpatch%mmean_root_maintenance(ico)     &
-                                                  + cpatch%root_maintenance(ico)           &
+               cpatch%coresp%mmean_root_maintenance(ico) = cpatch%coresp%mmean_root_maintenance(ico)     &
+                                                  + cpatch%coresp%root_maintenance(ico)           &
                                                   * yr_day
-               cpatch%mmean_leaf_drop (ico)       = cpatch%leaf_drop(ico)                  &
-                                                  + cpatch%leaf_drop(ico)                  &
+               cpatch%cophen%mmean_leaf_drop (ico)       = cpatch%cophen%leaf_drop(ico)                  &
+                                                  + cpatch%cophen%leaf_drop(ico)                  &
                                                   * yr_day
-               cpatch%mmean_growth_resp(ico)      = cpatch%mmean_growth_resp(ico)          &
-                                                  + cpatch%growth_respiration(ico)         &
+               cpatch%coresp%mmean_growth_resp(ico)      = cpatch%coresp%mmean_growth_resp(ico)          &
+                                                  + cpatch%coresp%growth_respiration(ico)         &
                                                   * yr_day
-               cpatch%mmean_storage_resp(ico)     = cpatch%mmean_storage_resp(ico)         &
-                                                  + cpatch%storage_respiration(ico)        &
+               cpatch%coresp%mmean_storage_resp(ico)     = cpatch%coresp%mmean_storage_resp(ico)         &
+                                                  + cpatch%coresp%storage_respiration(ico)        &
                                                   * yr_day
-               cpatch%mmean_vleaf_resp(ico)       = cpatch%mmean_vleaf_resp(ico)           &
-                                                  + cpatch%vleaf_respiration(ico)          &
+               cpatch%coresp%mmean_vleaf_resp(ico)       = cpatch%coresp%mmean_vleaf_resp(ico)           &
+                                                  + cpatch%coresp%vleaf_respiration(ico)          &
                                                   * yr_day
-               !---------------------------------------------------------------------------!
-               !    Light level, a simple average now.  We currently ignore that different !
-               ! days have different day light lenghts.                                    !
-               !---------------------------------------------------------------------------!
-               cpatch%mmean_light_level(ico)      = cpatch%mmean_light_level(ico)          &
-                                                  + cpatch%dmean_light_level(ico)
-               cpatch%mmean_light_level_beam(ico) = cpatch%mmean_light_level_beam(ico)     &
-                                                  + cpatch%dmean_light_level_beam(ico)
-               cpatch%mmean_light_level_diff(ico) = cpatch%mmean_light_level_diff(ico)     &
-                                                  + cpatch%dmean_light_level_diff(ico)
-               cpatch%mmean_beamext_level(ico)    = cpatch%mmean_beamext_level(ico)        &
-                                                  + cpatch%dmean_beamext_level(ico)
-               cpatch%mmean_diffext_level(ico)    = cpatch%mmean_diffext_level(ico)        &
-                                                  + cpatch%dmean_diffext_level(ico)
-               cpatch%mmean_lambda_light(ico)     = cpatch%mmean_lambda_light(ico)         &
-                                                  + cpatch%dmean_lambda_light(ico)
-
                !----- Mortality rates. ----------------------------------------------------!
                do imt=1,n_mort
-                  cpatch%mmean_mort_rate(imt,ico) = cpatch%mmean_mort_rate(imt,ico)        &
-                                                  + cpatch%mort_rate(imt,ico)
+                  cpatch%comort%mmean_mort_rate(imt,ico) = cpatch%comort%mmean_mort_rate(imt,ico)        &
+                                                  + cpatch%comort%mort_rate(imt,ico)
                end do
 
             end do cohort_loop
@@ -3132,52 +3032,26 @@ subroutine normalize_ed_monthly_output_vars(cgrid)
             cpatch => csite%patch(ipa)
             cohortloop: do ico = 1, cpatch%ncohorts
                !----- Find the carbon fluxes. ---------------------------------------------!
-!               cpatch%mmean_gpp         (ico) = cpatch%mmean_gpp         (ico) * ndaysi
-!               cpatch%mmean_nppleaf     (ico) = cpatch%mmean_nppleaf     (ico) * ndaysi
-!               cpatch%mmean_nppfroot    (ico) = cpatch%mmean_nppfroot    (ico) * ndaysi
-!               cpatch%mmean_nppsapwood  (ico) = cpatch%mmean_nppsapwood  (ico) * ndaysi
-!               cpatch%mmean_nppcroot    (ico) = cpatch%mmean_nppcroot    (ico) * ndaysi
-!               cpatch%mmean_nppseeds    (ico) = cpatch%mmean_nppseeds    (ico) * ndaysi
-!               cpatch%mmean_nppwood     (ico) = cpatch%mmean_nppwood     (ico) * ndaysi
-!               cpatch%mmean_nppdaily    (ico) = cpatch%mmean_nppdaily    (ico) * ndaysi
-!               cpatch%mmean_leaf_resp   (ico) = cpatch%mmean_leaf_resp   (ico) * ndaysi
-!               cpatch%mmean_root_resp   (ico) = cpatch%mmean_root_resp   (ico) * ndaysi
-               cpatch%mmean_growth_resp (ico) = cpatch%mmean_growth_resp (ico) * ndaysi
-               cpatch%mmean_storage_resp(ico) = cpatch%mmean_storage_resp(ico) * ndaysi
-               cpatch%mmean_vleaf_resp  (ico) = cpatch%mmean_vleaf_resp  (ico) * ndaysi
-               cpatch%mmean_fsw         (ico) = cpatch%mmean_fsw         (ico) * ndaysi
-               cpatch%mmean_fsn         (ico) = cpatch%mmean_fsn         (ico) * ndaysi
-               cpatch%mmean_fs_open     (ico) = cpatch%mmean_fs_open     (ico) * ndaysi
-               cpatch%mmean_psi_open    (ico) = cpatch%mmean_psi_open    (ico) * ndaysi
-               cpatch%mmean_psi_closed  (ico) = cpatch%mmean_psi_closed  (ico) * ndaysi
-               cpatch%mmean_water_supply(ico) = cpatch%mmean_water_supply(ico) * ndaysi
-               cpatch%mmean_par_l       (ico) = cpatch%mmean_par_l       (ico) * ndaysi
-               cpatch%mmean_par_l_beam  (ico) = cpatch%mmean_par_l_beam  (ico) * ndaysi
-               cpatch%mmean_par_l_diff  (ico) = cpatch%mmean_par_l_diff  (ico) * ndaysi
-               cpatch%mmean_leaf_maintenance (ico) = cpatch%mmean_leaf_maintenance(ico)    &
+               cpatch%cophoto%mmean_gpp         (ico) = cpatch%cophoto%mmean_gpp         (ico) * ndaysi
+               cpatch%coresp%mmean_growth_resp (ico) = cpatch%coresp%mmean_growth_resp (ico) * ndaysi
+               cpatch%coresp%mmean_storage_resp(ico) = cpatch%coresp%mmean_storage_resp(ico) * ndaysi
+               cpatch%coresp%mmean_vleaf_resp  (ico) = cpatch%coresp%mmean_vleaf_resp  (ico) * ndaysi
+               cpatch%cophoto%mmean_fsw         (ico) = cpatch%cophoto%mmean_fsw         (ico) * ndaysi
+               cpatch%cophoto%mmean_fsn         (ico) = cpatch%cophoto%mmean_fsn         (ico) * ndaysi
+               cpatch%cophoto%mmean_fs_open     (ico) = cpatch%cophoto%mmean_fs_open     (ico) * ndaysi
+               cpatch%cophoto%mmean_psi_open    (ico) = cpatch%cophoto%mmean_psi_open    (ico) * ndaysi
+               cpatch%cophoto%mmean_psi_closed  (ico) = cpatch%cophoto%mmean_psi_closed  (ico) * ndaysi
+               cpatch%cophoto%mmean_water_supply(ico) = cpatch%cophoto%mmean_water_supply(ico) * ndaysi
+               cpatch%coresp%mmean_leaf_maintenance (ico) = cpatch%coresp%mmean_leaf_maintenance(ico)    &
                                                    * ndaysi
-               cpatch%mmean_root_maintenance (ico) = cpatch%mmean_root_maintenance(ico)    &
+               cpatch%coresp%mmean_root_maintenance (ico) = cpatch%coresp%mmean_root_maintenance(ico)    &
                                                    * ndaysi
-               cpatch%mmean_leaf_drop   (ico) = cpatch%mmean_leaf_drop   (ico) * ndaysi
+               cpatch%cophen%mmean_leaf_drop   (ico) = cpatch%cophen%mmean_leaf_drop   (ico) * ndaysi
 
                !----- Find the mortality rates. -------------------------------------------!
                do imt=1,n_mort
-                  cpatch%mmean_mort_rate(imt,ico) = cpatch%mmean_mort_rate(imt,ico)*ndaysi
+                  cpatch%comort%mmean_mort_rate(imt,ico) = cpatch%comort%mmean_mort_rate(imt,ico)*ndaysi
                end do
-
-               !----- Finding the light level, ignoring changes in day time length... -----!
-               cpatch%mmean_light_level (ico)      = cpatch%mmean_light_level(ico)         &
-                                                   * ndaysi
-               cpatch%mmean_light_level_beam (ico) = cpatch%mmean_light_level_beam(ico)    &
-                                                   * ndaysi
-               cpatch%mmean_light_level_diff (ico) = cpatch%mmean_light_level_diff(ico)    &
-                                                   * ndaysi
-               cpatch%mmean_beamext_level (ico)    = cpatch%mmean_beamext_level(ico)       &
-                                                   * ndaysi
-               cpatch%mmean_diffext_level (ico)    = cpatch%mmean_diffext_level(ico)       &
-                                                   * ndaysi
-               cpatch%mmean_lambda_light(ico)      = cpatch%mmean_lambda_light(ico)        &
-                                                   * ndaysi
 
                !----- Define to which PFT this cohort belongs. ----------------------------!
                ipft = cpatch%costate%pft(ico)
@@ -3281,29 +3155,23 @@ subroutine normalize_ed_monthly_output_vars(cgrid)
 
                   do ico=1,cpatch%ncohorts
                      !----- Convert GPP and plant respiration to kgC/plant/year. ----------!
-                     cpatch%qmean_gpp         (t,ico) = cpatch%qmean_gpp           (t,ico) &
+                     cpatch%cophoto%qmean_gpp         (t,ico) = cpatch%cophoto%qmean_gpp           (t,ico) &
                                                       * ndaysi
-                     cpatch%qmean_leaf_resp   (t,ico) = cpatch%qmean_leaf_resp     (t,ico) &
+                     cpatch%coresp%qmean_leaf_resp   (t,ico) = cpatch%coresp%qmean_leaf_resp     (t,ico) &
                                                       * ndaysi
-                     cpatch%qmean_root_resp   (t,ico) = cpatch%qmean_root_resp     (t,ico) &
+                     cpatch%coresp%qmean_root_resp   (t,ico) = cpatch%coresp%qmean_root_resp     (t,ico) &
                                                       * ndaysi
-                     cpatch%qmean_par_l       (t,ico) = cpatch%qmean_par_l         (t,ico) &
+                     cpatch%cophoto%qmean_fs_open     (t,ico) = cpatch%cophoto%qmean_fs_open       (t,ico) &
                                                       * ndaysi * dtlsm_o_frqfast
-                     cpatch%qmean_par_l_beam  (t,ico) = cpatch%qmean_par_l_beam    (t,ico) &
+                     cpatch%cophoto%qmean_fsw         (t,ico) = cpatch%cophoto%qmean_fsw           (t,ico) &
                                                       * ndaysi * dtlsm_o_frqfast
-                     cpatch%qmean_par_l_diff  (t,ico) = cpatch%qmean_par_l_diff    (t,ico) &
+                     cpatch%cophoto%qmean_fsn         (t,ico) = cpatch%cophoto%qmean_fsn           (t,ico) &
                                                       * ndaysi * dtlsm_o_frqfast
-                     cpatch%qmean_fs_open     (t,ico) = cpatch%qmean_fs_open       (t,ico) &
+                     cpatch%cophoto%qmean_psi_open    (t,ico) = cpatch%cophoto%qmean_psi_open      (t,ico) &
                                                       * ndaysi * dtlsm_o_frqfast
-                     cpatch%qmean_fsw         (t,ico) = cpatch%qmean_fsw           (t,ico) &
+                     cpatch%cophoto%qmean_psi_closed  (t,ico) = cpatch%cophoto%qmean_psi_closed    (t,ico) &
                                                       * ndaysi * dtlsm_o_frqfast
-                     cpatch%qmean_fsn         (t,ico) = cpatch%qmean_fsn           (t,ico) &
-                                                      * ndaysi * dtlsm_o_frqfast
-                     cpatch%qmean_psi_open    (t,ico) = cpatch%qmean_psi_open      (t,ico) &
-                                                      * ndaysi * dtlsm_o_frqfast
-                     cpatch%qmean_psi_closed  (t,ico) = cpatch%qmean_psi_closed    (t,ico) &
-                                                      * ndaysi * dtlsm_o_frqfast
-                     cpatch%qmean_water_supply(t,ico) = cpatch%qmean_water_supply  (t,ico) &
+                     cpatch%cophoto%qmean_water_supply(t,ico) = cpatch%cophoto%qmean_water_supply  (t,ico) &
                                                       * ndaysi * dtlsm_o_frqfast
                   end do
 
@@ -3314,13 +3182,13 @@ subroutine normalize_ed_monthly_output_vars(cgrid)
                      patch_laiall_i = 1.0                                                  &
                                     / max(tiny(1.),sum(cpatch%costate%lai,cpatch%costate%leaf_resolvable))
                      pss_fsn        = pss_fsn + csite%area(ipa)                            &
-                                    * (sum( cpatch%qmean_fsn(t,:) * cpatch%costate%lai             &
+                                    * (sum( cpatch%cophoto%qmean_fsn(t,:) * cpatch%costate%lai             &
                                           , cpatch%costate%leaf_resolvable) * patch_laiall_i)
                      pss_fsw        = pss_fsw + csite%area(ipa)                            &
-                                    * (sum( cpatch%qmean_fsw(t,:) * cpatch%costate%lai             &
+                                    * (sum( cpatch%cophoto%qmean_fsw(t,:) * cpatch%costate%lai             &
                                           , cpatch%costate%leaf_resolvable) * patch_laiall_i)
                      pss_fs_open    = pss_fs_open + csite%area(ipa)                        &
-                                    * (sum( cpatch%qmean_fs_open(t,:) * cpatch%costate%lai         &
+                                    * (sum( cpatch%cophoto%qmean_fs_open(t,:) * cpatch%costate%lai         &
                                           , cpatch%costate%leaf_resolvable) * patch_laiall_i)
                   end if
                   !------------------------------------------------------------------------!
@@ -3638,38 +3506,22 @@ subroutine zero_ed_monthly_output_vars(cgrid)
 
             cpatch=> csite%patch(ipa)
             do ico=1,cpatch%ncohorts
-               cpatch%mmean_par_l             (ico) = 0.
-               cpatch%mmean_par_l_beam        (ico) = 0.
-               cpatch%mmean_par_l_diff        (ico) = 0.
-               cpatch%mmean_fs_open           (ico) = 0.
-               cpatch%mmean_fsw               (ico) = 0.
-               cpatch%mmean_fsn               (ico) = 0.
-               cpatch%mmean_psi_open          (ico) = 0.
-               cpatch%mmean_psi_closed        (ico) = 0.
-               cpatch%mmean_water_supply      (ico) = 0.
-               cpatch%mmean_leaf_maintenance  (ico) = 0.
-               cpatch%mmean_root_maintenance  (ico) = 0.
-               cpatch%mmean_leaf_drop         (ico) = 0.
-               cpatch%mmean_gpp               (ico) = 0.
-!               cpatch%mmean_nppleaf           (ico) = 0.
-!               cpatch%mmean_nppfroot          (ico) = 0.
-!               cpatch%mmean_nppsapwood        (ico) = 0.
-!               cpatch%mmean_nppcroot          (ico) = 0.
-!               cpatch%mmean_nppseeds          (ico) = 0.
-!               cpatch%mmean_nppwood           (ico) = 0.
-!               cpatch%mmean_nppdaily          (ico) = 0.
-               cpatch%mmean_leaf_resp         (ico) = 0.
-               cpatch%mmean_root_resp         (ico) = 0.
-               cpatch%mmean_growth_resp       (ico) = 0.
-               cpatch%mmean_storage_resp      (ico) = 0.
-               cpatch%mmean_vleaf_resp        (ico) = 0.
-               cpatch%mmean_light_level       (ico) = 0.
-               cpatch%mmean_light_level_beam  (ico) = 0.
-               cpatch%mmean_light_level_diff  (ico) = 0.
-               cpatch%mmean_beamext_level     (ico) = 0.
-               cpatch%mmean_diffext_level     (ico) = 0.
-               cpatch%mmean_lambda_light      (ico) = 0.
-               cpatch%mmean_mort_rate       (:,ico) = 0.
+               cpatch%cophoto%mmean_fs_open           (ico) = 0.
+               cpatch%cophoto%mmean_fsw               (ico) = 0.
+               cpatch%cophoto%mmean_fsn               (ico) = 0.
+               cpatch%cophoto%mmean_psi_open          (ico) = 0.
+               cpatch%cophoto%mmean_psi_closed        (ico) = 0.
+               cpatch%cophoto%mmean_water_supply      (ico) = 0.
+               cpatch%coresp%mmean_leaf_maintenance  (ico) = 0.
+               cpatch%coresp%mmean_root_maintenance  (ico) = 0.
+               cpatch%cophen%mmean_leaf_drop         (ico) = 0.
+               cpatch%cophoto%mmean_gpp               (ico) = 0.
+               cpatch%coresp%mmean_leaf_resp         (ico) = 0.
+               cpatch%coresp%mmean_root_resp         (ico) = 0.
+               cpatch%coresp%mmean_growth_resp       (ico) = 0.
+               cpatch%coresp%mmean_storage_resp      (ico) = 0.
+               cpatch%coresp%mmean_vleaf_resp        (ico) = 0.
+               cpatch%comort%mmean_mort_rate       (:,ico) = 0.
             end do
          end do
       end do
@@ -3685,18 +3537,15 @@ subroutine zero_ed_monthly_output_vars(cgrid)
                cpatch => csite%patch(ipa)
                do ico=1,cpatch%ncohorts
                   !----- Convert GPP and plant respiration to kgC/plant/year. -------------!
-                  cpatch%qmean_gpp         (:,ico) = 0.0
-                  cpatch%qmean_leaf_resp   (:,ico) = 0.0
-                  cpatch%qmean_root_resp   (:,ico) = 0.0
-                  cpatch%qmean_par_l       (:,ico) = 0.0
-                  cpatch%qmean_par_l_beam  (:,ico) = 0.0
-                  cpatch%qmean_par_l_diff  (:,ico) = 0.0
-                  cpatch%qmean_fs_open     (:,ico) = 0.0
-                  cpatch%qmean_fsw         (:,ico) = 0.0
-                  cpatch%qmean_fsn         (:,ico) = 0.0
-                  cpatch%qmean_psi_open    (:,ico) = 0.0
-                  cpatch%qmean_psi_closed  (:,ico) = 0.0
-                  cpatch%qmean_water_supply(:,ico) = 0.0
+                  cpatch%cophoto%qmean_gpp         (:,ico) = 0.0
+                  cpatch%coresp%qmean_leaf_resp   (:,ico) = 0.0
+                  cpatch%coresp%qmean_root_resp   (:,ico) = 0.0
+                  cpatch%cophoto%qmean_fs_open     (:,ico) = 0.0
+                  cpatch%cophoto%qmean_fsw         (:,ico) = 0.0
+                  cpatch%cophoto%qmean_fsn         (:,ico) = 0.0
+                  cpatch%cophoto%qmean_psi_open    (:,ico) = 0.0
+                  cpatch%cophoto%qmean_psi_closed  (:,ico) = 0.0
+                  cpatch%cophoto%qmean_water_supply(:,ico) = 0.0
                end do
 
                csite%qmean_rh              (:,ipa) = 0.0

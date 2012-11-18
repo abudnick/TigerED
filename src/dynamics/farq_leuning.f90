@@ -76,11 +76,10 @@ module farq_leuning
    !      This is the main driver for the photosynthesis model.                            !
    !---------------------------------------------------------------------------------------!
    subroutine lphysiol_full(can_prss,can_rhos,can_shv,can_co2,ipft,leaf_par,leaf_temp      &
-                           ,lint_shv,green_leaf_factor,leaf_aging_factor,llspan,vm_bar     &
-                           ,leaf_gbw,A_open,A_closed,gsw_open,gsw_closed,lsfc_shv_open     &
-                           ,lsfc_shv_closed,lsfc_co2_open,lsfc_co2_closed,lint_co2_open    &
-                           ,lint_co2_closed,leaf_resp,vmout,comppout,limit_flag            &
-                           ,old_st_data)
+                           ,green_leaf_factor,leaf_aging_factor,llspan,vm_bar     &
+                           ,leaf_gbw,A_open,A_closed,gsw_open,gsw_closed  &
+                           ,leaf_resp,vmout,comppout,limit_flag           &
+                           )
       use rk4_coms       , only : tiny_offset              & ! intent(in)
                                 , effarea_transp           ! ! intent(in)
       use c34constants   , only : stoma_data               & ! structure
@@ -131,6 +130,7 @@ module farq_leuning
                                 , umol_2_mol8              & ! intent(in)
                                 , mol_2_umol8              & ! intent(in)
                                 , Watts_2_Ein8             ! ! intent(in)
+      use therm_lib, only: rslif
       implicit none
       !------ Arguments. ------------------------------------------------------------------!
       real(kind=4), intent(in)    :: can_prss          ! Canopy air pressure    [       Pa]
@@ -140,7 +140,6 @@ module farq_leuning
       integer     , intent(in)    :: ipft              ! Plant functional type  [      ---]
       real(kind=4), intent(in)    :: leaf_par          ! Absorbed PAR           [     W/m²]
       real(kind=4), intent(in)    :: leaf_temp         ! Leaf temperature       [        K]
-      real(kind=4), intent(in)    :: lint_shv          ! Leaf interc. sp. hum.  [    kg/kg]
       real(kind=4), intent(in)    :: green_leaf_factor ! Frac. of on-allom. gr. [      ---]
       real(kind=4), intent(in)    :: leaf_aging_factor ! Ageing parameter       [      ---]
       real(kind=4), intent(in)    :: llspan            ! Leaf life span         [     mnth]
@@ -150,22 +149,14 @@ module farq_leuning
       real(kind=4), intent(out)   :: A_closed          ! Photosyn. rate (cl.)   [µmol/m²/s]
       real(kind=4), intent(out)   :: gsw_open          ! St. cnd. of H2O  (op.) [  kg/m²/s]
       real(kind=4), intent(out)   :: gsw_closed        ! St. cnd. of H2O  (cl.) [  kg/m²/s]
-      real(kind=4), intent(out)   :: lsfc_shv_open     ! Leaf sfc. sp.hum.(op.) [    kg/kg] 
-      real(kind=4), intent(out)   :: lsfc_shv_closed   ! Leaf sfc. sp.hum.(cl.) [    kg/kg]
-      real(kind=4), intent(out)   :: lsfc_co2_open     ! Leaf sfc. CO2    (op.) [ µmol/mol]
-      real(kind=4), intent(out)   :: lsfc_co2_closed   ! Leaf sfc. CO2    (cl.) [ µmol/mol]
-      real(kind=4), intent(out)   :: lint_co2_open     ! Intercell. CO2   (op.) [ µmol/mol]
-      real(kind=4), intent(out)   :: lint_co2_closed   ! Intercell. CO2   (cl.) [ µmol/mol]
       real(kind=4), intent(out)   :: leaf_resp         ! Leaf respiration rate  [µmol/m²/s]
       real(kind=4), intent(out)   :: vmout             ! Max. Rubisco capacity  [µmol/m²/s]
       real(kind=4), intent(out)   :: comppout          ! GPP compensation point [ µmol/mol]
       integer     , intent(out)   :: limit_flag        ! Photosyn. limit. flag  [      ---]
-      !----- This structure save the full stomatal state for the small pert. solver. ------!
-      type(stoma_data), intent(inout) :: old_st_data ! Previous results.
       !----- External function. -----------------------------------------------------------!
       real(kind=4)    , external      :: sngloff     ! Safe double -> single precision
       !------------------------------------------------------------------------------------!
-
+      real :: lint_shv
 
       !----- Initialise limit_flag to night time value. -----------------------------------!
       limit_flag = 0
@@ -193,6 +184,8 @@ module farq_leuning
       !  5. Intercellular specific humidity, which is assumed to be at saturation          !
       !     given the leaf temperature.  We convert it to mol/mol.                         !
       !------------------------------------------------------------------------------------!
+      lint_shv = rslif(can_prss,leaf_temp)
+      lint_shv = lint_shv / (1. + lint_shv)
       met%lint_shv    = epi8 * dble(lint_shv)
       !------------------------------------------------------------------------------------!
       !  6. Find the conductivities for water and carbon.  The input for water is in       !
@@ -302,15 +295,6 @@ module farq_leuning
 
       gsw_open       = sngloff(stopen%stom_cond_h2o   * mmdry8 / effarea_transp(ipft)      &
                               , tiny_offset)
-      !----- Leaf surface specific humidity, convert them to [kg/kg]. ---------------------!
-      lsfc_shv_closed = sngloff(stclosed%lsfc_shv     * ep8         , tiny_offset)
-      lsfc_shv_open   = sngloff(stopen%lsfc_shv       * ep8         , tiny_offset)
-      !----- Leaf surface CO2 concentration, convert them to [µmol/mol]. ------------------!
-      lsfc_co2_closed = sngloff(stclosed%lsfc_co2     * mol_2_umol8 , tiny_offset)
-      lsfc_co2_open   = sngloff(stopen%lsfc_co2       * mol_2_umol8 , tiny_offset)
-      !----- Intercellular carbon dioxide concentration, convert them to [µmol/mol]. ------!
-      lint_co2_closed = sngloff(stclosed%lint_co2     * mol_2_umol8 , tiny_offset)
-      lint_co2_open   = sngloff(stopen%lint_co2       * mol_2_umol8 , tiny_offset)
       !----- Leaf respiration [µmol/m²/s]. ------------------------------------------------!
       leaf_resp       = sngloff(aparms%leaf_resp      * mol_2_umol8 , tiny_offset)
       !----- Maximum Rubisco capacity to perform the carboxylase function [µmol/m²/s]. ----!

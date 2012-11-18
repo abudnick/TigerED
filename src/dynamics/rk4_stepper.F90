@@ -1279,8 +1279,8 @@ module rk4_stepper
          if(y%leaf_resolvable(ico)) then
             write(unit=*,fmt='(2(i5,1x),8(es12.4,1x))')                                    &
                ico,cpatch%costate%pft(ico),y%lai(ico),y%wai(ico),y%wpa(ico),y%tai(ico)             &
-                  ,y%leaf_energy(ico),cpatch%leaf_energy(ico),y%leaf_temp(ico)             &
-                  ,cpatch%leaf_temp(ico)
+                  ,y%leaf_energy(ico),cpatch%cotherm%leaf_energy(ico),y%leaf_temp(ico)             &
+                  ,cpatch%cotherm%leaf_temp(ico)
          end if
       end do
       write(unit=*,fmt='(78a)') ('-',k=1,78)
@@ -1294,7 +1294,7 @@ module rk4_stepper
          if(y%leaf_resolvable(ico)) then
             write(unit=*,fmt='(2(i5,1x),8(es12.4,1x))')                                    &
                ico,cpatch%costate%pft(ico),y%lai(ico),y%wai(ico),y%wpa(ico),y%tai(ico)             &
-                  ,y%leaf_water(ico),cpatch%leaf_water(ico),cpatch%leaf_hcap(ico)          &
+                  ,y%leaf_water(ico),cpatch%cotherm%leaf_water(ico),cpatch%cotherm%leaf_hcap(ico)          &
                   ,y%leaf_hcap(ico)
          end if
       end do
@@ -1311,8 +1311,8 @@ module rk4_stepper
          if(y%wood_resolvable(ico)) then
             write(unit=*,fmt='(2(i5,1x),8(es12.4,1x))')                                    &
                ico,cpatch%costate%pft(ico),y%lai(ico),y%wai(ico),y%wpa(ico),y%tai(ico)             &
-                  ,y%wood_energy(ico),cpatch%wood_energy(ico),y%wood_temp(ico)             &
-                  ,cpatch%wood_temp(ico)
+                  ,y%wood_energy(ico),cpatch%cotherm%wood_energy(ico),y%wood_temp(ico)             &
+                  ,cpatch%cotherm%wood_temp(ico)
          end if
       end do
       write(unit=*,fmt='(78a)') ('-',k=1,78)
@@ -1326,7 +1326,7 @@ module rk4_stepper
          if(y%wood_resolvable(ico)) then
             write(unit=*,fmt='(2(i5,1x),8(es12.4,1x))')                                    &
                ico,cpatch%costate%pft(ico),y%lai(ico),y%wai(ico),y%wpa(ico),y%tai(ico)             &
-                  ,y%wood_water(ico),cpatch%wood_water(ico),cpatch%wood_hcap(ico)          &
+                  ,y%wood_water(ico),cpatch%cotherm%wood_water(ico),cpatch%cotherm%wood_hcap(ico)          &
                   ,y%wood_hcap(ico)
          end if
       end do

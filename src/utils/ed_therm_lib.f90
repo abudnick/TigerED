@@ -152,13 +152,13 @@ module ed_therm_lib
       !------------------------------------------------------------------------------------!
       !     Leaves.  Check whether heat capacity is zero or not.                           !
       !------------------------------------------------------------------------------------!
-      if (cpatch%leaf_hcap(ico) == 0. ) then
-         cpatch%leaf_energy(ico) = 0.
-         cpatch%leaf_water(ico)  = 0.
-         cpatch%leaf_fliq(ico)   = 0.
+      if (cpatch%cotherm%leaf_hcap(ico) == 0. ) then
+         cpatch%cotherm%leaf_energy(ico) = 0.
+         cpatch%cotherm%leaf_water(ico)  = 0.
+         cpatch%cotherm%leaf_fliq(ico)   = 0.
          if (cpatch%costate%hite(ico) > csite%total_sfcw_depth(ipa)) then
             !----- Plant is exposed, set temperature to the canopy temperature. -----------!
-            cpatch%leaf_temp(ico) = csite%can_temp(ipa)
+            cpatch%cotherm%leaf_temp(ico) = csite%can_temp(ipa)
          else
             !----- Find the snow layer that is the closest to where the leaves would be. --!
             do k = csite%nlev_sfcwater(ipa), 1, -1
@@ -166,7 +166,7 @@ module ed_therm_lib
                   kclosest = k
                end if
             end do
-            cpatch%leaf_temp(ico) = csite%sfcwater_tempk(kclosest,ipa)
+            cpatch%cotherm%leaf_temp(ico) = csite%sfcwater_tempk(kclosest,ipa)
          end if
          !---------------------------------------------------------------------------------!
 
@@ -176,18 +176,18 @@ module ed_therm_lib
          ! fraction of water held by leaves, we can recalculate the internal energy by     !
          ! just switching the old heat capacity by the new one.                            !
          !---------------------------------------------------------------------------------!
-         cpatch%leaf_energy(ico) = cpatch%leaf_hcap(ico) * cpatch%leaf_temp(ico)           &
-                                 + cpatch%leaf_water(ico)                                  &
-                                 * ( cliq * cpatch%leaf_fliq(ico)                          &
-                                   * (cpatch%leaf_temp(ico) - tsupercool)                  &
-                                   + cice * (1.-cpatch%leaf_fliq(ico))                     &
-                                          * cpatch%leaf_temp(ico))
+         cpatch%cotherm%leaf_energy(ico) = cpatch%cotherm%leaf_hcap(ico) * cpatch%cotherm%leaf_temp(ico)           &
+                                 + cpatch%cotherm%leaf_water(ico)                                  &
+                                 * ( cliq * cpatch%cotherm%leaf_fliq(ico)                          &
+                                   * (cpatch%cotherm%leaf_temp(ico) - tsupercool)                  &
+                                   + cice * (1.-cpatch%cotherm%leaf_fliq(ico))                     &
+                                          * cpatch%cotherm%leaf_temp(ico))
          !---------------------------------------------------------------------------------!
 
 
 
          !----- This is a sanity check, it can be removed if it doesn't crash. ------------!
-         call qwtk(cpatch%leaf_energy(ico),cpatch%leaf_water(ico),cpatch%leaf_hcap(ico)    &
+         call qwtk(cpatch%cotherm%leaf_energy(ico),cpatch%cotherm%leaf_water(ico),cpatch%cotherm%leaf_hcap(ico)    &
                   ,new_temp,new_fliq)
          !---------------------------------------------------------------------------------!
 
@@ -196,16 +196,16 @@ module ed_therm_lib
          !---------------------------------------------------------------------------------!
          !     In case the temperature is different, give the user the bad news...         !
          !---------------------------------------------------------------------------------!
-         if (abs(new_temp - cpatch%leaf_temp(ico)) > 0.1) then
+         if (abs(new_temp - cpatch%cotherm%leaf_temp(ico)) > 0.1) then
             write(unit=*,fmt='(a)') '-----------------------------------------------------'
             write(unit=*,fmt='(a)') ' LEAF ENERGY CONSERVATION FAILED!:'
             write(unit=*,fmt='(a)') '-----------------------------------------------------'
-            write(unit=*,fmt='(a,1x,es12.5)') ' Old temperature:  ',cpatch%leaf_temp(ico)
+            write(unit=*,fmt='(a,1x,es12.5)') ' Old temperature:  ',cpatch%cotherm%leaf_temp(ico)
             write(unit=*,fmt='(a,1x,es12.5)') ' New temperature:  ',new_temp
             write(unit=*,fmt='(a,1x,es12.5)') ' Old heat capacity:',old_leaf_hcap
-            write(unit=*,fmt='(a,1x,es12.5)') ' New heat capacity:',cpatch%leaf_hcap(ico)
-            write(unit=*,fmt='(a,1x,es12.5)') ' Leaf energy:      ',cpatch%leaf_energy(ico)
-            write(unit=*,fmt='(a,1x,es12.5)') ' Leaf water:       ',cpatch%leaf_water(ico)
+            write(unit=*,fmt='(a,1x,es12.5)') ' New heat capacity:',cpatch%cotherm%leaf_hcap(ico)
+            write(unit=*,fmt='(a,1x,es12.5)') ' Leaf energy:      ',cpatch%cotherm%leaf_energy(ico)
+            write(unit=*,fmt='(a,1x,es12.5)') ' Leaf water:       ',cpatch%cotherm%leaf_water(ico)
             write(unit=*,fmt='(a)') '-----------------------------------------------------'
             call fatal_error('Leaf energy is leaking!!!','update_veg_energy_cweh'          &
                             &,'ed_therm_lib.f90')
@@ -220,13 +220,13 @@ module ed_therm_lib
       !------------------------------------------------------------------------------------!
       !     Wood.  Check whether heat capacity is zero or not.                             !
       !------------------------------------------------------------------------------------!
-      if (cpatch%wood_hcap(ico) == 0. ) then
-         cpatch%wood_energy(ico) = 0.
-         cpatch%wood_water(ico)  = 0.
-         cpatch%wood_fliq(ico)   = 0.
+      if (cpatch%cotherm%wood_hcap(ico) == 0. ) then
+         cpatch%cotherm%wood_energy(ico) = 0.
+         cpatch%cotherm%wood_water(ico)  = 0.
+         cpatch%cotherm%wood_fliq(ico)   = 0.
          if (cpatch%costate%hite(ico) > csite%total_sfcw_depth(ipa)) then
             !----- Plant is exposed, set temperature to the canopy temperature. -----------!
-            cpatch%wood_temp(ico) = csite%can_temp(ipa)
+            cpatch%cotherm%wood_temp(ico) = csite%can_temp(ipa)
          else
             !----- Find the snow layer that is the closest to where the leaves would be. --!
             do k = csite%nlev_sfcwater(ipa), 1, -1
@@ -234,7 +234,7 @@ module ed_therm_lib
                   kclosest = k
                end if
             end do
-            cpatch%wood_temp(ico) = csite%sfcwater_tempk(kclosest,ipa)
+            cpatch%cotherm%wood_temp(ico) = csite%sfcwater_tempk(kclosest,ipa)
          end if
          !---------------------------------------------------------------------------------!
 
@@ -244,18 +244,18 @@ module ed_therm_lib
          ! fraction of water held by leaves, we can recalculate the internal energy by     !
          ! just switching the old heat capacity by the new one.                            !
          !---------------------------------------------------------------------------------!
-         cpatch%wood_energy(ico) = cpatch%wood_hcap(ico) * cpatch%wood_temp(ico)           &
-                                + cpatch%wood_water(ico)                                   &
-                                * ( cliq * cpatch%wood_fliq(ico)                           &
-                                  * (cpatch%wood_temp(ico) - tsupercool)                   &
-                                  + cice * (1.-cpatch%wood_fliq(ico))                      &
-                                         * cpatch%wood_temp(ico))
+         cpatch%cotherm%wood_energy(ico) = cpatch%cotherm%wood_hcap(ico) * cpatch%cotherm%wood_temp(ico)           &
+                                + cpatch%cotherm%wood_water(ico)                                   &
+                                * ( cliq * cpatch%cotherm%wood_fliq(ico)                           &
+                                  * (cpatch%cotherm%wood_temp(ico) - tsupercool)                   &
+                                  + cice * (1.-cpatch%cotherm%wood_fliq(ico))                      &
+                                         * cpatch%cotherm%wood_temp(ico))
          !---------------------------------------------------------------------------------!
 
 
 
          !----- This is a sanity check, it can be removed if it doesn't crash. ------------!
-         call qwtk(cpatch%wood_energy(ico),cpatch%wood_water(ico),cpatch%wood_hcap(ico)    &
+         call qwtk(cpatch%cotherm%wood_energy(ico),cpatch%cotherm%wood_water(ico),cpatch%cotherm%wood_hcap(ico)    &
                   ,new_temp,new_fliq)
          !---------------------------------------------------------------------------------!
 
@@ -265,16 +265,16 @@ module ed_therm_lib
          !---------------------------------------------------------------------------------!
          !     In case the temperature is different, give the user the bad news...         !
          !---------------------------------------------------------------------------------!
-         if (abs(new_temp - cpatch%wood_temp(ico)) > 0.1) then
+         if (abs(new_temp - cpatch%cotherm%wood_temp(ico)) > 0.1) then
             write(unit=*,fmt='(a)') '-----------------------------------------------------'
             write(unit=*,fmt='(a)') ' WOOD ENERGY CONSERVATION FAILED!:'
             write(unit=*,fmt='(a)') '-----------------------------------------------------'
-            write(unit=*,fmt='(a,1x,es12.5)') ' Old temperature:  ',cpatch%wood_temp(ico)
+            write(unit=*,fmt='(a,1x,es12.5)') ' Old temperature:  ',cpatch%cotherm%wood_temp(ico)
             write(unit=*,fmt='(a,1x,es12.5)') ' New temperature:  ',new_temp
             write(unit=*,fmt='(a,1x,es12.5)') ' Old heat capacity:',old_wood_hcap
-            write(unit=*,fmt='(a,1x,es12.5)') ' New heat capacity:',cpatch%wood_hcap(ico)
-            write(unit=*,fmt='(a,1x,es12.5)') ' Wood energy:      ',cpatch%wood_energy(ico)
-            write(unit=*,fmt='(a,1x,es12.5)') ' Wood water:       ',cpatch%wood_water(ico)
+            write(unit=*,fmt='(a,1x,es12.5)') ' New heat capacity:',cpatch%cotherm%wood_hcap(ico)
+            write(unit=*,fmt='(a,1x,es12.5)') ' Wood energy:      ',cpatch%cotherm%wood_energy(ico)
+            write(unit=*,fmt='(a,1x,es12.5)') ' Wood water:       ',cpatch%cotherm%wood_water(ico)
             write(unit=*,fmt='(a)') '-----------------------------------------------------'
             call fatal_error('Wood energy is leaking!!!','update_veg_energy_cweh'          &
                             &,'ed_therm_lib.f90')

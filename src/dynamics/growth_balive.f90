@@ -105,10 +105,10 @@ old_plant_P = old_plant_P + csite%area(ipa) * cpatch%costate%nplant(ico) * (cpat
                   !----- Update the elongation factor. ------------------------------------!
                   select case (phenology(ipft))
                   case (4)
-                     cpatch%elongf(ico) = max(0.0, min(1.0, cpatch%paw_avg(ico)            &
+                     cpatch%cophen%elongf(ico) = max(0.0, min(1.0, cpatch%cophen%paw_avg(ico)            &
                                                           / theta_crit))
                   case default
-                     cpatch%elongf(ico) = 1.0
+                     cpatch%cophen%elongf(ico) = 1.0
 
                   end select
 
@@ -122,23 +122,23 @@ old_plant_P = old_plant_P + csite%area(ipa) * cpatch%costate%nplant(ico) * (cpat
                   !------------------------------------------------------------------------!
                   call plant_maintenance(cpatch,ico,cpatch%costate%broot(ico),cpatch%costate%bleaf(ico)    &
                                         ,tfact,daily_C_gain,csite%avg_daily_temp(ipa))
-!cpatch%leaf_maintenance(ico) = 0.                  
-!cpatch%root_maintenance(ico) = 0.                  
+!cpatch%coresp%leaf_maintenance(ico) = 0.                  
+!cpatch%coresp%root_maintenance(ico) = 0.                  
 !daily_C_gain = 0.
                   !----- Subtract maintenance costs from pools. ---------------------------!
                   cpatch%costate%balive(ico)    = cpatch%costate%balive(ico)                               &
-                                        - cpatch%leaf_maintenance(ico)                     &
-                                        - cpatch%root_maintenance(ico)
+                                        - cpatch%coresp%leaf_maintenance(ico)                     &
+                                        - cpatch%coresp%root_maintenance(ico)
                   cpatch%costate%bleaf(ico)     = cpatch%costate%bleaf(ico)                                &
-                                        - cpatch%leaf_maintenance(ico)       
+                                        - cpatch%coresp%leaf_maintenance(ico)       
                   cpatch%costate%broot(ico)     = cpatch%costate%broot(ico)                                &
-                                        - cpatch%root_maintenance(ico)
-                  cpatch%cb(13,ico)     = cpatch%cb(13,ico)                                &
-                                        - cpatch%leaf_maintenance(ico)                     &
-                                        - cpatch%root_maintenance(ico)
-                  cpatch%cb_max(13,ico) = cpatch%cb_max(13,ico)                            &
-                                        - cpatch%leaf_maintenance(ico)                     &
-                                        - cpatch%root_maintenance(ico)
+                                        - cpatch%coresp%root_maintenance(ico)
+                  cpatch%comort%cb(13,ico)     = cpatch%comort%cb(13,ico)                                &
+                                        - cpatch%coresp%leaf_maintenance(ico)                     &
+                                        - cpatch%coresp%root_maintenance(ico)
+                  cpatch%comort%cb_max(13,ico) = cpatch%comort%cb_max(13,ico)                            &
+                                        - cpatch%coresp%leaf_maintenance(ico)                     &
+                                        - cpatch%coresp%root_maintenance(ico)
 
                   !------------------------------------------------------------------------!
                   !    Storage respiration/turnover_rate.                                  !
@@ -155,21 +155,21 @@ old_plant_P = old_plant_P + csite%area(ipa) * cpatch%costate%nplant(ico) * (cpat
                   temp_dep = 1.0
                   !------------------------------------------------------------------------!
 
-                  cpatch%storage_respiration(ico) = cpatch%costate%bstorage(ico)                   &
+                  cpatch%coresp%storage_respiration(ico) = cpatch%costate%bstorage(ico)                   &
                                                   * storage_turnover_rate(ipft)            &
                                                   * tfact * temp_dep
 
                   cpatch%costate%bstorage(ico) = cpatch%costate%bstorage(ico)                              &
-                                         - cpatch%storage_respiration(ico)
+                                         - cpatch%coresp%storage_respiration(ico)
 
                   !------------------------------------------------------------------------!
                   !     When storage carbon is lost, allow the associated nitrogen to go   !
                   ! to litter in order to maintain prescribed C2N ratio.                   !
                   !------------------------------------------------------------------------!
-                  csite%fsn_in(ipa) = csite%fsn_in(ipa) + cpatch%storage_respiration(ico)  &
+                  csite%fsn_in(ipa) = csite%fsn_in(ipa) + cpatch%coresp%storage_respiration(ico)  &
                                                         / c2n_storage * cpatch%costate%nplant(ico)
 
-                  csite%fsp_in(ipa) = csite%fsp_in(ipa) + cpatch%storage_respiration(ico) &
+                  csite%fsp_in(ipa) = csite%fsp_in(ipa) + cpatch%coresp%storage_respiration(ico) &
                        / c2p_storage(ipft) * cpatch%costate%nplant(ico)
 
                   !------------------------------------------------------------------------!
@@ -186,7 +186,7 @@ old_plant_P = old_plant_P + csite%area(ipa) * cpatch%costate%nplant(ico) * (cpat
                   !------------------------------------------------------------------------!
                   !      Compute respiration rates for coming day [kgC/plant/day].         !
                   !------------------------------------------------------------------------!
-                  cpatch%growth_respiration(ico) = max(0.0, daily_C_gain                   &
+                  cpatch%coresp%growth_respiration(ico) = max(0.0, daily_C_gain                   &
                                                           * growth_resp_factor(ipft))
                   !------------------------------------------------------------------------!
 
@@ -195,7 +195,7 @@ old_plant_P = old_plant_P + csite%area(ipa) * cpatch%costate%nplant(ico) * (cpat
                   !------------------------------------------------------------------------!
                   !     Find the "virtual" leaf respiration.                               !
                   !------------------------------------------------------------------------!
-                  cpatch%vleaf_respiration(ico) = (1.0-cpoly%green_leaf_factor(ipft,isi))  &
+                  cpatch%coresp%vleaf_respiration(ico) = (1.0-cpoly%green_leaf_factor(ipft,isi))  &
                                                 * salloci * cpatch%costate%balive(ico)             &
                                                 * storage_turnover_rate(ipft)              &
                                                 * tfact * temp_dep
@@ -245,11 +245,11 @@ old_plant_P = old_plant_P + csite%area(ipa) * cpatch%costate%nplant(ico) * (cpat
 
                   !----- Calculate plant N limitation factor. -----------------------------!
                   if (n_plant_lim == 0 .or. N_uptake_pot <= 0.0) then
-                     cpatch%fsn(ico) = 1.0
+                     cpatch%cophoto%fsn(ico) = 1.0
                   else
                      nitrogen_supply = plant_N_supply_scale * cpatch%costate%broot(ico)            &
                                      * csite%sbgc%miner_soil_N(ipa)
-                     cpatch%fsn(ico) = nitrogen_supply                                     &
+                     cpatch%cophoto%fsn(ico) = nitrogen_supply                                     &
                                      / (nitrogen_supply + N_uptake_pot)
                   end if
                   
@@ -258,16 +258,16 @@ old_plant_P = old_plant_P + csite%area(ipa) * cpatch%costate%nplant(ico) * (cpat
                   !------------------------------------------------------------------------!
                   call mortality_rates(cpatch,ipa,ico,csite%avg_daily_temp(ipa)            &
                                       ,csite%age(ipa))
-                  dndt = - sum(cpatch%mort_rate(:,ico)) * cpatch%costate%nplant(ico) * tfact
+                  dndt = - sum(cpatch%comort%mort_rate(:,ico)) * cpatch%costate%nplant(ico) * tfact
 
                   !----- Update monthly mortality rate [plants/m2/month]. -----------------!
-                  cpatch%monthly_dndt(ico) = cpatch%monthly_dndt(ico) + dndt
+                  cpatch%comort%monthly_dndt(ico) = cpatch%comort%monthly_dndt(ico) + dndt
 
 
                   !----- Updating LAI, WPA, and WAI. --------------------------------------!
                   call area_indices(cpatch%costate%nplant(ico),cpatch%costate%bleaf(ico)                   &
                                    ,cpatch%costate%bdead(ico),cpatch%costate%balive(ico),cpatch%costate%dbh(ico)   &
-                                   ,cpatch%costate%hite(ico) ,cpatch%costate%pft(ico),cpatch%sla(ico)      &
+                                   ,cpatch%costate%hite(ico) ,cpatch%costate%pft(ico),cpatch%cophen%sla(ico)      &
                                    ,cpatch%costate%lai(ico),cpatch%costate%wpa(ico),cpatch%costate%wai(ico)        &
                                    ,cpatch%costate%crown_area(ico),cpatch%costate%bsapwood(ico))
 
@@ -281,12 +281,12 @@ old_plant_P = old_plant_P + csite%area(ipa) * cpatch%costate%nplant(ico) * (cpat
                   !     It is likely that biomass has changed, therefore, update           !
                   ! vegetation energy and heat capacity.                                   !
                   !------------------------------------------------------------------------!
-                  old_leaf_hcap         = cpatch%leaf_hcap(ico)
-                  old_wood_hcap         = cpatch%wood_hcap(ico)
+                  old_leaf_hcap         = cpatch%cotherm%leaf_hcap(ico)
+                  old_wood_hcap         = cpatch%cotherm%wood_hcap(ico)
                   call calc_veg_hcap(cpatch%costate%bleaf(ico) ,cpatch%costate%bdead(ico)                  &
                                     ,cpatch%costate%bsapwood(ico),cpatch%costate%nplant(ico)               &
                                     ,cpatch%costate%pft(ico)                                       &
-                                    ,cpatch%leaf_hcap(ico),cpatch%wood_hcap(ico))
+                                    ,cpatch%cotherm%leaf_hcap(ico),cpatch%cotherm%wood_hcap(ico))
                   call update_veg_energy_cweh(csite,ipa,ico,old_leaf_hcap,old_wood_hcap)
                   !----- Update the stability status. -------------------------------------!
                   call is_resolvable(csite,ipa,ico,cpoly%green_leaf_factor(:,isi))
@@ -404,9 +404,9 @@ new_plant_P = new_plant_P + csite%area(ipa) * (csite%repro(1,ipa)/c2p_recruit(1)
                   !----- Update the elongation factor. ------------------------------------!
                   select case (phenology(ipft))
                   case (4)
-                     cpatch%elongf(ico) = max(0.0, min(1.0, cpatch%paw_avg(ico)/theta_crit))
+                     cpatch%cophen%elongf(ico) = max(0.0, min(1.0, cpatch%cophen%paw_avg(ico)/theta_crit))
                   case default
-                     cpatch%elongf(ico) = 1.0
+                     cpatch%cophen%elongf(ico) = 1.0
                   end select
 
                   !----- Initialize cohort nitrogen uptake. -------------------------------!
@@ -429,12 +429,12 @@ new_plant_P = new_plant_P + csite%area(ipa) * (csite%repro(1,ipa)/c2p_recruit(1)
                                         ,csite%avg_daily_temp(ipa))
 
                   !----- Subtract maintenance costs from balive. --------------------------!
-                  cpatch%cb(13,ico)     = cpatch%cb(13,ico)                                &
-                                        - cpatch%leaf_maintenance(ico)                     &
-                                        - cpatch%root_maintenance(ico)
-                  cpatch%cb_max(13,ico) = cpatch%cb_max(13,ico)                            &
-                                        - cpatch%leaf_maintenance(ico)                     &
-                                        - cpatch%root_maintenance(ico)
+                  cpatch%comort%cb(13,ico)     = cpatch%comort%cb(13,ico)                                &
+                                        - cpatch%coresp%leaf_maintenance(ico)                     &
+                                        - cpatch%coresp%root_maintenance(ico)
+                  cpatch%comort%cb_max(13,ico) = cpatch%comort%cb_max(13,ico)                            &
+                                        - cpatch%coresp%leaf_maintenance(ico)                     &
+                                        - cpatch%coresp%root_maintenance(ico)
 
                   !------------------------------------------------------------------------!
                   !      Calculate actual, potential and maximum carbon balances.          !
@@ -445,11 +445,11 @@ new_plant_P = new_plant_P + csite%area(ipa) * (csite%repro(1,ipa)/c2p_recruit(1)
                   !------------------------------------------------------------------------!
                   !      Compute respiration rates for coming day [kgC/plant/day].         !
                   !------------------------------------------------------------------------!
-                  cpatch%growth_respiration(ico)  = max(0.0, daily_C_gain                  &
+                  cpatch%coresp%growth_respiration(ico)  = max(0.0, daily_C_gain                  &
                                                            * growth_resp_factor(ipft))
-                  cpatch%storage_respiration(ico) = cpatch%costate%bstorage(ico)                   &
+                  cpatch%coresp%storage_respiration(ico) = cpatch%costate%bstorage(ico)                   &
                                                   * storage_turnover_rate(ipft) * tfact
-                  cpatch%vleaf_respiration(ico) =                                          &
+                  cpatch%coresp%vleaf_respiration(ico) =                                          &
                                         (1.0 - cpoly%green_leaf_factor(ipft,isi))          &
                                       / (1.0 + q(ipft) + qsw(ipft) * cpatch%costate%hite(ico))     &
                                       * cpatch%costate%balive(ico) * storage_turnover_rate(ipft)   &
@@ -482,11 +482,11 @@ new_plant_P = new_plant_P + csite%area(ipa) * (csite%repro(1,ipa)/c2p_recruit(1)
 
                   !----- Calculate plant N limitation factor. -----------------------------!
                   if (n_plant_lim == 0 .or. N_uptake_pot <= 0.0) then
-                     cpatch%fsn(ico) = 1.0
+                     cpatch%cophoto%fsn(ico) = 1.0
                   else
                      nitrogen_supply = plant_N_supply_scale * br                           &
                                      * csite%sbgc%miner_soil_N(ipa)
-                     cpatch%fsn(ico) = nitrogen_supply / (nitrogen_supply + N_uptake_pot)
+                     cpatch%cophoto%fsn(ico) = nitrogen_supply / (nitrogen_supply + N_uptake_pot)
                   end if
                   
                   !------------------------------------------------------------------------!
@@ -545,7 +545,7 @@ new_plant_P = new_plant_P + csite%area(ipa) * (csite%repro(1,ipa)/c2p_recruit(1)
       !------------------------------------------------------------------------------------!
       !     Only do the transfer if leaves exist.                                          !
       !------------------------------------------------------------------------------------!
-      if (cpatch%phenology_status(ico) == 2) return
+      if (cpatch%cophen%phenology_status(ico) == 2) return
      
       !----- Alias for pft type. ----------------------------------------------------------!
       ipft = cpatch%costate%pft(ico)
@@ -614,28 +614,28 @@ new_plant_P = new_plant_P + csite%area(ipa) * (csite%repro(1,ipa)/c2p_recruit(1)
       end if
 
       !----- Calculate maintenance demand (kgC/plant/year). -------------------------------!
-      cpatch%root_maintenance(ico) = root_turnover_rate(ipft) * br * maintenance_temp_dep
+      cpatch%coresp%root_maintenance(ico) = root_turnover_rate(ipft) * br * maintenance_temp_dep
       if (phenology(ipft) /= 3)then
-         cpatch%leaf_maintenance(ico) = leaf_turnover_rate(ipft) * bl * maintenance_temp_dep
+         cpatch%coresp%leaf_maintenance(ico) = leaf_turnover_rate(ipft) * bl * maintenance_temp_dep
       else
-         cpatch%leaf_maintenance(ico) = leaf_turnover_rate(ipft) * bl                      &
-                                      * cpatch%turnover_amp(ico) * maintenance_temp_dep
+         cpatch%coresp%leaf_maintenance(ico) = leaf_turnover_rate(ipft) * bl                      &
+                                      * cpatch%cophen%turnover_amp(ico) * maintenance_temp_dep
       end if
 
 
       !----- Convert units of maintenance to [kgC/plant/day]. -----------------------------!
-      cpatch%leaf_maintenance(ico) = cpatch%leaf_maintenance(ico) * tfact
-      cpatch%root_maintenance(ico) = cpatch%root_maintenance(ico) * tfact
+      cpatch%coresp%leaf_maintenance(ico) = cpatch%coresp%leaf_maintenance(ico) * tfact
+      cpatch%coresp%root_maintenance(ico) = cpatch%coresp%root_maintenance(ico) * tfact
 
 
       !----- Compute daily C uptake [kgC/plant/day]. --------------------------------------!
       if(cpatch%costate%nplant(ico) > tiny(1.0)) then
-!         daily_C_gain = umol_2_kgC * day_sec * ( cpatch%today_gpp(ico)                     &
-!                                               - cpatch%today_leaf_resp(ico)               &
-!                                               - cpatch%today_root_resp(ico))              &
+!         daily_C_gain = umol_2_kgC * day_sec * ( cpatch%cophoto%today_gpp(ico)                     &
+!                                               - cpatch%coresp%today_leaf_resp(ico)               &
+!                                               - cpatch%coresp%today_root_resp(ico))              &
 !                                             / cpatch%nplant(ico)
-         daily_C_gain = cpatch%today_gpp(ico) - cpatch%today_leaf_resp(ico)               &
-              - cpatch%today_root_resp(ico)
+         daily_C_gain = cpatch%cophoto%today_gpp(ico) - cpatch%coresp%today_leaf_resp(ico)               &
+              - cpatch%coresp%today_root_resp(ico)
       else
          daily_C_gain = 0.0
       end if
@@ -685,8 +685,8 @@ new_plant_P = new_plant_P + csite%area(ipa) * (csite%repro(1,ipa)/c2p_recruit(1)
       ipft = cpatch%costate%pft(ico)
 
       !------ Calculate actual daily carbon balance: kgC/plant/day. -----------------------!
-      carbon_balance = daily_C_gain - cpatch%growth_respiration(ico)                       &
-                                    - cpatch%vleaf_respiration(ico)
+      carbon_balance = daily_C_gain - cpatch%coresp%growth_respiration(ico)                       &
+                                    - cpatch%coresp%vleaf_respiration(ico)
 
       if (cpatch%costate%nplant(ico) > tiny(1.0)) then
 
@@ -694,36 +694,36 @@ new_plant_P = new_plant_P + csite%area(ipa) * (csite%repro(1,ipa)/c2p_recruit(1)
          !      Calculate potential carbon balance (used for nitrogen demand function).    !
          ! [kgC/plant/day].                                                                !
          !---------------------------------------------------------------------------------!
-!         daily_C_gain_pot       = umol_2_kgC * day_sec * ( cpatch%today_gpp_pot(ico)       &
-!                                                         - cpatch%today_leaf_resp(ico)     &
-!                                                         - cpatch%today_root_resp(ico))    &
+!         daily_C_gain_pot       = umol_2_kgC * day_sec * ( cpatch%cophoto%today_gpp_pot(ico)       &
+!                                                         - cpatch%coresp%today_leaf_resp(ico)     &
+!                                                         - cpatch%coresp%today_root_resp(ico))    &
 !                                                       / cpatch%nplant(ico)
-         daily_C_gain_pot       = cpatch%today_gpp_pot(ico)       &
-              - cpatch%today_leaf_resp(ico)     &
-              - cpatch%today_root_resp(ico)
+         daily_C_gain_pot       = cpatch%cophoto%today_gpp_pot(ico)       &
+              - cpatch%coresp%today_leaf_resp(ico)     &
+              - cpatch%coresp%today_root_resp(ico)
          growth_respiration_pot = max(0.0, daily_C_gain_pot * growth_resp_factor(ipft))
          carbon_balance_pot     = daily_C_gain_pot - growth_respiration_pot                &
-                                - cpatch%vleaf_respiration(ico)
+                                - cpatch%coresp%vleaf_respiration(ico)
 
          !----- Calculate maximum carbon balance (used for mortality). --------------------!
-!         daily_C_gain_max       = umol_2_kgC * day_sec * ( cpatch%today_gpp_max(ico)       &
-!                                                         - cpatch%today_leaf_resp(ico)     &
-!                                                         - cpatch%today_root_resp(ico) )   &
+!         daily_C_gain_max       = umol_2_kgC * day_sec * ( cpatch%cophoto%today_gpp_max(ico)       &
+!                                                         - cpatch%coresp%today_leaf_resp(ico)     &
+!                                                         - cpatch%coresp%today_root_resp(ico) )   &
 !                                                       / cpatch%nplant(ico)
-         daily_C_gain_max       = cpatch%today_gpp_max(ico)       &
-              - cpatch%today_leaf_resp(ico)     &
-              - cpatch%today_root_resp(ico)
+         daily_C_gain_max       = cpatch%cophoto%today_gpp_max(ico)       &
+              - cpatch%coresp%today_leaf_resp(ico)     &
+              - cpatch%coresp%today_root_resp(ico)
          growth_respiration_max = max(0.0, daily_C_gain_max * growth_resp_factor(ipft))
          carbon_balance_max     = daily_C_gain_max - growth_respiration_max                &
-                                                   - cpatch%vleaf_respiration(ico)
+                                                   - cpatch%coresp%vleaf_respiration(ico)
       else
          carbon_balance_max = 0.0
          carbon_balance_pot = 0.0
       end if
 
       !----- Carbon balances for mortality. -----------------------------------------------!
-      cpatch%cb(13,ico)     = cpatch%cb(13,ico)     + carbon_balance
-      cpatch%cb_max(13,ico) = cpatch%cb_max(13,ico) + carbon_balance_max
+      cpatch%comort%cb(13,ico)     = cpatch%comort%cb(13,ico)     + carbon_balance
+      cpatch%comort%cb_max(13,ico) = cpatch%comort%cb_max(13,ico) + carbon_balance_max
 
 !      if (print_debug) then
 
@@ -738,12 +738,12 @@ new_plant_P = new_plant_P + csite%area(ipa) * (csite%repro(1,ipa)/c2p_recruit(1)
 
 !         write(unit=30+ipft,fmt='(2(i2.2,a1),i4.4,2(1x,i12),13(1x,es12.5))')               &
 !              current_time%month,'/',current_time%date,'/',current_time%year               &
-!             ,ipa,ico,cpatch%nplant(ico),carbon_balance,cpatch%growth_respiration(ico)     &
-!             ,cpatch%vleaf_respiration(ico),cpatch%today_gpp(ico)                          &
-!             ,cpatch%today_gpp_max(ico),cpatch%today_leaf_resp(ico)                        &
-!             ,cpatch%today_root_resp(ico),carbon_balance_max,cpatch%cb(13,ico)             &
-!             ,cpatch%cb_max(13,ico),cpatch%leaf_maintenance(ico)                           &
-!             ,cpatch%root_maintenance(ico)
+!             ,ipa,ico,cpatch%nplant(ico),carbon_balance,cpatch%coresp%growth_respiration(ico)     &
+!             ,cpatch%coresp%vleaf_respiration(ico),cpatch%cophoto%today_gpp(ico)                          &
+!             ,cpatch%today_gpp_max(ico),cpatch%coresp%today_leaf_resp(ico)                        &
+!             ,cpatch%coresp%today_root_resp(ico),carbon_balance_max,cpatch%comort%cb(13,ico)             &
+!             ,cpatch%comort%cb_max(13,ico),cpatch%coresp%leaf_maintenance(ico)                           &
+!             ,cpatch%coresp%root_maintenance(ico)
 !      end if
 
       return
@@ -818,7 +818,7 @@ new_plant_P = new_plant_P + csite%area(ipa) * (csite%repro(1,ipa)/c2p_recruit(1)
       storage2alive = 0.0
 
       ! However, f there is carbon and leaves want to grow, let them grow.
-      if(cpatch%costate%bstorage(ico) > 0. .and. cpatch%phenology_status(ico) == 1)then
+      if(cpatch%costate%bstorage(ico) > 0. .and. cpatch%cophen%phenology_status(ico) == 1)then
 
          !  Maximum bleaf that the allometric relationship would allow.  
          bl_max     = dbh2bl(cpatch%costate%dbh(ico),ipft) * green_leaf_factor
@@ -828,7 +828,7 @@ new_plant_P = new_plant_P + csite%area(ipa) * (csite%repro(1,ipa)/c2p_recruit(1)
 
          if(cpatch%costate%bstorage(ico) >= desired_carbon)then
             storage2alive = desired_carbon
-            cpatch%phenology_status(ico) = 0
+            cpatch%cophen%phenology_status(ico) = 0
          else
             storage2alive = cpatch%costate%bstorage(ico)
          endif
@@ -841,7 +841,7 @@ new_plant_P = new_plant_P + csite%area(ipa) * (csite%repro(1,ipa)/c2p_recruit(1)
       ! If plants have negative storage, take from balive.
       if(cpatch%costate%bstorage(ico) < 0.)then
          storage2alive = cpatch%costate%bstorage(ico)
-         if(cpatch%phenology_status(ico) == 0)cpatch%phenology_status(ico) = 1
+         if(cpatch%cophen%phenology_status(ico) == 0)cpatch%cophen%phenology_status(ico) = 1
 
          ! This process implies the loss of some additional nutrients.
          csite%fsp_in(ipa) = csite%fsp_in(ipa) - cpatch%costate%nplant(ico) *   &
@@ -899,14 +899,14 @@ new_plant_P = new_plant_P + csite%area(ipa) * (csite%repro(1,ipa)/c2p_recruit(1)
 
       ipft = cpatch%costate%pft(ico) 
 
-      if ( cpatch%phenology_status(ico) == 0 .and. carbon_balance_pot > 0.0 ) then
+      if ( cpatch%cophen%phenology_status(ico) == 0 .and. carbon_balance_pot > 0.0 ) then
 
          !----- Positive carbon balance with plants fully flushed. ------------------------!
          N_uptake_pot = N_uptake_pot + carbon_balance_pot / c2n_storage
 
-      elseif (cpatch%phenology_status(ico) == 1) then
+      elseif (cpatch%cophen%phenology_status(ico) == 1) then
 
-         bl_max = dbh2bl(cpatch%costate%dbh(ico),ipft) * green_leaf_factor * cpatch%elongf(ico)
+         bl_max = dbh2bl(cpatch%costate%dbh(ico),ipft) * green_leaf_factor * cpatch%cophen%elongf(ico)
          bl_pot = cpatch%costate%bleaf(ico) + carbon_balance_pot
 
          if (bl_pot > bl_max) then
@@ -975,7 +975,7 @@ new_plant_P = new_plant_P + csite%area(ipa) * (csite%repro(1,ipa)/c2p_recruit(1)
       do ico=1,cpatch%ncohorts
          ipft = cpatch%costate%pft(ico)
 
-         plant_litter   = ( cpatch%leaf_maintenance(ico) + cpatch%root_maintenance(ico) )  &
+         plant_litter   = ( cpatch%coresp%leaf_maintenance(ico) + cpatch%coresp%root_maintenance(ico) )  &
                         * cpatch%costate%nplant(ico)
          plant_litter_f = plant_litter * f_labile(ipft)
          plant_litter_s = plant_litter - plant_litter_f

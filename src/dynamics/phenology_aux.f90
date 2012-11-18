@@ -240,12 +240,12 @@ subroutine update_turnover(cpoly, isi)
          
          !         write(unit=*,fmt='(a,1x,es12.5)') 'New Turnover is       =', turnover0
                   
-         cpatch%turnover_amp(ico) = (1.0 - tfact10) * cpatch%turnover_amp(ico)             &
+         cpatch%cophen%turnover_amp(ico) = (1.0 - tfact10) * cpatch%cophen%turnover_amp(ico)             &
                                   +        tfact10  * turnover0
 
          !----- Update leaf lifespan. -----------------------------------------------------!
          if (leaf_turnover_rate(ipft) > 0.) then
-            llspan0       = 12.0 / (cpatch%turnover_amp(ico) * leaf_turnover_rate(ipft))
+            llspan0       = 12.0 / (cpatch%cophen%turnover_amp(ico) * leaf_turnover_rate(ipft))
             if (llspan0 < 2.) then
                 llspan0=2.
             elseif (llspan0 > 60.) then
@@ -256,21 +256,21 @@ subroutine update_turnover(cpoly, isi)
          end if
          
          !         write(unit=*,fmt='(a,1x,es12.5)') 'llspan0 is       =', llspan0
-         cpatch%llspan(ico) = (1.0 - tfact60) * cpatch%llspan(ico) + tfact60 * llspan0
-         !         write(unit=*,fmt='(a,1x,es12.5)') 'llspan(ico) is       =', cpatch%llspan(ico)         
+         cpatch%cophen%llspan(ico) = (1.0 - tfact60) * cpatch%cophen%llspan(ico) + tfact60 * llspan0
+         !         write(unit=*,fmt='(a,1x,es12.5)') 'llspan(ico) is       =', cpatch%cophen%llspan(ico)         
 
          !----- Update vm_bar. ------------------------------------------------------------!
-         vm0               = vm_amp / (1.0 + (cpatch%llspan(ico)/vm_tran)**vm_slop) + vm_min
-         cpatch%vm_bar(ico)= (1.0 - tfact60) * cpatch%vm_bar(ico) + tfact60 * vm0
+         vm0               = vm_amp / (1.0 + (cpatch%cophen%llspan(ico)/vm_tran)**vm_slop) + vm_min
+         cpatch%cophen%vm_bar(ico)= (1.0 - tfact60) * cpatch%cophen%vm_bar(ico) + tfact60 * vm0
 
          !----- Update the specific leaf area (SLA). --------------------------------------!
          if (is_tropical(ipft) .and. ipft /= 17) then
-            cpatch%sla(ico) =  10.0                                                        &
+            cpatch%cophen%sla(ico) =  10.0                                                        &
                             ** ( 1.6923                                                    &
-                               - 0.3305 *log10(12.0 / ( cpatch%turnover_amp(ico)           &
+                               - 0.3305 *log10(12.0 / ( cpatch%cophen%turnover_amp(ico)           &
                                                       * leaf_turnover_rate(ipft)) ) )
          else
-            cpatch%sla(ico) = sla(ipft)
+            cpatch%cophen%sla(ico) = sla(ipft)
          end if
       end do cohortloop
 
@@ -344,7 +344,7 @@ subroutine first_phenology(cgrid)
                !----- Find LAI, WPA, WAI. -------------------------------------------------!
                call area_indices(cpatch%costate%nplant(ico),cpatch%costate%bleaf(ico),cpatch%costate%bdead(ico)    &
                                 ,cpatch%costate%balive(ico),cpatch%costate%dbh(ico),cpatch%costate%hite(ico)       &
-                                ,cpatch%costate%pft(ico),cpatch%sla(ico),cpatch%costate%lai(ico)           &
+                                ,cpatch%costate%pft(ico),cpatch%cophen%sla(ico),cpatch%costate%lai(ico)           &
                                 ,cpatch%costate%wpa(ico),cpatch%costate%wai(ico),cpatch%costate%crown_area(ico)    &
                                 ,cpatch%costate%bsapwood(ico)) 
                !---------------------------------------------------------------------------!
@@ -353,9 +353,9 @@ subroutine first_phenology(cgrid)
                !----- Find heat capacity and vegetation internal energy. ------------------!
                call calc_veg_hcap(cpatch%costate%bleaf(ico),cpatch%costate%bdead(ico),cpatch%costate%bsapwood(ico) &
                                  ,cpatch%costate%nplant(ico),cpatch%costate%pft(ico)                       &
-                                 ,cpatch%leaf_hcap(ico),cpatch%wood_hcap(ico) )
-               cpatch%leaf_energy(ico) = cpatch%leaf_hcap(ico) * cpatch%leaf_temp(ico)
-               cpatch%wood_energy(ico) = cpatch%wood_hcap(ico) * cpatch%wood_temp(ico)
+                                 ,cpatch%cotherm%leaf_hcap(ico),cpatch%cotherm%wood_hcap(ico) )
+               cpatch%cotherm%leaf_energy(ico) = cpatch%cotherm%leaf_hcap(ico) * cpatch%cotherm%leaf_temp(ico)
+               cpatch%cotherm%wood_energy(ico) = cpatch%cotherm%wood_hcap(ico) * cpatch%cotherm%wood_temp(ico)
                call is_resolvable(csite,ipa,ico,cpoly%green_leaf_factor(:,isi))
                !---------------------------------------------------------------------------!
 
@@ -422,10 +422,10 @@ subroutine pheninit_balive_bstorage(mzg,csite,ipa,ico,ntext_soil,green_leaf_fact
 
    ipft = cpatch%costate%pft(ico)
 
-   cpatch%paw_avg(ico) = 0.0
+   cpatch%cophen%paw_avg(ico) = 0.0
 
    do k = 1, 10
-      cpatch%paw_avg(ico) = cpatch%paw_avg(ico) + 0.1 * csite%past_paw(cpatch%costate%krdepth(ico),k,ipa)
+      cpatch%cophen%paw_avg(ico) = cpatch%cophen%paw_avg(ico) + 0.1 * csite%past_paw(cpatch%costate%krdepth(ico),k,ipa)
    enddo
 
 !   do k = cpatch%krdepth(ico), mzg - 1
@@ -445,27 +445,27 @@ subroutine pheninit_balive_bstorage(mzg,csite,ipa,ico,ntext_soil,green_leaf_fact
 
    select case (phenology(ipft))
    case (1)
-      if (cpatch%paw_avg(ico) < theta_crit) then
-         cpatch%elongf(ico) = 0.0
+      if (cpatch%cophen%paw_avg(ico) < theta_crit) then
+         cpatch%cophen%elongf(ico) = 0.0
       else
-         cpatch%elongf(ico) = green_leaf_factor(ipft)
+         cpatch%cophen%elongf(ico) = green_leaf_factor(ipft)
       end if
    case (4)
-      cpatch%elongf(ico)  = max(0.0,min(1.0,cpatch%paw_avg(ico)/theta_crit))               &
+      cpatch%cophen%elongf(ico)  = max(0.0,min(1.0,cpatch%cophen%paw_avg(ico)/theta_crit))               &
                           * green_leaf_factor(ipft)
    case default
-      cpatch%elongf(ico)  = green_leaf_factor(ipft)
+      cpatch%cophen%elongf(ico)  = green_leaf_factor(ipft)
    end select
 
 
    !----- Set phenology status according to the elongation factor. ------------------------!
-   if (cpatch%elongf(ico) >= 1.0) then
-      cpatch%phenology_status(ico) = 0
-   elseif (cpatch%elongf(ico) > elongf_min) then
-      cpatch%phenology_status(ico) = -1
+   if (cpatch%cophen%elongf(ico) >= 1.0) then
+      cpatch%cophen%phenology_status(ico) = 0
+   elseif (cpatch%cophen%elongf(ico) > elongf_min) then
+      cpatch%cophen%phenology_status(ico) = -1
    else
-      cpatch%phenology_status(ico) = 2
-      cpatch%elongf(ico)           = 0.
+      cpatch%cophen%phenology_status(ico) = 2
+      cpatch%cophen%elongf(ico)           = 0.
    end if
    !---------------------------------------------------------------------------------------!
 
@@ -476,12 +476,12 @@ subroutine pheninit_balive_bstorage(mzg,csite,ipa,ico,ntext_soil,green_leaf_fact
    salloci              = 1.0 / salloc
    bleaf_max            = dbh2bl(cpatch%costate%dbh(ico),cpatch%costate%pft(ico))
    balive_max           = bleaf_max * salloc
-   select case (cpatch%phenology_status(ico))
+   select case (cpatch%cophen%phenology_status(ico))
    case (2)
       cpatch%costate%bleaf(ico)  = 0.
-      cpatch%elongf(ico) = 0.
+      cpatch%cophen%elongf(ico) = 0.
    case default
-      cpatch%costate%bleaf(ico) = bleaf_max * cpatch%elongf(ico) 
+      cpatch%costate%bleaf(ico) = bleaf_max * cpatch%cophen%elongf(ico) 
    end select
    cpatch%costate%broot(ico)    = balive_max * q(ipft)   * salloci
    cpatch%costate%bsapwood(ico) = balive_max * qsw(ipft) * cpatch%costate%hite(ico) * salloci

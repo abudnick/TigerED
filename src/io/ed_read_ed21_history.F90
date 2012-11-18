@@ -555,7 +555,7 @@ subroutine read_ed21_history_file
                         cpatch%costate%bsapwood(ico) = cpatch%costate%balive(ico) * qsw(ipft)              &
                                              * cpatch%costate%hite(ico) * salloci
                         cpatch%costate%bstorage(ico) = 0.0
-                        cpatch%phenology_status(ico) = 0
+                        cpatch%cophen%phenology_status(ico) = 0
                      end do
 
                      !----- Then the 2-D variables. ---------------------------------------!
@@ -573,16 +573,13 @@ subroutine read_ed21_history_file
                      memsize(2)  = int(cpatch%ncohorts,8)
                      memoffs(2)  = 0_8
 
-                     call hdf_getslab_r(cpatch%cb    ,'CB '    ,dsetrank,iparallel,.true.)
-                     call hdf_getslab_r(cpatch%cb_max,'CB_MAX ',dsetrank,iparallel,.true.)
+                     call hdf_getslab_r(cpatch%comort%cb    ,'CB '    ,dsetrank,iparallel,.true.)
+                     call hdf_getslab_r(cpatch%comort%cb_max,'CB_MAX ',dsetrank,iparallel,.true.)
                      
                      !----- The following variables are initialised with default values. --!
-                     cpatch%dagb_dt              = 0.
-                     cpatch%dba_dt               = 0.
-                     cpatch%ddbh_dt              = 0.
-                     cpatch%fsw                  = 1.0
-                     cpatch%gpp                  = 0.0
-                     cpatch%par_l                = 0.0
+                     cpatch%cophoto%fsw                  = 1.0
+                     cpatch%cophoto%gpp                  = 0.0
+                     cpatch%corad%par_l                = 0.0
                      
                      cohortloop: do ico=1,cpatch%ncohorts
                         !------------------------------------------------------------------!
@@ -1607,7 +1604,7 @@ subroutine read_ed21_history_unstruct
                            cpatch%costate%bsapwood(ico) = cpatch%costate%balive(ico) * qsw(ipft)           &
                                                 * cpatch%costate%hite(ico) * salloci
                            cpatch%costate%bstorage(ico) = 0.0
-                           cpatch%phenology_status(ico) = 0
+                           cpatch%cophen%phenology_status(ico) = 0
                         end do
 
                         !----- Then the 2-D variables. ------------------------------------!
@@ -1625,20 +1622,17 @@ subroutine read_ed21_history_unstruct
                         memsize(2)  = int(cpatch%ncohorts,8)
                         memoffs(2)  = 0_8
 
-                        call hdf_getslab_r(cpatch%cb    ,'CB '                             &
+                        call hdf_getslab_r(cpatch%comort%cb    ,'CB '                             &
                                           ,dsetrank,iparallel,.true.)
-                        call hdf_getslab_r(cpatch%cb_max,'CB_MAX '                         &
+                        call hdf_getslab_r(cpatch%comort%cb_max,'CB_MAX '                         &
                                           ,dsetrank,iparallel,.true.)
 
                         !------------------------------------------------------------------!
                         !    The following variables are initialised with default values.  !
                         !------------------------------------------------------------------!
-                        cpatch%dagb_dt              = 0.
-                        cpatch%dba_dt               = 0.
-                        cpatch%ddbh_dt              = 0.
-                        cpatch%fsw                  = 1.0
-                        cpatch%gpp                  = 0.0
-                        cpatch%par_l                = 0.0
+                        cpatch%cophoto%fsw                  = 1.0
+                        cpatch%cophoto%gpp                  = 0.0
+                        cpatch%corad%par_l                = 0.0
 
                         cohortloop: do ico=1,cpatch%ncohorts
                            !---------------------------------------------------------------!

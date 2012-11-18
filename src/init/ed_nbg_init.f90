@@ -214,12 +214,12 @@ subroutine init_nbg_cohorts(csite,lsl,ipa_a,ipa_z)
          !---------------------------------------------------------------------------------!
          cpatch%costate%nplant(ico)           = init_density(ipft)
          cpatch%costate%hite(ico)             = hgt_min(ipft)
-         cpatch%phenology_status(ico) = 0
+         cpatch%cophen%phenology_status(ico) = 0
          cpatch%costate%bstorage(ico)         = 0.0
          cpatch%costate%dbh(ico)              = h2dbh(cpatch%costate%hite(ico),ipft)
          cpatch%costate%bdead(ico)            = dbh2bd(cpatch%costate%dbh(ico),ipft)
          cpatch%costate%bleaf(ico)            = dbh2bl(cpatch%costate%dbh(ico),ipft)
-         cpatch%sla(ico)              = sla(ipft)
+         cpatch%cophen%sla(ico)              = sla(ipft)
 
 
          salloc                       = 1.0 + q(ipft) + qsw(ipft) * cpatch%costate%hite(ico)
@@ -233,7 +233,7 @@ subroutine init_nbg_cohorts(csite,lsl,ipa_a,ipa_z)
          !----- Find the initial area indices (LAI, WPA, WAI). ----------------------------!
          call area_indices(cpatch%costate%nplant(ico),cpatch%costate%bleaf(ico),cpatch%costate%bdead(ico)          &
                           ,cpatch%costate%balive(ico),cpatch%costate%dbh(ico), cpatch%costate%hite(ico)            &
-                          ,cpatch%costate%pft(ico),cpatch%sla(ico),cpatch%costate%lai(ico)                 &
+                          ,cpatch%costate%pft(ico),cpatch%cophen%sla(ico),cpatch%costate%lai(ico)                 &
                           ,cpatch%costate%wpa(ico),cpatch%costate%wai(ico),cpatch%costate%crown_area(ico)          &
                           ,cpatch%costate%bsapwood(ico))
 
@@ -351,12 +351,12 @@ subroutine init_cohorts_by_layers(csite,lsl,ipa_a,ipa_z)
          ! for this PFT.                                                                   !
          !---------------------------------------------------------------------------------!
          cpatch%costate%hite(ico)             = height
-         cpatch%phenology_status(ico) = 0
+         cpatch%cophen%phenology_status(ico) = 0
          cpatch%costate%bstorage(ico)         = 0.0
          cpatch%costate%dbh(ico)              = h2dbh(cpatch%costate%hite(ico),ipft)
          cpatch%costate%bdead(ico)            = dbh2bd(cpatch%costate%dbh(ico),ipft)
          cpatch%costate%bleaf(ico)            = dbh2bl(cpatch%costate%dbh(ico),ipft)
-         cpatch%sla(ico)              = sla(ipft)
+         cpatch%cophen%sla(ico)              = sla(ipft)
 
 
          salloc                       = 1.0 + q(ipft) + qsw(ipft) * cpatch%costate%hite(ico)
@@ -368,12 +368,12 @@ subroutine init_cohorts_by_layers(csite,lsl,ipa_a,ipa_z)
                                       * salloci
 
          !----- NPlant is defined such that the cohort LAI is equal to LAI0
-         cpatch%costate%nplant(ico)           = lai0 / (cpatch%costate%bleaf(ico) * cpatch%sla(ico))
+         cpatch%costate%nplant(ico)           = lai0 / (cpatch%costate%bleaf(ico) * cpatch%cophen%sla(ico))
 
          !----- Find the initial area indices (LAI, WPA, WAI). ----------------------------!
          call area_indices(cpatch%costate%nplant(ico),cpatch%costate%bleaf(ico),cpatch%costate%bdead(ico)          &
                           ,cpatch%costate%balive(ico),cpatch%costate%dbh(ico), cpatch%costate%hite(ico)            &
-                          ,cpatch%costate%pft(ico),cpatch%sla(ico),cpatch%costate%lai(ico)                 &
+                          ,cpatch%costate%pft(ico),cpatch%cophen%sla(ico),cpatch%costate%lai(ico)                 &
                           ,cpatch%costate%wpa(ico),cpatch%costate%wai(ico),cpatch%costate%crown_area(ico)          &
                           ,cpatch%costate%bsapwood(ico))
 

@@ -20,6 +20,12 @@ OBJ_MODEL =                        \
 	c34constants.o             \
 	charutils.o                \
 	cohort_state.o             \
+	cohort_phen.o             \
+	cohort_mort.o             \
+	cohort_therm.o             \
+	cohort_photo.o             \
+	cohort_rad.o             \
+	cohort_resp.o             \
 	consts_coms.o              \
 	dateutils.o                \
 	decomp_coms.o              \

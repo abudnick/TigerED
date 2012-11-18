@@ -263,14 +263,14 @@ nafter = nafter + csite%repro(ipft,ipa)*csite%area(ipa)/c2n_recruit(ipft)
 
 
                   !----- Assign temperature after init_ed_cohort_vars... ------------------!
-                  cpatch%leaf_temp(ico)  = recruit(inew)%leaf_temp
-                  cpatch%wood_temp(ico)  = recruit(inew)%wood_temp
+                  cpatch%cotherm%leaf_temp(ico)  = recruit(inew)%leaf_temp
+                  cpatch%cotherm%wood_temp(ico)  = recruit(inew)%wood_temp
 
                   !----- Initialise the next variables with zeroes... ---------------------!
-                  cpatch%leaf_water(ico) = 0.0
-                  cpatch%leaf_fliq (ico) = 0.0
-                  cpatch%wood_water(ico) = 0.0
-                  cpatch%wood_fliq (ico) = 0.0
+                  cpatch%cotherm%leaf_water(ico) = 0.0
+                  cpatch%cotherm%leaf_fliq (ico) = 0.0
+                  cpatch%cotherm%wood_water(ico) = 0.0
+                  cpatch%cotherm%wood_fliq (ico) = 0.0
                   !------------------------------------------------------------------------!
 
                   !------------------------------------------------------------------------!
@@ -282,9 +282,6 @@ nafter = nafter + csite%repro(ipft,ipa)*csite%area(ipa)/c2n_recruit(ipft)
                                                   ,cpatch%costate%hite(ico),cpatch%costate%bstorage(ico)   &
                                                   ,cpatch%costate%bsapwood(ico))
                   cpatch%costate%basarea(ico) = pio4 * cpatch%costate%dbh(ico)  * cpatch%costate%dbh(ico)
-                  cpatch%dagb_dt(ico) = 0.0
-                  cpatch%dba_dt(ico)  = 0.0
-                  cpatch%ddbh_dt(ico) = 0.0
                   !------------------------------------------------------------------------!
                   !     Setting new_recruit_flag to 1 indicates that this cohort is        !
                   ! included when we tally agb_recruit, basal_area_recruit.                !
@@ -297,17 +294,17 @@ nafter = nafter + csite%repro(ipft,ipa)*csite%area(ipa)/c2n_recruit(ipft)
                   !----- Find LAI, WPA, WAI. ----------------------------------------------!
                   call area_indices(cpatch%costate%nplant(ico),cpatch%costate%bleaf(ico),cpatch%costate%bdead(ico) &
                                    ,cpatch%costate%balive(ico),cpatch%costate%dbh(ico), cpatch%costate%hite(ico)   &
-                                   ,cpatch%costate%pft(ico),cpatch%sla(ico), cpatch%costate%lai(ico)       &
+                                   ,cpatch%costate%pft(ico),cpatch%cophen%sla(ico), cpatch%costate%lai(ico)       &
                                    ,cpatch%costate%wpa(ico),cpatch%costate%wai(ico)                        &
                                    ,cpatch%costate%crown_area(ico),cpatch%costate%bsapwood(ico))
                   !----- Find heat capacity and vegetation internal energy. ---------------!
                   call calc_veg_hcap(cpatch%costate%bleaf(ico),cpatch%costate%bdead(ico)                   &
                                     ,cpatch%costate%bsapwood(ico),cpatch%costate%nplant(ico)               &
                                     ,cpatch%costate%pft(ico)                                       &
-                                    ,cpatch%leaf_hcap(ico),cpatch%wood_hcap(ico))
+                                    ,cpatch%cotherm%leaf_hcap(ico),cpatch%cotherm%wood_hcap(ico))
 
-                  cpatch%leaf_energy(ico) = cpatch%leaf_hcap(ico) * cpatch%leaf_temp(ico)
-                  cpatch%wood_energy(ico) = cpatch%wood_hcap(ico) * cpatch%wood_temp(ico)
+                  cpatch%cotherm%leaf_energy(ico) = cpatch%cotherm%leaf_hcap(ico) * cpatch%cotherm%leaf_temp(ico)
+                  cpatch%cotherm%wood_energy(ico) = cpatch%cotherm%wood_hcap(ico) * cpatch%cotherm%wood_temp(ico)
 
                   call is_resolvable(csite,ipa,ico,cpoly%green_leaf_factor(:,isi))
 

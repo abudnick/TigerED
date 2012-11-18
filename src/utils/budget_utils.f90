@@ -438,8 +438,8 @@ real function compute_water_storage(csite, lsl,ipa)
                             * csite%can_rhos(ipa)
    !----- 4. Add the water on the leaf and wood surfaces. ---------------------------------!
    do ico = 1,cpatch%ncohorts
-      compute_water_storage = compute_water_storage + cpatch%leaf_water(ico)
-      compute_water_storage = compute_water_storage + cpatch%wood_water(ico)
+      compute_water_storage = compute_water_storage + cpatch%cotherm%leaf_water(ico)
+      compute_water_storage = compute_water_storage + cpatch%cotherm%wood_water(ico)
    end do
 
    return
@@ -481,8 +481,8 @@ real function compute_netrad(csite,ipa)
    end do
    !----- 3. Add the radiation components that is absorbed by leaves and branches. --------!
    do ico = 1,cpatch%ncohorts
-      compute_netrad = compute_netrad + cpatch%rshort_l(ico) + cpatch%rlong_l(ico)
-      compute_netrad = compute_netrad + cpatch%rshort_w(ico) + cpatch%rlong_w(ico)
+      compute_netrad = compute_netrad + cpatch%corad%rshort_l(ico) + cpatch%corad%rlong_l(ico)
+      compute_netrad = compute_netrad + cpatch%corad%rshort_w(ico) + cpatch%corad%rlong_w(ico)
    end do
    return
 end function compute_netrad
@@ -553,7 +553,7 @@ real function compute_energy_storage(csite, lsl, ipa)
    !---------------------------------------------------------------------------------------!
    veg_storage = 0.0
    do ico = 1,cpatch%ncohorts
-      veg_storage = veg_storage + cpatch%leaf_energy(ico) + cpatch%wood_energy(ico)
+      veg_storage = veg_storage + cpatch%cotherm%leaf_energy(ico) + cpatch%cotherm%wood_energy(ico)
    end do
  
    !----- 5. Integrating the total energy in ED. ------------------------------------------!
@@ -622,30 +622,30 @@ subroutine sum_plant_cfluxes(csite,ipa, gpp, gpp_dbh,leaf_resp,root_resp,growth_
    do ico = 1,cpatch%ncohorts
       !----- Adding GPP and leaf respiration only for those cohorts with enough leaves. ---!
       if (cpatch%costate%leaf_resolvable(ico)) then
-         gpp = gpp + cpatch%gpp(ico)
+         gpp = gpp + cpatch%cophoto%gpp(ico)
          !----- Forest cohorts have dbh distribution, add them to gpp_dbh. ----------------!
          if (forest) then 
             idbh=max(1,min(n_dbh,ceiling(cpatch%costate%dbh(ico)*ddbhi)))
-            gpp_dbh(idbh) = gpp_dbh(idbh) + cpatch%gpp(ico)
+            gpp_dbh(idbh) = gpp_dbh(idbh) + cpatch%cophoto%gpp(ico)
          end if
-         leaf_resp = leaf_resp + cpatch%leaf_respiration(ico)
+         leaf_resp = leaf_resp + cpatch%coresp%leaf_respiration(ico)
 
       end if
       !----- Root respiration happens even when the LAI is tiny ---------------------------!
-      root_resp = root_resp + cpatch%root_respiration(ico)
+      root_resp = root_resp + cpatch%coresp%root_respiration(ico)
 
       !------------------------------------------------------------------------------------!
       !      Structural terms are "intensive", we must convert them from kgC/plant/day to  !
       ! umol/m2/s.                                                                         !
       !------------------------------------------------------------------------------------!
       growth_resp  = growth_resp                                                           &
-                   + cpatch%growth_respiration(ico)  * cpatch%costate%nplant(ico)                  &
+                   + cpatch%coresp%growth_respiration(ico)  * cpatch%costate%nplant(ico)                  &
                    / (day_sec * umol_2_kgC)
       storage_resp = storage_resp                                                          &
-                   + cpatch%storage_respiration(ico) * cpatch%costate%nplant(ico)                  &
+                   + cpatch%coresp%storage_respiration(ico) * cpatch%costate%nplant(ico)                  &
                    / (day_sec * umol_2_kgC)
       vleaf_resp   = vleaf_resp                                                            &
-                   + cpatch%vleaf_respiration(ico)   * cpatch%costate%nplant(ico)                  &
+                   + cpatch%coresp%vleaf_respiration(ico)   * cpatch%costate%nplant(ico)                  &
                    / (day_sec * umol_2_kgC)
    end do
 

@@ -660,9 +660,9 @@ subroutine spatial_averages
                   !------------------------------------------------------------------------!
                   !     Leaf water and energy properties.                                  !
                   !------------------------------------------------------------------------!
-                  csite%avg_leaf_energy(ipa)  = sum(cpatch%leaf_energy)
-                  csite%avg_leaf_water (ipa)  = sum(cpatch%leaf_water)
-                  csite%avg_leaf_hcap  (ipa)  = sum(cpatch%leaf_hcap)
+                  csite%avg_leaf_energy(ipa)  = sum(cpatch%cotherm%leaf_energy)
+                  csite%avg_leaf_water (ipa)  = sum(cpatch%cotherm%leaf_water)
+                  csite%avg_leaf_hcap  (ipa)  = sum(cpatch%cotherm%leaf_hcap)
                   !----- Check whether there is any heat storage. -------------------------!
                   if (csite%avg_leaf_hcap(ipa) > 0.) then
                      !----- Yes, use the default thermodynamics. --------------------------!
@@ -683,9 +683,9 @@ subroutine spatial_averages
                   !------------------------------------------------------------------------!
                   !     Stem water and energy properties.
                   !------------------------------------------------------------------------!
-                  csite%avg_wood_energy(ipa)  = sum(cpatch%wood_energy)
-                  csite%avg_wood_water (ipa)  = sum(cpatch%wood_water)
-                  csite%avg_wood_hcap  (ipa)  = sum(cpatch%wood_hcap)
+                  csite%avg_wood_energy(ipa)  = sum(cpatch%cotherm%wood_energy)
+                  csite%avg_wood_water (ipa)  = sum(cpatch%cotherm%wood_water)
+                  csite%avg_wood_hcap  (ipa)  = sum(cpatch%cotherm%wood_hcap)
                   !----- Check whether there is any heat storage. -------------------------!
                   if (csite%avg_wood_hcap(ipa) > 0.) then
                      !----- Yes, use the default thermodynamics. --------------------------!
@@ -706,32 +706,32 @@ subroutine spatial_averages
                   !------------------------------------------------------------------------!
 
                   cgrid%avg_gpp(ipy)          = cgrid%avg_gpp(ipy)                         &
-                                              + sum(cpatch%mean_gpp)                       &
+                                              + sum(cpatch%cophoto%mean_gpp)                       &
                                               * csite%area(ipa)*cpoly%area(isi)            &
                                               * site_area_i * poly_area_i
 
                   cgrid%avg_leaf_resp(ipy)    = cgrid%avg_leaf_resp(ipy)                   &
-                                              + sum(cpatch%mean_leaf_resp)                 &
+                                              + sum(cpatch%coresp%mean_leaf_resp)                 &
                                               * csite%area(ipa)*cpoly%area(isi)            &
                                               * site_area_i * poly_area_i
 
                   cgrid%avg_root_resp(ipy)    = cgrid%avg_root_resp(ipy)                   &
-                                              + sum(cpatch%mean_root_resp)                 &
+                                              + sum(cpatch%coresp%mean_root_resp)                 &
                                               * csite%area(ipa)*cpoly%area(isi)            &
                                               * site_area_i * poly_area_i
 
                   cgrid%avg_growth_resp(ipy)  = cgrid%avg_growth_resp(ipy)                 &
-                                              + sum(cpatch%mean_growth_resp)               &
+                                              + sum(cpatch%coresp%mean_growth_resp)               &
                                               * csite%area(ipa)*cpoly%area(isi)            &
                                               * site_area_i * poly_area_i
 
                   cgrid%avg_storage_resp(ipy) = cgrid%avg_storage_resp(ipy)                &
-                                              + sum(cpatch%mean_storage_resp)              &
+                                              + sum(cpatch%coresp%mean_storage_resp)              &
                                               * csite%area(ipa)*cpoly%area(isi)            &
                                               * site_area_i * poly_area_i
 
                   cgrid%avg_vleaf_resp(ipy)   = cgrid%avg_vleaf_resp(ipy)                  &
-                                              + sum(cpatch%mean_vleaf_resp)                &
+                                              + sum(cpatch%coresp%mean_vleaf_resp)                &
                                               * csite%area(ipa)*cpoly%area(isi)            &
                                               * site_area_i * poly_area_i
                   !------------------------------------------------------------------------!
@@ -776,27 +776,27 @@ subroutine spatial_averages
                   ! in kgC/m2/yr...                                                        !
                   !------------------------------------------------------------------------!
                   cgrid%avg_leaf_drop(ipy)         = cgrid%avg_leaf_drop(ipy)              &
-                                                   + sum( cpatch%leaf_drop                 &
+                                                   + sum( cpatch%cophen%leaf_drop                 &
                                                         * cpatch%costate%nplant)                   &
                                                    * csite%area(ipa)*cpoly%area(isi)       &
                                                    * site_area_i * poly_area_i
                   cgrid%avg_leaf_maintenance(ipy)  = cgrid%avg_leaf_maintenance(ipy)       &
-                                                   + sum( cpatch%leaf_maintenance          &
+                                                   + sum( cpatch%coresp%leaf_maintenance          &
                                                         * cpatch%costate%nplant)                   &
                                                    * csite%area(ipa)*cpoly%area(isi)       &
                                                    * site_area_i * poly_area_i
                   cgrid%avg_root_maintenance(ipy)  = cgrid%avg_root_maintenance(ipy)       &
-                                                   + sum( cpatch%root_maintenance          &
+                                                   + sum( cpatch%coresp%root_maintenance          &
                                                         * cpatch%costate%nplant)                   &
                                                    * csite%area(ipa)*cpoly%area(isi)       &
                                                    * site_area_i * poly_area_i
 
                   !----- Check the extremes and update if necessary. ----------------------!
-                  if (maxval(cpatch%leaf_temp) > cgrid%max_leaf_temp(ipy)) then
-                     cgrid%max_leaf_temp(ipy) = maxval(cpatch%leaf_temp)
+                  if (maxval(cpatch%cotherm%leaf_temp) > cgrid%max_leaf_temp(ipy)) then
+                     cgrid%max_leaf_temp(ipy) = maxval(cpatch%cotherm%leaf_temp)
                   end if
-                  if (minval(cpatch%leaf_temp) < cgrid%min_leaf_temp(ipy)) then
-                     cgrid%min_leaf_temp(ipy) = minval(cpatch%leaf_temp)
+                  if (minval(cpatch%cotherm%leaf_temp) < cgrid%min_leaf_temp(ipy)) then
+                     cgrid%min_leaf_temp(ipy) = minval(cpatch%cotherm%leaf_temp)
                   end if
                else
                   lai_patch                   = 0.

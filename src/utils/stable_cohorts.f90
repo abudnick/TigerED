@@ -117,7 +117,7 @@ subroutine is_resolvable(csite,ipa,ico,green_leaf_factor)
    ! 3.  Check for relative leaf biomass, which is the product of the drought-phenology    !
    !     and cold-phenology elongation factors.                                            !
    !---------------------------------------------------------------------------------------!
-   green        = cpatch%elongf(ico) * green_leaf_factor(ipft) >= elongf_min
+   green        = cpatch%cophen%elongf(ico) * green_leaf_factor(ipft) >= elongf_min
    !---------------------------------------------------------------------------------------!
 
 

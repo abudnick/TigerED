@@ -2391,6 +2391,12 @@ subroutine fill_history_patch(cpatch,paco_index,ncohorts_global,green_leaf_facto
   use ed_misc_coms, only : ndcycle
   use therm_lib, only : qwtk
   use cohort_state, only: fill_history_patch_state
+  use cohort_phen, only: fill_history_patch_phen
+  use cohort_mort, only: fill_history_patch_mort
+  use cohort_resp, only: fill_history_patch_resp
+  use cohort_photo, only: fill_history_patch_photo
+  use cohort_rad, only: fill_history_patch_rad
+  use cohort_therm, only: fill_history_patch_therm
   implicit none
 
 #if USE_INTERF
@@ -2433,360 +2439,33 @@ subroutine fill_history_patch(cpatch,paco_index,ncohorts_global,green_leaf_facto
 
   iparallel = 0
   
-  dsetrank = 1
-  globdims = 0_8
-  chnkdims = 0_8
-  chnkoffs = 0_8
-  memoffs  = 0_8
-  memdims  = 0_8
-  memsize  = 1_8
-  
-  globdims(1) = int(ncohorts_global,8)
-  chnkdims(1) = int(cpatch%ncohorts,8)
-  chnkoffs(1) = int(paco_index - 1,8)
-
-  memdims(1)  = int(cpatch%ncohorts,8)
-  memsize(1)  = int(cpatch%ncohorts,8)
-  memoffs(1)  = 0_8
 
   if(cpatch%ncohorts>0) then
 
-     call fill_history_patch_state(cpatch%costate, dsetrank, iparallel)
+     call fill_history_patch_state(cpatch%costate, iparallel, ncohorts_global,  &
+          cpatch%ncohorts, paco_index)
+     call fill_history_patch_phen(cpatch%cophen, iparallel, ncohorts_global,  &
+          cpatch%ncohorts, paco_index)
+     call fill_history_patch_mort(cpatch%comort, iparallel, ncohorts_global,  &
+          cpatch%ncohorts, paco_index, n_mort)
+     call fill_history_patch_resp(cpatch%coresp, iparallel, ncohorts_global,  &
+          cpatch%ncohorts, paco_index, ndcycle)
+     call fill_history_patch_photo(cpatch%cophoto, iparallel, ncohorts_global, &
+          cpatch%ncohorts, paco_index, ndcycle)
+     call fill_history_patch_rad(cpatch%corad, iparallel, ncohorts_global,  &
+          cpatch%ncohorts, paco_index)
+     call fill_history_patch_therm(cpatch%cotherm, iparallel, ncohorts_global,   &
+          cpatch%ncohorts, paco_index)
 
-     call hdf_getslab_r(cpatch%dagb_dt,'DAGB_DT ',dsetrank,iparallel,.true.)
-     call hdf_getslab_r(cpatch%dba_dt,'DBA_DT',dsetrank,iparallel,.true.)
-     call hdf_getslab_r(cpatch%ddbh_dt,'DDBH_DT',dsetrank,iparallel,.true.)
-
-     call hdf_getslab_i(cpatch%phenology_status,'PHENOLOGY_STATUS ',dsetrank,iparallel,.true.)
-     
-     call hdf_getslab_r(cpatch%llspan,'LLSPAN ',dsetrank,iparallel,.true.)
-     call hdf_getslab_r(cpatch%turnover_amp,'TURNOVER_AMP ',dsetrank,iparallel,.true.)
-     call hdf_getslab_r(cpatch%vm_bar,'VM_BAR ',dsetrank,iparallel,.true.)
-     call hdf_getslab_r(cpatch%sla,'SLA ',dsetrank,iparallel,.true.)
-
-     call hdf_getslab_r(cpatch%cbr_bar,'CBR_BAR ',dsetrank,iparallel,.true.)
-     
-     call hdf_getslab_r(cpatch%leaf_energy,'LEAF_ENERGY ',dsetrank,iparallel,.true.)
-     call hdf_getslab_r(cpatch%leaf_hcap,'LEAF_HCAP ',dsetrank,iparallel,.true.)
-     call hdf_getslab_r(cpatch%leaf_temp,'LEAF_TEMP ',dsetrank,iparallel,.true.)
-     call hdf_getslab_r(cpatch%leaf_water,'LEAF_WATER ',dsetrank,iparallel,.true.)
-     call hdf_getslab_r(cpatch%leaf_fliq,'LEAF_FLIQ ',dsetrank,iparallel,.true.)
-     call hdf_getslab_r(cpatch%wood_energy,'WOOD_ENERGY ',dsetrank,iparallel,.true.)
-     call hdf_getslab_r(cpatch%wood_hcap,'WOOD_HCAP ',dsetrank,iparallel,.true.)
-     call hdf_getslab_r(cpatch%wood_temp,'WOOD_TEMP ',dsetrank,iparallel,.true.)
-     call hdf_getslab_r(cpatch%wood_water,'WOOD_WATER ',dsetrank,iparallel,.true.)
-     call hdf_getslab_r(cpatch%wood_fliq,'WOOD_FLIQ ',dsetrank,iparallel,.true.)
-     call hdf_getslab_r(cpatch%veg_wind,'VEG_WIND ',dsetrank,iparallel,.true.)
-     call hdf_getslab_r(cpatch%lsfc_co2_open,'LSFC_CO2_OPEN ',dsetrank,iparallel,.true.)
-     call hdf_getslab_r(cpatch%lsfc_co2_closed,'LSFC_CO2_CLOSED ',dsetrank,iparallel,.true.)
-     call hdf_getslab_r(cpatch%lsfc_shv_open,'LSFC_SHV_OPEN ',dsetrank,iparallel,.true.)
-     call hdf_getslab_r(cpatch%lsfc_shv_closed,'LSFC_SHV_CLOSED ',dsetrank,iparallel,.true.)
-     call hdf_getslab_r(cpatch%lint_shv,'LINT_SHV ',dsetrank,iparallel,.true.)
-     call hdf_getslab_r(cpatch%lint_co2_open,'LINT_CO2_OPEN ',dsetrank,iparallel,.true.)
-     call hdf_getslab_r(cpatch%lint_co2_closed,'LINT_CO2_CLOSED ',dsetrank,iparallel,.true.)
- 
-     call hdf_getslab_r(cpatch%mean_gpp,'MEAN_GPP ',dsetrank,iparallel,.true.)
-     call hdf_getslab_r(cpatch%mean_leaf_resp,'MEAN_LEAF_RESP ',dsetrank,iparallel,.true.)
-     call hdf_getslab_r(cpatch%mean_root_resp,'MEAN_ROOT_RESP ',dsetrank,iparallel,.true.)
-     call hdf_getslab_r(cpatch%today_leaf_resp,'TODAY_LEAF_RESP ',dsetrank,iparallel,.true.)
-     call hdf_getslab_r(cpatch%today_root_resp,'TODAY_ROOT_RESP ',dsetrank,iparallel,.true.)
-     call hdf_getslab_r(cpatch%today_gpp,'TODAY_GPP ',dsetrank,iparallel,.true.)
-     
-
-     call hdf_getslab_r(cpatch%today_gpp_pot,'TODAY_GPP_POT ',dsetrank,iparallel,.true.)
-     call hdf_getslab_r(cpatch%today_gpp_max,'TODAY_GPP_MAX ',dsetrank,iparallel,.true.)
-     call hdf_getslab_r(cpatch%growth_respiration,'GROWTH_RESPIRATION ',dsetrank,iparallel,.true.)
-     call hdf_getslab_r(cpatch%storage_respiration,'STORAGE_RESPIRATION ',dsetrank,iparallel,.true.)
-     call hdf_getslab_r(cpatch%vleaf_respiration,'VLEAF_RESPIRATION ',dsetrank,iparallel,.true.)
-     call hdf_getslab_r(cpatch%fsn,'FSN ',dsetrank,iparallel,.true.)
-     call hdf_getslab_r(cpatch%monthly_dndt,'MONTHLY_DNDT ',dsetrank,iparallel,.true.)
-
-     if (associated(cpatch%mmean_gpp       )) &
-          call hdf_getslab_r(cpatch%mmean_gpp,'MMEAN_GPP_CO ',dsetrank,iparallel,.false.)
-          
-     if (associated(cpatch%mmean_leaf_resp       )) &
-          call hdf_getslab_r(cpatch%mmean_leaf_resp,'MMEAN_LEAF_RESP_CO ',dsetrank,iparallel,.false.)
-     if (associated(cpatch%mmean_root_resp       )) &
-          call hdf_getslab_r(cpatch%mmean_root_resp,'MMEAN_ROOT_RESP_CO ',dsetrank,iparallel,.false.)
-     if (associated(cpatch%mmean_growth_resp       )) &
-          call hdf_getslab_r(cpatch%mmean_growth_resp,'MMEAN_GROWTH_RESP_CO ',dsetrank,iparallel,.false.)
-     if (associated(cpatch%mmean_storage_resp       )) &
-          call hdf_getslab_r(cpatch%mmean_storage_resp,'MMEAN_STORAGE_RESP_CO ',dsetrank,iparallel,.false.)
-     if (associated(cpatch%mmean_vleaf_resp       )) &
-          call hdf_getslab_r(cpatch%mmean_vleaf_resp,'MMEAN_VLEAF_RESP_CO ',dsetrank,iparallel,.false.)
-          
-     if (associated(cpatch%dmean_fs_open       )) &
-     call hdf_getslab_r(cpatch%dmean_fs_open,'DMEAN_FS_OPEN_CO ',dsetrank,iparallel,.false.)
-     if (associated(cpatch%mmean_fs_open       )) &
-     call hdf_getslab_r(cpatch%mmean_fs_open,'MMEAN_FS_OPEN_CO ',dsetrank,iparallel,.false.) 
-     if (associated(cpatch%dmean_fsw       )) &
-     call hdf_getslab_r(cpatch%dmean_fsw,'DMEAN_FSW_CO ',dsetrank,iparallel,.false.)
-     if (associated(cpatch%mmean_fsw       )) &
-     call hdf_getslab_r(cpatch%mmean_fsw,'MMEAN_FSW_CO ',dsetrank,iparallel,.false.) 
-     if (associated(cpatch%dmean_fsn       )) &
-     call hdf_getslab_r(cpatch%dmean_fsn,'DMEAN_FSN_CO ',dsetrank,iparallel,.false.)
-     if (associated(cpatch%mmean_fsn       )) &
-     call hdf_getslab_r(cpatch%mmean_fsn,'MMEAN_FSN_CO ',dsetrank,iparallel,.false.) 
-     if (associated(cpatch%dmean_psi_open   )) &
-     call hdf_getslab_r(cpatch%dmean_psi_open,'DMEAN_PSI_OPEN_CO ',dsetrank,iparallel,.false.) 
-     if (associated(cpatch%dmean_psi_closed )) &
-     call hdf_getslab_r(cpatch%dmean_psi_closed,'DMEAN_PSI_CLOSED_CO ',dsetrank,iparallel,.false.) 
-     if (associated(cpatch%mmean_psi_open   )) &
-     call hdf_getslab_r(cpatch%mmean_psi_open,'MMEAN_PSI_OPEN_CO ',dsetrank,iparallel,.false.) 
-     if (associated(cpatch%mmean_psi_closed )) &
-     call hdf_getslab_r(cpatch%mmean_psi_closed,'MMEAN_PSI_CLOSED_CO ',dsetrank,iparallel,.false.) 
-     if (associated(cpatch%dmean_water_supply )) &
-     call hdf_getslab_r(cpatch%dmean_water_supply,'DMEAN_WATER_SUPPLY_CO ',dsetrank,iparallel,.false.) 
-     if (associated(cpatch%mmean_water_supply )) &
-     call hdf_getslab_r(cpatch%mmean_water_supply,'MMEAN_WATER_SUPPLY_CO ',dsetrank,iparallel,.false.) 
-     if (associated(cpatch%mmean_leaf_maintenance )) &
-     call hdf_getslab_r(cpatch%mmean_leaf_maintenance,'MMEAN_LEAF_MAINTENANCE ',dsetrank,iparallel,.false.)   
-     if (associated(cpatch%mmean_root_maintenance )) &
-     call hdf_getslab_r(cpatch%mmean_root_maintenance,'MMEAN_ROOT_MAINTENANCE ',dsetrank,iparallel,.false.)   
-     if (associated(cpatch%mmean_leaf_drop       )) &
-     call hdf_getslab_r(cpatch%mmean_leaf_drop,'MMEAN_LEAF_DROP_CO ',dsetrank,iparallel,.false.)   
-     if (associated(cpatch%dmean_light_level       )) &
-     call hdf_getslab_r(cpatch%dmean_light_level,'DMEAN_LIGHT_LEVEL ',dsetrank,iparallel,.false.)
-     if (associated(cpatch%mmean_light_level       )) &
-     call hdf_getslab_r(cpatch%mmean_light_level,'MMEAN_LIGHT_LEVEL ',dsetrank,iparallel,.false.)
-     if (associated(cpatch%mmean_light_level       )) &
-     call hdf_getslab_r(cpatch%dmean_light_level_beam,'DMEAN_LIGHT_LEVEL_BEAM ',dsetrank,iparallel,.false.)
-     if (associated(cpatch%mmean_light_level_beam       )) &
-     call hdf_getslab_r(cpatch%mmean_light_level_beam,'MMEAN_LIGHT_LEVEL_BEAM ',dsetrank,iparallel,.false.)
-     if (associated(cpatch%dmean_light_level_diff       )) &
-     call hdf_getslab_r(cpatch%dmean_light_level_diff,'DMEAN_LIGHT_LEVEL_DIFF ',dsetrank,iparallel,.false.)
-     if (associated(cpatch%mmean_light_level_diff       )) &
-     call hdf_getslab_r(cpatch%mmean_light_level_diff,'MMEAN_LIGHT_LEVEL_DIFF ',dsetrank,iparallel,.false.)
-     if (associated(cpatch%dmean_par_l       )) &
-     call hdf_getslab_r(cpatch%dmean_par_l,'DMEAN_PAR_L ',dsetrank,iparallel,.false.)
-
-     if (associated(cpatch%dmean_par_l_beam       )) &
-     call hdf_getslab_r(cpatch%dmean_par_l_beam,'DMEAN_PAR_L_BEAM ',dsetrank,iparallel,.false.)
-     if (associated(cpatch%dmean_par_l_diff       )) &
-     call hdf_getslab_r(cpatch%dmean_par_l_diff,'DMEAN_PAR_L_DIFF ',dsetrank,iparallel,.false.)
-     if (associated(cpatch%mmean_par_l       )) &
-     call hdf_getslab_r(cpatch%mmean_par_l,'MMEAN_PAR_L ',dsetrank,iparallel,.false.)
-     if (associated(cpatch%mmean_par_l_beam       )) &
-     call hdf_getslab_r(cpatch%mmean_par_l_beam,'MMEAN_PAR_L_BEAM ',dsetrank,iparallel,.false.)
-     if (associated(cpatch%mmean_par_l_diff       )) &
-     call hdf_getslab_r(cpatch%mmean_par_l_diff,'MMEAN_PAR_L_DIFF ',dsetrank,iparallel,.false.)
-     if (associated(cpatch%dmean_beamext_level       )) &
-     call hdf_getslab_r(cpatch%dmean_beamext_level,'DMEAN_BEAMEXT_LEVEL ',dsetrank,iparallel,.false.)
-     if (associated(cpatch%mmean_beamext_level      )) &
-     call hdf_getslab_r(cpatch%mmean_beamext_level,'MMEAN_BEAMEXT_LEVEL ',dsetrank,iparallel,.false.)
-
-     if (associated(cpatch%dmean_diffext_level       )) &
-     call hdf_getslab_r(cpatch%dmean_diffext_level,'DMEAN_DIFFEXT_LEVEL ',dsetrank,iparallel,.false.)
-
-     if (associated(cpatch%mmean_diffext_level       )) &
-     call hdf_getslab_r(cpatch%mmean_diffext_level,'MMEAN_DIFFEXT_LEVEL ',dsetrank,iparallel,.false.)
-
-     if (associated(cpatch%dmean_lambda_light       )) &
-          call hdf_getslab_r(cpatch%dmean_lambda_light,'DMEAN_LAMBDA_LIGHT_CO ',dsetrank,iparallel,.false.)
-
-     if (associated(cpatch%mmean_lambda_light       )) &
-     call hdf_getslab_r(cpatch%mmean_lambda_light,'MMEAN_LAMBDA_LIGHT_CO ',dsetrank,iparallel,.false.)
-
-     call hdf_getslab_r(cpatch%Psi_open,'PSI_OPEN ',dsetrank,iparallel,.true.)
-     call hdf_getslab_r(cpatch%light_level,'LIGHT_LEVEL ',dsetrank,iparallel,.true.)
-     call hdf_getslab_r(cpatch%light_level_beam,'LIGHT_LEVEL_BEAM ',dsetrank,iparallel,.true.)
-     call hdf_getslab_r(cpatch%light_level_diff,'LIGHT_LEVEL_DIFF ',dsetrank,iparallel,.true.)
-     call hdf_getslab_r(cpatch%beamext_level,'BEAMEXT_LEVEL ',dsetrank,iparallel,.true.)
-     call hdf_getslab_r(cpatch%diffext_level,'DIFFEXT_LEVEL ',dsetrank,iparallel,.true.)
-     call hdf_getslab_r(cpatch%lambda_light,'LAMBDA_LIGHT_CO ',dsetrank,iparallel,.true.)
-     call hdf_getslab_r(cpatch%par_l,'PAR_L ',dsetrank,iparallel,.true.)
-     call hdf_getslab_r(cpatch%par_l_beam,'PAR_L_BEAM ',dsetrank,iparallel,.true.)
-     call hdf_getslab_r(cpatch%par_l_diffuse,'PAR_L_DIFFUSE ',dsetrank,iparallel,.true.)
-     call hdf_getslab_r(cpatch%rshort_l,'RSHORT_L ',dsetrank,iparallel,.true.)
-     call hdf_getslab_r(cpatch%rshort_l_beam,'RSHORT_L_BEAM ',dsetrank,iparallel,.true.)
-     call hdf_getslab_r(cpatch%rshort_l_diffuse,'RSHORT_L_DIFFUSE ',dsetrank,iparallel,.true.)
-     call hdf_getslab_r(cpatch%rlong_l,'RLONG_L ',dsetrank,iparallel,.true.)
-     call hdf_getslab_r(cpatch%rlong_l_surf,'RLONG_L_SURF ',dsetrank,iparallel,.true.)
-     call hdf_getslab_r(cpatch%rlong_l_incid,'RLONG_L_INCID ',dsetrank,iparallel,.true.)
-     call hdf_getslab_r(cpatch%rshort_w,'RSHORT_W ',dsetrank,iparallel,.true.)
-     call hdf_getslab_r(cpatch%rshort_w_beam,'RSHORT_W_BEAM ',dsetrank,iparallel,.true.)
-     call hdf_getslab_r(cpatch%rshort_w_diffuse,'RSHORT_W_DIFFUSE ',dsetrank,iparallel,.true.)
-     call hdf_getslab_r(cpatch%rlong_w,'RLONG_W ',dsetrank,iparallel,.true.)
-     call hdf_getslab_r(cpatch%rlong_w_surf,'RLONG_W_SURF ',dsetrank,iparallel,.true.)
-     call hdf_getslab_r(cpatch%rlong_w_incid,'RLONG_W_INCID ',dsetrank,iparallel,.true.)
-     call hdf_getslab_r(cpatch%leaf_gbh,'LEAF_GBH ',dsetrank,iparallel,.true.)
-     call hdf_getslab_r(cpatch%leaf_gbw,'LEAF_GBW ',dsetrank,iparallel,.true.)
-     call hdf_getslab_r(cpatch%wood_gbh,'WOOD_GBH ',dsetrank,iparallel,.true.)
-     call hdf_getslab_r(cpatch%wood_gbw,'WOOD_GBW ',dsetrank,iparallel,.true.)
-     call hdf_getslab_r(cpatch%A_open,'A_OPEN ',dsetrank,iparallel,.true.)
-     call hdf_getslab_r(cpatch%A_closed,'A_CLOSED ',dsetrank,iparallel,.true.)
-     call hdf_getslab_r(cpatch%Psi_closed,'PSI_CLOSED ',dsetrank,iparallel,.true.)
-     call hdf_getslab_r(cpatch%gsw_open,'GSW_OPEN ',dsetrank,iparallel,.true.)
-     call hdf_getslab_r(cpatch%gsw_closed,'GSW_CLOSED ',dsetrank,iparallel,.true.)
-     call hdf_getslab_r(cpatch%fsw,'FSW ',dsetrank,iparallel,.true.)
-     call hdf_getslab_r(cpatch%fs_open,'FS_OPEN ',dsetrank,iparallel,.true.)
-     call hdf_getslab_r(cpatch%water_supply,'WATER_SUPPLY ',dsetrank,iparallel,.true.)
-     call hdf_getslab_r(cpatch%stomatal_conductance,'STOMATAL_CONDUCTANCE ',dsetrank,iparallel,.true.)
-     call hdf_getslab_r(cpatch%leaf_maintenance,'LEAF_MAINTENANCE ',dsetrank,iparallel,.true.)
-     call hdf_getslab_r(cpatch%root_maintenance,'ROOT_MAINTENANCE ',dsetrank,iparallel,.true.)
-     call hdf_getslab_r(cpatch%leaf_drop,'LEAF_DROP ',dsetrank,iparallel,.true.)
-     call hdf_getslab_r(cpatch%leaf_respiration,'LEAF_RESPIRATION ',dsetrank,iparallel,.true.)
-     call hdf_getslab_r(cpatch%root_respiration,'ROOT_RESPIRATION ',dsetrank,iparallel,.true.)
-     call hdf_getslab_r(cpatch%gpp,'GPP ',dsetrank,iparallel,.true.)
-     call hdf_getslab_r(cpatch%paw_avg,'PAW_AVG ',dsetrank,iparallel,.true.)
-     call hdf_getslab_r(cpatch%elongf,'ELONGF ',dsetrank,iparallel,.false.)
-     
      if (all(cpatch%costate%crown_area == 0.)) then
          do ico= 1,cpatch%ncohorts
               cpatch%costate%crown_area(ico) = min(1.0, cpatch%costate%nplant(ico) *   &
                    dbh2ca(cpatch%costate%dbh(ico)  &
-                   ,cpatch%sla(ico),cpatch%costate%pft(ico)))
-         end do
-     end if
+                   ,cpatch%cophen%sla(ico),cpatch%costate%pft(ico)))
+         enddo
+     endif
 
-     !----- 13-month dimension (12 previous months + current month). ----------------------!
-     dsetrank    = 2
-     globdims(1) = 13_8
-     chnkdims(1) = 13_8
-     chnkoffs(1) = 0_8
-     memdims(1)  = 13_8
-     memsize(1)  = 13_8
-     memoffs(2)  = 0_8
-     
-     globdims(2) = int(ncohorts_global,8)
-     chnkdims(2) = int(cpatch%ncohorts,8)
-     chnkoffs(2) = int(paco_index - 1,8)
-     
-     memdims(2)  = int(cpatch%ncohorts,8)
-     memsize(2)  = int(cpatch%ncohorts,8)
-     memoffs(2)  = 0_8
-     
-     call hdf_getslab_r(cpatch%cb,'CB ',dsetrank,iparallel,.true.)
-     call hdf_getslab_r(cpatch%cb_max,'CB_MAX ',dsetrank,iparallel,.true.)
-
-     !----- 2-D, dimensioned by the number of mortality rates. ----------------------------!
-     dsetrank    = 2
-     globdims(1) = int(n_mort,8)
-     chnkdims(1) = int(n_mort,8)
-     chnkoffs(1) = 0_8
-     memdims(1)  = int(n_mort,8)
-     memsize(1)  = int(n_mort,8)
-     memoffs(2)  = 0_8
-     
-     globdims(2) = int(ncohorts_global,8)
-     chnkdims(2) = int(cpatch%ncohorts,8)
-     chnkoffs(2) = int(paco_index - 1,8)
-     
-     memdims(2)  = int(cpatch%ncohorts,8)
-     memsize(2)  = int(cpatch%ncohorts,8)
-     memoffs(2)  = 0_8
-
-     call hdf_getslab_r(cpatch%mort_rate,'MORT_RATE_CO ',dsetrank,iparallel,.true.)
-
-     if (associated(cpatch%mmean_mort_rate))                                               &
-        call hdf_getslab_r(cpatch%mmean_mort_rate,'MMEAN_MORT_RATE_CO '                    &
-                          ,dsetrank,iparallel,.false.)
-
-     !----- 2-D, dimensioned by the number of diurnal cycle times. ------------------------!
-     dsetrank    = 2
-     globdims(1) = int(ndcycle,8)
-     chnkdims(1) = int(ndcycle,8)
-     chnkoffs(1) = 0_8
-     memdims(1)  = int(ndcycle,8)
-     memsize(1)  = int(ndcycle,8)
-     memoffs(2)  = 0_8
-
-     globdims(2) = int(ncohorts_global,8)
-     chnkdims(2) = int(cpatch%ncohorts,8)
-     chnkoffs(2) = int(paco_index - 1,8)
-     memdims(2)  = int(cpatch%ncohorts,8)
-     memsize(2)  = int(cpatch%ncohorts,8)
-     memoffs(2)  = 0_8
-
-     if (associated(cpatch%qmean_gpp))                                                     &
-        call hdf_getslab_r(cpatch%qmean_gpp         ,'QMEAN_GPP_CO '                       &
-                          ,dsetrank,iparallel,.true.)
-
-     if (associated(cpatch%qmean_leaf_resp))                                               &
-        call hdf_getslab_r(cpatch%qmean_leaf_resp   ,'QMEAN_LEAF_RESP_CO '                 &
-                          ,dsetrank,iparallel,.true.)
-
-     if (associated(cpatch%qmean_root_resp))                                               &
-        call hdf_getslab_r(cpatch%qmean_root_resp   ,'QMEAN_ROOT_RESP_CO '                 &
-                          ,dsetrank,iparallel,.true.)
-
-     if (associated(cpatch%qmean_par_l))                                                   &
-        call hdf_getslab_r(cpatch%qmean_par_l       ,'QMEAN_PAR_L '                        &
-                          ,dsetrank,iparallel,.true.)
-
-     if (associated(cpatch%qmean_par_l_beam))                                              &
-        call hdf_getslab_r(cpatch%qmean_par_l_beam  ,'QMEAN_PAR_L_BEAM '                   &
-                          ,dsetrank,iparallel,.true.)
-
-     if (associated(cpatch%qmean_par_l_diff))                                              &
-        call hdf_getslab_r(cpatch%qmean_par_l_diff  ,'QMEAN_PAR_L_DIFF '                   &
-                          ,dsetrank,iparallel,.true.)
-
-     if (associated(cpatch%qmean_fs_open))                                                 &
-        call hdf_getslab_r(cpatch%qmean_fs_open     ,'QMEAN_FS_OPEN_CO '                   &
-                          ,dsetrank,iparallel,.true.)
-
-     if (associated(cpatch%qmean_fsn))                                                     &
-        call hdf_getslab_r(cpatch%qmean_fsn         ,'QMEAN_FSN_CO '                       &
-                          ,dsetrank,iparallel,.true.)
-
-     if (associated(cpatch%qmean_fsw))                                                     &
-        call hdf_getslab_r(cpatch%qmean_fsw         ,'QMEAN_FSW_CO '                       &
-                          ,dsetrank,iparallel,.true.)
-
-     if (associated(cpatch%qmean_psi_open))                                                &
-        call hdf_getslab_r(cpatch%qmean_psi_open    ,'QMEAN_PSI_OPEN_CO '                  &
-                          ,dsetrank,iparallel,.true.)
-
-     if (associated(cpatch%qmean_psi_closed))                                              &
-        call hdf_getslab_r(cpatch%qmean_psi_closed  ,'QMEAN_PSI_CLOSED_CO '                &
-                          ,dsetrank,iparallel,.true.)
-
-     if (associated(cpatch%qmean_water_supply))                                            &
-        call hdf_getslab_r(cpatch%qmean_water_supply,'QMEAN_WATER_SUPPLY_CO '              &
-                          ,dsetrank,iparallel,.true.)
-
-
-     dsetrank    = 2
-     globdims(1) = int(n_stoma_atts,8)
-     chnkdims(1) = int(n_stoma_atts,8)
-     chnkoffs(1) = 0_8
-     memdims(1)  = int(n_stoma_atts,8)
-     memsize(1)  = int(n_stoma_atts,8)
-     memoffs(2)  = 0_8
-     
-     globdims(2) = int(ncohorts_global,8)
-     chnkdims(2) = int(cpatch%ncohorts,8)
-     chnkoffs(2) = int(paco_index - 1,8)
-     
-     memdims(2)  = int(cpatch%ncohorts,8)
-     memsize(2)  = int(cpatch%ncohorts,8)
-     memoffs(2)  = 0_8
-     
-
-     call hdf_getslab_r(cpatch%old_stoma_vector,'OLD_STOMA_VECTOR', &
-          dsetrank,iparallel,.true.)
-
-  cohortloop: do ico=1,cpatch%ncohorts
-     cpatch%old_stoma_data(ico)%recalc = int(cpatch%old_stoma_vector(1,ico))
-     cpatch%old_stoma_data(ico)%T_L    = cpatch%old_stoma_vector(2,ico)
-     cpatch%old_stoma_data(ico)%e_A    = cpatch%old_stoma_vector(3,ico)
-     cpatch%old_stoma_data(ico)%PAR    = cpatch%old_stoma_vector(4,ico)
-     cpatch%old_stoma_data(ico)%rb_factor = cpatch%old_stoma_vector(5,ico)
-     cpatch%old_stoma_data(ico)%prss = cpatch%old_stoma_vector(6,ico) 
-     cpatch%old_stoma_data(ico)%phenology_factor = cpatch%old_stoma_vector(7,ico)
-     cpatch%old_stoma_data(ico)%gsw_open = cpatch%old_stoma_vector(8,ico)
-     cpatch%old_stoma_data(ico)%ilimit   = int(cpatch%old_stoma_vector(9,ico))
-     cpatch%old_stoma_data(ico)%T_L_residual = cpatch%old_stoma_vector(10,ico)
-     cpatch%old_stoma_data(ico)%e_a_residual = cpatch%old_stoma_vector(11,ico)
-     cpatch%old_stoma_data(ico)%par_residual = cpatch%old_stoma_vector(12,ico)
-     cpatch%old_stoma_data(ico)%rb_residual  = cpatch%old_stoma_vector(13,ico)
-     cpatch%old_stoma_data(ico)%prss_residual= cpatch%old_stoma_vector(14,ico) 
-     cpatch%old_stoma_data(ico)%leaf_residual= cpatch%old_stoma_vector(15,ico)
-     cpatch%old_stoma_data(ico)%gsw_residual = cpatch%old_stoma_vector(16,ico)
-  enddo cohortloop
-
-endif
+  endif
 
 
   return

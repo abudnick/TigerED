@@ -41,9 +41,9 @@ subroutine soil_respiration(csite,ipa,mzg,ntext_soil)
       ipft = cpatch%costate%pft(ico)
       r_resp = root_respiration_factor(ipft) * r_resp_temp_fac * cpatch%costate%broot(ico)        &
              * cpatch%costate%nplant(ico)
-      cpatch%root_respiration(ico) = r_resp
-      cpatch%mean_root_resp(ico)   = cpatch%mean_root_resp(ico)  + r_resp
-      cpatch%today_root_resp(ico)  = cpatch%today_root_resp(ico) + r_resp
+      cpatch%coresp%root_respiration(ico) = r_resp
+      cpatch%coresp%mean_root_resp(ico)   = cpatch%coresp%mean_root_resp(ico)  + r_resp
+      cpatch%coresp%today_root_resp(ico)  = cpatch%coresp%today_root_resp(ico) + r_resp
    end do
 
    !----- Compute soil/temperature modulation of heterotrophic respiration. ---------------!

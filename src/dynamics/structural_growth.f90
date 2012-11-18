@@ -108,25 +108,25 @@ n1=n1+csite%area(ipa)*cpatch%costate%nplant(ico)*(cpatch%costate%balive(ico)/c2n
                ! sparse cohort is about to be terminated, anyway).                         !
                ! NB: monthly_dndt may be negative.                                         !
                !---------------------------------------------------------------------------!
-               cpatch%monthly_dndt(ico) = max(cpatch%monthly_dndt(ico)                     &
+               cpatch%comort%monthly_dndt(ico) = max(cpatch%comort%monthly_dndt(ico)                     &
                                              ,negligible_nplant(ipft) - cpatch%costate%nplant(ico))
-!cpatch%monthly_dndt(ico) = 0.
-               cpatch%costate%nplant(ico)       = cpatch%costate%nplant(ico) + cpatch%monthly_dndt(ico)
+!cpatch%comort%monthly_dndt(ico) = 0.
+               cpatch%costate%nplant(ico)       = cpatch%costate%nplant(ico) + cpatch%comort%monthly_dndt(ico)
 
                !----- Calculate litter owing to mortality. --------------------------------!
-               balive_mort_litter   = - cpatch%costate%balive(ico)   * cpatch%monthly_dndt(ico)
-               bstorage_mort_litter = - cpatch%costate%bstorage(ico) * cpatch%monthly_dndt(ico)
-               struct_litter        = - cpatch%costate%bdead(ico)    * cpatch%monthly_dndt(ico)
+               balive_mort_litter   = - cpatch%costate%balive(ico)   * cpatch%comort%monthly_dndt(ico)
+               bstorage_mort_litter = - cpatch%costate%bstorage(ico) * cpatch%comort%monthly_dndt(ico)
+               struct_litter        = - cpatch%costate%bdead(ico)    * cpatch%comort%monthly_dndt(ico)
                mort_litter          = balive_mort_litter + bstorage_mort_litter            &
                                     + struct_litter
 
                !----- Reset monthly_dndt. -------------------------------------------------!
-               cpatch%monthly_dndt(ico) = 0.0
+               cpatch%comort%monthly_dndt(ico) = 0.0
 
                !----- Determine how to distribute what is in bstorage. --------------------!
                call plant_structural_allocation(cpatch%costate%pft(ico),cpatch%costate%hite(ico)           &
                                             ,cgrid%lat(ipy),month                          &
-                                            ,cpatch%phenology_status(ico),f_bseeds,f_bdead)
+                                            ,cpatch%cophen%phenology_status(ico),f_bseeds,f_bdead)
 !f_bseeds=1.
 !f_bdead=0.
                !----- Grow plants; bdead gets fraction f_bdead of bstorage. ---------------!
@@ -229,11 +229,11 @@ nup=nup+csite%area(ipa)*(net_stem_N_uptake+net_seed_N_uptake)
                !      Internal energy is an extensive variable, we just account for the    !
                !      difference in the heat capacity to update it.                        !
                !---------------------------------------------------------------------------!
-               old_leaf_hcap = cpatch%leaf_hcap(ico)
-               old_wood_hcap = cpatch%wood_hcap(ico)
+               old_leaf_hcap = cpatch%cotherm%leaf_hcap(ico)
+               old_wood_hcap = cpatch%cotherm%wood_hcap(ico)
                call calc_veg_hcap(cpatch%costate%bleaf(ico),cpatch%costate%bdead(ico),cpatch%costate%bsapwood(ico) &
                                  ,cpatch%costate%nplant(ico),cpatch%costate%pft(ico)                       &
-                                 ,cpatch%leaf_hcap(ico),cpatch%wood_hcap(ico) )
+                                 ,cpatch%cotherm%leaf_hcap(ico),cpatch%cotherm%wood_hcap(ico) )
                call update_veg_energy_cweh(csite,ipa,ico,old_leaf_hcap,old_wood_hcap)
                call is_resolvable(csite,ipa,ico,cpoly%green_leaf_factor(:,isi))
                !---------------------------------------------------------------------------!
@@ -242,24 +242,24 @@ nup=nup+csite%area(ipa)*(net_stem_N_uptake+net_seed_N_uptake)
                !----- Update annual average carbon balances for mortality. ----------------!
                update_month = month - 1
                if(update_month == 0) update_month = 12
-               cpatch%cb(update_month,ico)     = cpatch%cb(13,ico)
-               cpatch%cb_max(update_month,ico) = cpatch%cb_max(13,ico)
+               cpatch%comort%cb(update_month,ico)     = cpatch%comort%cb(13,ico)
+               cpatch%comort%cb_max(update_month,ico) = cpatch%comort%cb_max(13,ico)
 
                !----- Reset the current month integrator. ---------------------------------!
-               cpatch%cb(13,ico)               = 0.0
-               cpatch%cb_max(13,ico)           = 0.0
+               cpatch%comort%cb(13,ico)               = 0.0
+               cpatch%comort%cb_max(13,ico)           = 0.0
 
                !----- Compute the relative carbon balance. --------------------------------!
                cb_act = 0.0
                cb_max = 0.0
                do imonth = 1,12
-                  cb_act = cb_act + cpatch%cb(imonth,ico)
-                  cb_max = cb_max + cpatch%cb_max(imonth,ico)
+                  cb_act = cb_act + cpatch%comort%cb(imonth,ico)
+                  cb_max = cb_max + cpatch%comort%cb_max(imonth,ico)
                end do
                if(cb_max > 0.0)then
-                  cpatch%cbr_bar(ico) = cb_act / cb_max
+                  cpatch%comort%cbr_bar(ico) = cb_act / cb_max
                else
-                  cpatch%cbr_bar(ico) = 0.0
+                  cpatch%comort%cbr_bar(ico) = 0.0
                end if
                !---------------------------------------------------------------------------!
 
@@ -394,7 +394,7 @@ subroutine structural_growth_eq_0(cgrid, month)
                ba_in       = cpatch%costate%basarea(ico)
 
                !----- Reset monthly_dndt. -------------------------------------------------!
-               cpatch%monthly_dndt(ico) = 0.0
+               cpatch%comort%monthly_dndt(ico) = 0.0
 
                !---------------------------------------------------------------------------!
                !      Rebalance the plant nitrogen uptake considering the actual alloc-    !
@@ -460,20 +460,20 @@ subroutine structural_growth_eq_0(cgrid, month)
                !----- Update annual average carbon balances for mortality. ----------------!
                update_month = month - 1
                if(update_month == 0) update_month = 12
-               cpatch%cb(update_month,ico)     = cpatch%cb(13,ico)
-               cpatch%cb_max(update_month,ico) = cpatch%cb_max(13,ico)
-               cpatch%cb(13,ico)               = 0.0
-               cpatch%cb_max(13,ico)           = 0.0
+               cpatch%comort%cb(update_month,ico)     = cpatch%comort%cb(13,ico)
+               cpatch%comort%cb_max(update_month,ico) = cpatch%comort%cb_max(13,ico)
+               cpatch%comort%cb(13,ico)               = 0.0
+               cpatch%comort%cb_max(13,ico)           = 0.0
                cb_act = 0.0
                cb_max = 0.0
                do imonth = 1,12
-                  cb_act = cb_act + cpatch%cb(imonth,ico)
-                  cb_max = cb_max + cpatch%cb_max(imonth,ico)
+                  cb_act = cb_act + cpatch%comort%cb(imonth,ico)
+                  cb_max = cb_max + cpatch%comort%cb_max(imonth,ico)
                end do
                if(cb_max > 0.0)then
-                  cpatch%cbr_bar(ico) = cb_act / cb_max
+                  cpatch%comort%cbr_bar(ico) = cb_act / cb_max
                else
-                  cpatch%cbr_bar(ico) = 0.0
+                  cpatch%comort%cbr_bar(ico) = 0.0
                end if
 
                !----- Update interesting output quantities. -------------------------------!
@@ -605,26 +605,26 @@ subroutine update_derived_cohort_props(cpatch,ico,green_leaf_factor,lsl)
    cpatch%costate%hite(ico) = dbh2h(cpatch%costate%pft(ico), cpatch%costate%dbh(ico))
    
    !----- Check the phenology status and whether it needs to change. ----------------------!
-   select case (cpatch%phenology_status(ico))
+   select case (cpatch%cophen%phenology_status(ico))
    case (0,1)
 
       select case (phenology(cpatch%costate%pft(ico)))
       case (4)
-         cpatch%elongf(ico)  = max(0.0,min (1.0, cpatch%paw_avg(ico)/theta_crit))
+         cpatch%cophen%elongf(ico)  = max(0.0,min (1.0, cpatch%cophen%paw_avg(ico)/theta_crit))
       case default
-         cpatch%elongf(ico)  = 1.0
+         cpatch%cophen%elongf(ico)  = 1.0
       end select
 
       bl_max = dbh2bl(cpatch%costate%dbh(ico),cpatch%costate%pft(ico))                                     &
-             * green_leaf_factor * cpatch%elongf(ico)
+             * green_leaf_factor * cpatch%cophen%elongf(ico)
       !------------------------------------------------------------------------------------!
       !     If LEAF biomass is not the maximum, set it to 1 (leaves partially flushed),    !
       ! otherwise, set it to 0 (leaves are fully flushed).                                 !
       !------------------------------------------------------------------------------------!
       if (cpatch%costate%bleaf(ico) < bl_max) then
-         cpatch%phenology_status(ico) = 1
+         cpatch%cophen%phenology_status(ico) = 1
       else
-         cpatch%phenology_status(ico) = 0
+         cpatch%cophen%phenology_status(ico) = 0
       end if
 
    end select
@@ -632,7 +632,7 @@ subroutine update_derived_cohort_props(cpatch,ico,green_leaf_factor,lsl)
    !----- Update LAI, WPA, and WAI --------------------------------------------------------!
    call area_indices(cpatch%costate%nplant(ico),cpatch%costate%bleaf(ico),cpatch%costate%bdead(ico)                &
               ,cpatch%costate%balive(ico),cpatch%costate%dbh(ico), cpatch%costate%hite(ico),cpatch%costate%pft(ico)        &
-              ,cpatch%sla(ico),cpatch%costate%lai(ico),cpatch%costate%wpa(ico),cpatch%costate%wai(ico)             &
+              ,cpatch%cophen%sla(ico),cpatch%costate%lai(ico),cpatch%costate%wpa(ico),cpatch%costate%wai(ico)             &
               ,cpatch%costate%crown_area(ico),cpatch%costate%bsapwood(ico))
 
    !----- Finding the new basal area and above-ground biomass. ----------------------------!
@@ -713,13 +713,6 @@ subroutine update_vital_rates(cpatch,ico,ilu,dbh_in,bdead_in,balive_in,hite_in,b
                                       ,cpatch%costate%hite(ico) ,cpatch%costate%bstorage(ico)              &
                                       ,cpatch%costate%bsapwood(ico) ) 
 
-   !---------------------------------------------------------------------------------------!
-   !     Change the agb growth to kgC/plant/year, basal area to cm2/plant/year, and DBH    !
-   ! growth to cm/year.                                                                    !
-   !---------------------------------------------------------------------------------------!
-   cpatch%dagb_dt(ico)    = (cpatch%costate%agb(ico)     - agb_in ) * 12.0
-   cpatch%dba_dt(ico)     = (cpatch%costate%basarea(ico) - ba_in  ) * 12.0
-   cpatch%ddbh_dt(ico)    = (cpatch%costate%dbh(ico)     - dbh_in ) * 12.0
 
    !---------------------------------------------------------------------------------------!
    !     These are polygon-level variable, so they are done in kgC/m2.  Update the current !

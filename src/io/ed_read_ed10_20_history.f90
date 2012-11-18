@@ -724,7 +724,7 @@ subroutine read_ed10_ed20_history_file
                         !     Start plants with full phenology, we will take care of       !
                         ! phenology after this sub-routine.                                !
                         !------------------------------------------------------------------!
-                        cpatch%phenology_status(ic2) = 0
+                        cpatch%cophen%phenology_status(ic2) = 0
                         cpatch%costate%bstorage        (ic2) = 0.0
                         !------------------------------------------------------------------!
 
@@ -739,10 +739,10 @@ subroutine read_ed10_ed20_history_file
                                          ,cpatch%costate%crown_area(ic2),cpatch%costate%bsapwood(ic2))
 
                         !----- Initialise the carbon balance. -----------------------------!
-                        cpatch%cb    (1:12,ic2) = cb(1:12,ic)
-                        cpatch%cb_max(1:12,ic2) = cb_max(1:12,ic)
-                        cpatch%cb    (  13,ic2) = 0.0
-                        cpatch%cb_max(  13,ic2) = 0.0
+                        cpatch%comort%cb    (1:12,ic2) = cb(1:12,ic)
+                        cpatch%comort%cb_max(1:12,ic2) = cb_max(1:12,ic)
+                        cpatch%comort%cb    (  13,ic2) = 0.0
+                        cpatch%comort%cb_max(  13,ic2) = 0.0
 
                         !----- Above ground biomass, use the allometry. -------------------!
                         cpatch%costate%agb(ic2) = ed_biomass(cpatch%costate%bdead(ic2),cpatch%costate%balive(ic2)  &
@@ -751,18 +751,14 @@ subroutine read_ed10_ed20_history_file
                                                     ,cpatch%costate%bsapwood(ic2))
                         cpatch%costate%basarea(ic2)  = pio4 * cpatch%costate%dbh(ic2) * cpatch%costate%dbh(ic2)
 
-                        !----- Growth rates, start with zero. -----------------------------!
-                        cpatch%dagb_dt(ic2)  = 0.
-                        cpatch%dba_dt(ic2)   = 0.
-                        cpatch%ddbh_dt(ic2)  = 0.
                         
                         !------------------------------------------------------------------!
                         !      Initialise other cohort variables.  Some of them won't be   !
                         ! updated unless the lai exceeds lai_min.                          !
                         !------------------------------------------------------------------!
-                        cpatch%fsw(ic2)   = 1.0
-                        cpatch%gpp(ic2)   = 0.0
-                        cpatch%par_l(ic2) = 0.0
+                        cpatch%cophoto%fsw(ic2)   = 1.0
+                        cpatch%cophoto%gpp(ic2)   = 0.0
+                        cpatch%corad%par_l(ic2) = 0.0
 
                         !----- Update the patch level above-ground biomass. ---------------!
                         csite%plant_ag_biomass(ipa) = csite%plant_ag_biomass(ipa)          &

@@ -251,7 +251,7 @@ subroutine copy_patch_init(sourcesite,ipa,targetp)
       targetp%wpa(ico)        = dble(cpatch%costate%wpa(ico))
       targetp%tai(ico)        = targetp%lai(ico) + targetp%wai(ico)
       targetp%crown_area(ico) = dble(cpatch%costate%crown_area(ico))
-      targetp%elongf(ico)     = dble(cpatch%elongf(ico)) * rk4site%green_leaf_factor(ipft)
+      targetp%elongf(ico)     = dble(cpatch%cophen%elongf(ico)) * rk4site%green_leaf_factor(ipft)
       !------------------------------------------------------------------------------------!
 
 
@@ -262,17 +262,17 @@ subroutine copy_patch_init(sourcesite,ipa,targetp)
       ! the leaves won't be really solved.                                                 !
       !------------------------------------------------------------------------------------!
       if (targetp%leaf_resolvable(ico)) then
-         targetp%leaf_energy(ico) = dble(cpatch%leaf_energy(ico))
-         targetp%leaf_water (ico) = max(0.d0,dble(cpatch%leaf_water (ico)))
-         targetp%leaf_hcap  (ico) = dble(cpatch%leaf_hcap  (ico))
+         targetp%leaf_energy(ico) = dble(cpatch%cotherm%leaf_energy(ico))
+         targetp%leaf_water (ico) = max(0.d0,dble(cpatch%cotherm%leaf_water (ico)))
+         targetp%leaf_hcap  (ico) = dble(cpatch%cotherm%leaf_hcap  (ico))
 
          call qwtk8(targetp%leaf_energy(ico),targetp%leaf_water(ico)                       &
                    ,targetp%leaf_hcap(ico),targetp%leaf_temp(ico),targetp%leaf_fliq(ico))
       else
-         targetp%leaf_fliq  (ico) = dble(cpatch%leaf_fliq  (ico))
-         targetp%leaf_temp  (ico) = dble(cpatch%leaf_temp  (ico))
-         targetp%leaf_water (ico) = dble(cpatch%leaf_water (ico))
-         targetp%leaf_hcap  (ico) = dble(cpatch%leaf_hcap  (ico))
+         targetp%leaf_fliq  (ico) = dble(cpatch%cotherm%leaf_fliq  (ico))
+         targetp%leaf_temp  (ico) = dble(cpatch%cotherm%leaf_temp  (ico))
+         targetp%leaf_water (ico) = dble(cpatch%cotherm%leaf_water (ico))
+         targetp%leaf_hcap  (ico) = dble(cpatch%cotherm%leaf_hcap  (ico))
          targetp%leaf_energy(ico) = targetp%leaf_hcap(ico) * targetp%leaf_temp(ico)
       end if
       !------------------------------------------------------------------------------------!
@@ -285,17 +285,17 @@ subroutine copy_patch_init(sourcesite,ipa,targetp)
       ! the wood won't be really solved.                                                   !
       !------------------------------------------------------------------------------------!
       if (targetp%wood_resolvable(ico)) then
-         targetp%wood_energy(ico) = dble(cpatch%wood_energy(ico))
-         targetp%wood_water (ico) = max(0.d0,dble(cpatch%wood_water (ico)))
-         targetp%wood_hcap  (ico) = dble(cpatch%wood_hcap  (ico))
+         targetp%wood_energy(ico) = dble(cpatch%cotherm%wood_energy(ico))
+         targetp%wood_water (ico) = max(0.d0,dble(cpatch%cotherm%wood_water (ico)))
+         targetp%wood_hcap  (ico) = dble(cpatch%cotherm%wood_hcap  (ico))
 
          call qwtk8(targetp%wood_energy(ico),targetp%wood_water(ico)                       &
                    ,targetp%wood_hcap(ico),targetp%wood_temp(ico),targetp%wood_fliq(ico))
       else
-         targetp%wood_fliq  (ico) = dble(cpatch%wood_fliq  (ico))
-         targetp%wood_temp  (ico) = dble(cpatch%wood_temp  (ico))
-         targetp%wood_water (ico) = dble(cpatch%wood_water (ico))
-         targetp%wood_hcap  (ico) = dble(cpatch%wood_hcap  (ico))
+         targetp%wood_fliq  (ico) = dble(cpatch%cotherm%wood_fliq  (ico))
+         targetp%wood_temp  (ico) = dble(cpatch%cotherm%wood_temp  (ico))
+         targetp%wood_water (ico) = dble(cpatch%cotherm%wood_water (ico))
+         targetp%wood_hcap  (ico) = dble(cpatch%cotherm%wood_hcap  (ico))
          targetp%wood_energy(ico) = targetp%wood_hcap(ico) * targetp%wood_temp(ico)
       end if
       !------------------------------------------------------------------------------------!
@@ -313,18 +313,18 @@ subroutine copy_patch_init(sourcesite,ipa,targetp)
 
 
       !------ Copy the stomatal conductances and the fraction of open stomata. ------------!
-      targetp%fs_open   (ico) = dble(cpatch%fs_open   (ico))
-      targetp%gsw_open  (ico) = dble(cpatch%gsw_open  (ico))
-      targetp%gsw_closed(ico) = dble(cpatch%gsw_closed(ico))
+      targetp%fs_open   (ico) = dble(cpatch%cophoto%fs_open   (ico))
+      targetp%gsw_open  (ico) = dble(cpatch%cophoto%gsw_open  (ico))
+      targetp%gsw_closed(ico) = dble(cpatch%cophoto%gsw_closed(ico))
       !------------------------------------------------------------------------------------!
 
 
 
       !------ Copy the net absorbed radiation (short wave and long wave). -----------------!
-      targetp%rshort_l   (ico) = dble(cpatch%rshort_l (ico))
-      targetp%rlong_l    (ico) = dble(cpatch%rlong_l  (ico))
-      targetp%rshort_w   (ico) = dble(cpatch%rshort_w (ico))
-      targetp%rlong_w    (ico) = dble(cpatch%rlong_w  (ico))
+      targetp%rshort_l   (ico) = dble(cpatch%corad%rshort_l (ico))
+      targetp%rlong_l    (ico) = dble(cpatch%corad%rlong_l  (ico))
+      targetp%rshort_w   (ico) = dble(cpatch%corad%rshort_w (ico))
+      targetp%rlong_w    (ico) = dble(cpatch%corad%rlong_w  (ico))
       !------------------------------------------------------------------------------------!
 
 
@@ -437,18 +437,18 @@ subroutine copy_patch_init_carbon(sourcesite,ipa,targetp)
    do ico = 1,cpatch%ncohorts
   
       !----- Copy the variables that are already in µmol/m²/s. ----------------------------!
-      targetp%gpp         (ico) = dble(cpatch%gpp                (ico))
-      targetp%leaf_resp   (ico) = dble(cpatch%leaf_respiration   (ico))
-      targetp%root_resp   (ico) = dble(cpatch%root_respiration   (ico))
+      targetp%gpp         (ico) = dble(cpatch%cophoto%gpp                (ico))
+      targetp%leaf_resp   (ico) = dble(cpatch%coresp%leaf_respiration   (ico))
+      targetp%root_resp   (ico) = dble(cpatch%coresp%root_respiration   (ico))
 
       !------------------------------------------------------------------------------------!
       !     The following variables are in kgC/plant/day, convert them to µmol/m²/s.       !
       !------------------------------------------------------------------------------------!
-      targetp%growth_resp (ico) = dble(cpatch%growth_respiration (ico))                    &
+      targetp%growth_resp (ico) = dble(cpatch%coresp%growth_respiration (ico))                    &
                                 * targetp%nplant(ico) / (day_sec8 * umol_2_kgC8)
-      targetp%storage_resp(ico) = dble(cpatch%storage_respiration(ico))                    &
+      targetp%storage_resp(ico) = dble(cpatch%coresp%storage_respiration(ico))                    &
                                 * targetp%nplant(ico) / (day_sec8 * umol_2_kgC8)
-      targetp%vleaf_resp  (ico) = dble(cpatch%vleaf_respiration  (ico))                    &
+      targetp%vleaf_resp  (ico) = dble(cpatch%coresp%vleaf_respiration  (ico))                    &
                                 * targetp%nplant(ico) / (day_sec8 * umol_2_kgC8)
    end do
 
@@ -2908,8 +2908,8 @@ subroutine print_csiteipa(csite, ipa)
       if (cpatch%costate%leaf_resolvable(ico)) then
          write(unit=*,fmt='(2(i7,1x),8(es12.4,1x))') cpatch%costate%pft(ico), cpatch%costate%krdepth(ico)  &
               ,cpatch%costate%nplant(ico),cpatch%costate%lai(ico),cpatch%costate%dbh(ico),cpatch%costate%bdead(ico)        &
-              ,cpatch%costate%bleaf(ico),cpatch%leaf_energy(ico),cpatch%leaf_temp(ico)             &
-              ,cpatch%leaf_water(ico)
+              ,cpatch%costate%bleaf(ico),cpatch%cotherm%leaf_energy(ico),cpatch%cotherm%leaf_temp(ico)             &
+              ,cpatch%cotherm%leaf_water(ico)
       end if
    end do
    write (unit=*,fmt='(2(a7,1x),6(a12,1x))')                                               &
@@ -2918,8 +2918,8 @@ subroutine print_csiteipa(csite, ipa)
    do ico = 1,cpatch%ncohorts
       if (cpatch%costate%leaf_resolvable(ico)) then
          write(unit=*,fmt='(2(i7,1x),6(es12.4,1x))') cpatch%costate%pft(ico), cpatch%costate%krdepth(ico)  &
-              ,cpatch%costate%lai(ico),cpatch%fs_open(ico),cpatch%fsw(ico),cpatch%fsn(ico)         &
-              ,cpatch%gpp(ico),cpatch%leaf_respiration(ico)
+              ,cpatch%costate%lai(ico),cpatch%cophoto%fs_open(ico),cpatch%cophoto%fsw(ico),cpatch%cophoto%fsn(ico)         &
+              ,cpatch%cophoto%gpp(ico),cpatch%coresp%leaf_respiration(ico)
       end if
    end do
    write (unit=*,fmt='(2(a7,1x),5(a12,1x))')                                               &
@@ -2927,15 +2927,15 @@ subroutine print_csiteipa(csite, ipa)
                             ,'  VLEAF_RESP'
    do ico = 1,cpatch%ncohorts
       if (cpatch%costate%leaf_resolvable(ico)) then
-         growth_resp  = cpatch%growth_respiration(ico)  * cpatch%costate%nplant(ico)               &
+         growth_resp  = cpatch%coresp%growth_respiration(ico)  * cpatch%costate%nplant(ico)               &
                       / (day_sec * umol_2_kgC)
-         storage_resp = cpatch%storage_respiration(ico) * cpatch%costate%nplant(ico)               &
+         storage_resp = cpatch%coresp%storage_respiration(ico) * cpatch%costate%nplant(ico)               &
                       / (day_sec * umol_2_kgC)
-         vleaf_resp   = cpatch%vleaf_respiration(ico)  * cpatch%costate%nplant(ico)                &
+         vleaf_resp   = cpatch%coresp%vleaf_respiration(ico)  * cpatch%costate%nplant(ico)                &
                       / (day_sec * umol_2_kgC)
 
          write(unit=*,fmt='(2(i7,1x),5(es12.4,1x))') cpatch%costate%pft(ico), cpatch%costate%krdepth(ico)  &
-              ,cpatch%costate%lai(ico),cpatch%root_respiration(ico),growth_resp,storage_resp       &
+              ,cpatch%costate%lai(ico),cpatch%coresp%root_respiration(ico),growth_resp,storage_resp       &
               ,vleaf_resp
       end if
    end do
@@ -2951,8 +2951,8 @@ subroutine print_csiteipa(csite, ipa)
       if (cpatch%costate%wood_resolvable(ico)) then
          write(unit=*,fmt='(2(i7,1x),8(es12.4,1x))') cpatch%costate%pft(ico), cpatch%costate%krdepth(ico)  &
               ,cpatch%costate%nplant(ico),cpatch%costate%wai(ico),cpatch%costate%dbh(ico),cpatch%costate%bdead(ico)        &
-              ,cpatch%costate%bsapwood(ico),cpatch%wood_energy(ico),cpatch%wood_temp(ico)          &
-              ,cpatch%wood_water(ico)
+              ,cpatch%costate%bsapwood(ico),cpatch%cotherm%wood_energy(ico),cpatch%cotherm%wood_temp(ico)          &
+              ,cpatch%cotherm%wood_water(ico)
       end if
    end do
    write (unit=*,fmt='(a)'  ) ' '
@@ -3112,7 +3112,7 @@ subroutine print_rk4patch(y,csite,ipa)
       if (cpatch%costate%leaf_resolvable(ico)) then
          write(unit=*,fmt='(2(i7,1x),8(es12.4,1x))') cpatch%costate%pft(ico), cpatch%costate%krdepth(ico)  &
               ,cpatch%costate%nplant(ico),cpatch%costate%hite(ico),cpatch%costate%dbh(ico),cpatch%costate%bdead(ico)       &
-              ,cpatch%costate%bleaf (ico),cpatch%fs_open(ico),cpatch%fsw(ico),cpatch%fsn(ico)
+              ,cpatch%costate%bleaf (ico),cpatch%cophoto%fs_open(ico),cpatch%cophoto%fsw(ico),cpatch%cophoto%fsn(ico)
       end if
    end do
    write (unit=*,fmt='(80a)') ('-',k=1,80)
@@ -3158,7 +3158,7 @@ subroutine print_rk4patch(y,csite,ipa)
       if (y%leaf_resolvable(ico)) then
          write(unit=*,fmt='(2(i7,1x),7(es12.4,1x))') cpatch%costate%pft(ico),cpatch%costate%krdepth(ico)   &
                ,y%lai(ico),cpatch%costate%hite(ico),y%leaf_gbh(ico),y%leaf_gbw(ico)                &
-               ,y%gsw_closed(ico),y%gsw_open(ico),cpatch%fs_open(ico)
+               ,y%gsw_closed(ico),y%gsw_open(ico),cpatch%cophoto%fs_open(ico)
       end if
    end do
    write (unit=*,fmt='(80a)') ('-',k=1,80)
@@ -3169,7 +3169,7 @@ subroutine print_rk4patch(y,csite,ipa)
       if (y%leaf_resolvable(ico)) then
          write(unit=*,fmt='(2(i7,1x),6(es12.4,1x))') cpatch%costate%pft(ico),cpatch%costate%krdepth(ico)   &
                ,y%lai(ico),cpatch%costate%hite(ico),y%rshort_l(ico),y%rlong_l(ico)                 &
-               ,cpatch%par_l_beam(ico),cpatch%par_l_diffuse(ico)
+               ,cpatch%corad%par_l_beam(ico),cpatch%corad%par_l_diffuse(ico)
       end if
    end do
    write (unit=*,fmt='(80a)') ('=',k=1,80)

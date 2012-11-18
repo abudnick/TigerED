@@ -1005,43 +1005,7 @@ plantP1=0.;plantP2=0.;soilP1=0.;soilP2=0.;totalP1=0.;totalP2=0.
 
             call insert_survivors_state(tpatch%costate, nco, survival_fac)
 
-            tpatch%mean_gpp           (nco) = tpatch%mean_gpp         (nco) * survival_fac
-            tpatch%mean_leaf_resp     (nco) = tpatch%mean_leaf_resp   (nco) * survival_fac
-            tpatch%mean_root_resp     (nco) = tpatch%mean_root_resp   (nco) * survival_fac
-            tpatch%mean_growth_resp   (nco) = tpatch%mean_growth_resp (nco) * survival_fac
-            tpatch%mean_storage_resp  (nco) = tpatch%mean_storage_resp(nco) * survival_fac
-            tpatch%mean_vleaf_resp    (nco) = tpatch%mean_vleaf_resp  (nco) * survival_fac
-            tpatch%Psi_open           (nco) = tpatch%Psi_open         (nco) * survival_fac
-            tpatch%gpp                (nco) = tpatch%gpp              (nco) * survival_fac
-            tpatch%leaf_respiration   (nco) = tpatch%leaf_respiration (nco) * survival_fac
-            tpatch%root_respiration   (nco) = tpatch%root_respiration (nco) * survival_fac
-            tpatch%monthly_dndt       (nco) = tpatch%monthly_dndt     (nco) * survival_fac
-            tpatch%leaf_water         (nco) = tpatch%leaf_water       (nco) * survival_fac
-            tpatch%leaf_hcap          (nco) = tpatch%leaf_hcap        (nco) * survival_fac
-            tpatch%leaf_energy        (nco) = tpatch%leaf_energy      (nco) * survival_fac
-            tpatch%wood_water         (nco) = tpatch%wood_water       (nco) * survival_fac
-            tpatch%wood_hcap          (nco) = tpatch%wood_hcap        (nco) * survival_fac
-            tpatch%wood_energy        (nco) = tpatch%wood_energy      (nco) * survival_fac
 
-            !----- Carbon flux monthly means are extensive, we must convert them. ---------!
-            if (idoutput > 0 .or. imoutput > 0 .or. iqoutput > 0) then
-               tpatch%dmean_par_l     (nco) = tpatch%dmean_par_l      (nco) * survival_fac
-               tpatch%dmean_par_l_beam(nco) = tpatch%dmean_par_l_beam (nco) * survival_fac
-               tpatch%dmean_par_l_diff(nco) = tpatch%dmean_par_l_diff (nco) * survival_fac
-            end if
-            if (imoutput > 0 .or. iqoutput > 0) then
-               tpatch%mmean_par_l     (nco) = tpatch%mmean_par_l      (nco) * survival_fac
-               tpatch%mmean_par_l_beam(nco) = tpatch%mmean_par_l_beam (nco) * survival_fac
-               tpatch%mmean_par_l_diff(nco) = tpatch%mmean_par_l_diff (nco) * survival_fac
-            end if
-            if (iqoutput > 0) then
-               tpatch%qmean_par_l     (:,nco) = tpatch%qmean_par_l      (:,nco)            &
-                                              * survival_fac
-               tpatch%qmean_par_l_beam(:,nco) = tpatch%qmean_par_l_beam (:,nco)            &
-                                              * survival_fac
-               tpatch%qmean_par_l_diff(:,nco) = tpatch%qmean_par_l_diff (:,nco)            &
-                                              * survival_fac
-            end if
          end if
       end do cohortloop
 
@@ -1056,15 +1020,7 @@ plantP1=0.;plantP2=0.;soilP1=0.;soilP2=0.;totalP1=0.;totalP2=0.
 
       return
    end subroutine insert_survivors
-   !=======================================================================================!
-   !=======================================================================================!
 
-
-
-
-
-
-   !=======================================================================================!
    !=======================================================================================!
    !     This subroutine updates the litter pools after a disturbance takes place.         !
    !---------------------------------------------------------------------------------------!
@@ -1371,7 +1327,7 @@ plantP1=0.;plantP2=0.;soilP1=0.;soilP2=0.;totalP1=0.;totalP2=0.
       !----- Compute all area indices needed. ---------------------------------------------!
       call area_indices(cpatch%costate%nplant(nc),cpatch%costate%bleaf(nc),cpatch%costate%bdead(nc)                &
                        ,cpatch%costate%balive(nc),cpatch%costate%dbh(nc),cpatch%costate%hite(nc),cpatch%costate%pft(nc)    &
-                       ,cpatch%sla(nc),cpatch%costate%lai(nc),cpatch%costate%wpa(nc),cpatch%costate%wai(nc)        &
+                       ,cpatch%cophen%sla(nc),cpatch%costate%lai(nc),cpatch%costate%wpa(nc),cpatch%costate%wai(nc)        &
                        ,cpatch%costate%crown_area(nc),cpatch%costate%bsapwood(nc))
 
 
@@ -1381,20 +1337,20 @@ plantP1=0.;plantP2=0.;soilP1=0.;soilP2=0.;totalP1=0.;totalP2=0.
                                      ,cpatch%costate%pft(nc),cpatch%costate%hite(nc) ,cpatch%costate%bstorage(nc)  &
                                      ,cpatch%costate%bsapwood(nc))
 
-      cpatch%leaf_temp(nc)  = csite%can_temp(np)
-      cpatch%leaf_water(nc) = 0.0
-      cpatch%leaf_fliq(nc)  = 0.0
-      cpatch%wood_temp(nc)  = csite%can_temp(np)
-      cpatch%wood_water(nc) = 0.0
-      cpatch%wood_fliq(nc)  = 0.0
+      cpatch%cotherm%leaf_temp(nc)  = csite%can_temp(np)
+      cpatch%cotherm%leaf_water(nc) = 0.0
+      cpatch%cotherm%leaf_fliq(nc)  = 0.0
+      cpatch%cotherm%wood_temp(nc)  = csite%can_temp(np)
+      cpatch%cotherm%wood_water(nc) = 0.0
+      cpatch%cotherm%wood_fliq(nc)  = 0.0
 
       !----- Because we assigned no water, the internal energy is simply hcap*T. ----------!
       call calc_veg_hcap(cpatch%costate%bleaf(nc),cpatch%costate%bdead(nc),cpatch%costate%bsapwood(nc)             &
                         ,cpatch%costate%nplant(nc),cpatch%costate%pft(nc)                                  &
-                        ,cpatch%leaf_hcap(nc),cpatch%wood_hcap(nc))
+                        ,cpatch%cotherm%leaf_hcap(nc),cpatch%cotherm%wood_hcap(nc))
 
-      cpatch%leaf_energy(nc) = cpatch%leaf_hcap(nc) * cpatch%leaf_temp(nc)
-      cpatch%wood_energy(nc) = cpatch%wood_hcap(nc) * cpatch%wood_temp(nc)
+      cpatch%cotherm%leaf_energy(nc) = cpatch%cotherm%leaf_hcap(nc) * cpatch%cotherm%leaf_temp(nc)
+      cpatch%cotherm%wood_energy(nc) = cpatch%cotherm%wood_hcap(nc) * cpatch%cotherm%wood_temp(nc)
 
       call is_resolvable(csite,np,nc,green_leaf_factor)
 

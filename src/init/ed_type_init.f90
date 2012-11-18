@@ -18,7 +18,15 @@ subroutine init_ed_cohort_vars(cpatch,ico, lsl)
                             , vm_amp              & ! intent(in)
                             , vm_min              ! ! intent(in)
    use cohort_state, only: init_cohort_vars_state
+   use cohort_phen, only: init_cohort_vars_phen
+   use cohort_mort, only: init_cohort_vars_mort
+   use cohort_resp, only: init_cohort_vars_resp
+   use cohort_photo, only: init_cohort_vars_photo
+   use cohort_rad, only: init_cohort_vars_rad
+   use cohort_therm, only: init_cohort_vars_therm
+
    implicit none
+
    !----- Arguments. ----------------------------------------------------------------------!
    type(patchtype), target     :: cpatch     ! Current patch
    integer        , intent(in) :: ico        ! Index of the current cohort
@@ -26,238 +34,12 @@ subroutine init_ed_cohort_vars(cpatch,ico, lsl)
    !---------------------------------------------------------------------------------------!
 
    call init_cohort_vars_state(cpatch%costate, ico, lsl)
-
-   cpatch%mean_gpp(ico)          = 0.0
-   cpatch%mean_leaf_resp(ico)    = 0.0
-   cpatch%mean_root_resp(ico)    = 0.0
-   cpatch%mean_growth_resp(ico)  = 0.0
-   cpatch%mean_storage_resp(ico) = 0.0
-   cpatch%mean_vleaf_resp(ico)   = 0.0
-   cpatch%today_leaf_resp(ico)   = 0.0
-   cpatch%today_root_resp(ico)   = 0.0
-   cpatch%today_gpp(ico)         = 0.0
-   cpatch%today_gpp_pot(ico)     = 0.0
-   cpatch%today_gpp_max(ico)     = 0.0
-
-   cpatch%light_level     (ico)  = 0.0
-   cpatch%light_level_beam(ico)  = 0.0
-   cpatch%light_level_diff(ico)  = 0.0
-   cpatch%beamext_level   (ico)  = 0.0
-   cpatch%diffext_level   (ico)  = 0.0
-   cpatch%lambda_light(ico)      = 0.0
-
-   cpatch%gpp(ico)                 = 0.0
-   cpatch%leaf_respiration(ico)    = 0.0
-   cpatch%root_respiration(ico)    = 0.0
-   cpatch%growth_respiration(ico)  = 0.0
-   cpatch%storage_respiration(ico) = 0.0
-   cpatch%vleaf_respiration(ico)   = 0.0
-
-
-   !---------------------------------------------------------------------------------------!
-   !     Start the fraction of open stomata with 1., since this is the most likely value   !
-   ! at night time.  FS_open is initialised with 0., though.                               !
-   !---------------------------------------------------------------------------------------!
-   cpatch%fsw(ico)     = 1.0
-   cpatch%fsn(ico)     = 1.0
-   cpatch%fs_open(ico) = 0.0
-   !---------------------------------------------------------------------------------------!
-
-
-   cpatch%monthly_dndt(ico)     = 0.0
-   cpatch%mort_rate(:,ico)      = 0.0
-
-   cpatch%dagb_dt(ico)          = 0.0
-   cpatch%dba_dt(ico)           = 0.0
-   cpatch%ddbh_dt(ico)          = 0.0
-
-
-   cpatch%par_l(ico)            = 0.0
-   cpatch%par_l_beam(ico)       = 0.0
-   cpatch%par_l_diffuse(ico)    = 0.0
-   cpatch%rshort_l(ico)         = 0.0
-   cpatch%rshort_l_beam(ico)    = 0.0
-   cpatch%rshort_l_diffuse(ico) = 0.0
-   cpatch%rlong_l(ico)          = 0.0
-   cpatch%rlong_l_surf(ico)     = 0.0
-   cpatch%rlong_l_incid(ico)    = 0.0
-   cpatch%rshort_w(ico)         = 0.0
-   cpatch%rshort_w_beam(ico)    = 0.0
-   cpatch%rshort_w_diffuse(ico) = 0.0
-   cpatch%rlong_w(ico)          = 0.0
-   cpatch%rlong_w_surf(ico)     = 0.0
-   cpatch%rlong_w_incid(ico)    = 0.0
-
-   cpatch%leaf_gbh(ico)             = 0.0
-   cpatch%leaf_gbw(ico)             = 0.0
-   cpatch%wood_gbh(ico)             = 0.0
-   cpatch%wood_gbw(ico)             = 0.0
-   cpatch%A_open(ico)               = 0.0
-   cpatch%A_closed(ico)             = 0.0
-   cpatch%psi_open(ico)             = 0.0
-   cpatch%psi_closed(ico)           = 0.0
-   cpatch%water_supply(ico)         = 0.0
-   cpatch%gsw_open(ico)             = 0.0
-   cpatch%gsw_closed(ico)           = 0.0
-   cpatch%stomatal_conductance(ico) = 0.0
-       
-       
-   cpatch%leaf_maintenance   (ico) = 0.0
-   cpatch%root_maintenance   (ico) = 0.0
-   cpatch%leaf_drop          (ico) = 0.0
-   cpatch%paw_avg            (ico) = 0.0
-   cpatch%elongf             (ico) = 0.0
-   !---------------------------------------------------------------------------------------!
-
-
-   !---------------------------------------------------------------------------------------!
-   !     The carbon balance must be initialised with a number other than zero (and better  !
-   ! be positive), otherwise a massive mortality will happen at the first year.  The 13th  !
-   ! element (current month integration) must be set to 0, though, otherwise the first     !
-   ! month carbon balance will be incorrect.                                               !
-   !---------------------------------------------------------------------------------------!
-   cpatch%cb(1:12,ico)     = 1.0
-   cpatch%cb_max(1:12,ico) = 1.0
-   cpatch%cbr_bar(ico)     = 1.0
-   cpatch%cb(13,ico)       = 0.0
-   cpatch%cb_max(13,ico)   = 0.0
-   !---------------------------------------------------------------------------------------!
-
-   cpatch%leaf_energy(ico)      = 0.
-   cpatch%leaf_hcap(ico)        = 0.
-   cpatch%leaf_temp(ico)        = 0.
-   cpatch%leaf_water(ico)       = 0.
-   cpatch%leaf_fliq(ico)        = 0.
-   cpatch%wood_energy(ico)      = 0.
-   cpatch%wood_hcap(ico)        = 0.
-   cpatch%wood_temp(ico)        = 0.
-   cpatch%wood_water(ico)       = 0.
-   cpatch%wood_fliq(ico)        = 0.
-   cpatch%veg_wind(ico)         = 0.
-   cpatch%lsfc_shv_open(ico)    = 0.
-   cpatch%lsfc_shv_closed(ico)  = 0.
-   cpatch%lsfc_co2_open(ico)    = 0.
-   cpatch%lsfc_co2_closed(ico)  = 0.
-   cpatch%lint_shv(ico)         = 0.
-   cpatch%lint_co2_open(ico)    = 0.
-   cpatch%lint_co2_closed(ico)  = 0.
-
-   !---------------------------------------------------------------------------------------!
-   !     Turnover amplitude must be set to 1 because it is used for scaling of the leaf    !
-   ! life span in the light-controlled phenology.                                          !
-   !---------------------------------------------------------------------------------------!
-   cpatch%turnover_amp(ico)     = 1.0
-   !---------------------------------------------------------------------------------------!
-
-
-
-   !---------------------------------------------------------------------------------------!
-   !     The monthly means are allocated only when the user wants the monthly output or    !
-   ! the mean diurnal cycle.                                                               !
-   !---------------------------------------------------------------------------------------!
-   if (imoutput > 0 .or. iqoutput > 0) then
-      cpatch%mmean_par_l            (ico) = 0.0
-      cpatch%mmean_par_l_beam       (ico) = 0.0
-      cpatch%mmean_par_l_diff       (ico) = 0.0
-      cpatch%mmean_gpp              (ico) = 0.0
-      cpatch%mmean_leaf_resp        (ico) = 0.0
-      cpatch%mmean_root_resp        (ico) = 0.0
-      cpatch%mmean_growth_resp      (ico) = 0.0
-      cpatch%mmean_storage_resp     (ico) = 0.0
-      cpatch%mmean_vleaf_resp       (ico) = 0.0
-      cpatch%mmean_light_level      (ico) = 0.0
-      cpatch%mmean_light_level_beam (ico) = 0.0
-      cpatch%mmean_light_level_diff (ico) = 0.0
-      cpatch%mmean_beamext_level    (ico) = 0.0
-      cpatch%mmean_diffext_level    (ico) = 0.0
-      cpatch%mmean_fs_open          (ico) = 0.0
-      cpatch%mmean_fsw              (ico) = 0.0
-      cpatch%mmean_fsn              (ico) = 0.0
-      cpatch%mmean_psi_open         (ico) = 0.0
-      cpatch%mmean_psi_closed       (ico) = 0.0
-      cpatch%mmean_water_supply     (ico) = 0.0
-      cpatch%mmean_lambda_light     (ico) = 0.0
-      cpatch%mmean_leaf_maintenance (ico) = 0.0
-      cpatch%mmean_root_maintenance (ico) = 0.0
-      cpatch%mmean_leaf_drop        (ico) = 0.0
-      cpatch%mmean_mort_rate      (:,ico) = 0.0
-   end if
-   !---------------------------------------------------------------------------------------!
-
-
-
-   !---------------------------------------------------------------------------------------!
-   !     The daily means are allocated only when the user wants the daily or the monthly   !
-   ! output, or the mean diurnal cycle.                                                    !
-   !---------------------------------------------------------------------------------------!
-   if (idoutput > 0 .or. imoutput > 0 .or. iqoutput > 0) then
-      cpatch%dmean_par_l            (ico) = 0.0
-      cpatch%dmean_par_l_beam       (ico) = 0.0
-      cpatch%dmean_par_l_diff       (ico) = 0.0
-      cpatch%dmean_light_level      (ico) = 0.0
-      cpatch%dmean_light_level_beam (ico) = 0.0
-      cpatch%dmean_light_level_diff (ico) = 0.0
-      cpatch%dmean_beamext_level    (ico) = 0.0
-      cpatch%dmean_diffext_level    (ico) = 0.0
-      cpatch%dmean_fsw              (ico) = 0.0
-      cpatch%dmean_fsn              (ico) = 0.0
-      cpatch%dmean_fs_open          (ico) = 0.0
-      cpatch%dmean_psi_open         (ico) = 0.0
-      cpatch%dmean_psi_closed       (ico) = 0.0
-      cpatch%dmean_water_supply     (ico) = 0.0
-      cpatch%dmean_lambda_light     (ico) = 0.0
-   end if
-
-
-
-   !---------------------------------------------------------------------------------------!
-   !     The daily means are allocated only when the user wants the daily or the monthly   !
-   ! output, or the mean diurnal cycle.                                                    !
-   !---------------------------------------------------------------------------------------!
-   if (iqoutput > 0) then
-      cpatch%qmean_par_l            (:,ico) = 0.0
-      cpatch%qmean_par_l_beam       (:,ico) = 0.0
-      cpatch%qmean_par_l_diff       (:,ico) = 0.0
-      cpatch%qmean_gpp              (:,ico) = 0.0
-      cpatch%qmean_leaf_resp        (:,ico) = 0.0
-      cpatch%qmean_root_resp        (:,ico) = 0.0
-      cpatch%qmean_fsw              (:,ico) = 0.0
-      cpatch%qmean_fsn              (:,ico) = 0.0
-      cpatch%qmean_fs_open          (:,ico) = 0.0
-      cpatch%qmean_psi_open         (:,ico) = 0.0
-      cpatch%qmean_psi_closed       (:,ico) = 0.0
-      cpatch%qmean_water_supply     (:,ico) = 0.0
-   end if
-
-
-   !---------------------------------------------------------------------------------------!
-
-
-
-   !---------------------------------------------------------------------------------------!
-   !     The leaf life span is initialised with the inverse of the turnover rate.  Notice  !
-   ! that the turnover rate is in years, but the life span is in months.  Also, some PFTs  !
-   ! do not define the turnover rate (temperate cold-deciduous for example), in which case !
-   ! we assign a meaningless number just to make sure the variable is initialised.         !
-   !---------------------------------------------------------------------------------------!
-   if (leaf_turnover_rate(cpatch%costate%pft(ico)) > 0.0) then
-      cpatch%llspan(ico) = 12.0/leaf_turnover_rate(cpatch%costate%pft(ico))
-   else
-      cpatch%llspan(ico) = 9999.
-   end if
-   !---------------------------------------------------------------------------------------!
-
-
-   !---------------------------------------------------------------------------------------!
-   !      The maximum capacity of Rubisco to perform the carboxylase function (Vm) and the !
-   ! specific leaf area (SLA) must be assigned with the default values.  These numbers     !
-   ! will change only if the PFT uses a light-controlled phenology.                        !
-   !---------------------------------------------------------------------------------------!
-   !cpatch%vm_bar(ico) = Vm0(cpatch%pft(ico))
-   cpatch%vm_bar(ico)= vm_amp / (1.0 + (cpatch%llspan(ico)/vm_tran)**vm_slop) + vm_min
-   cpatch%sla(ico) = sla(cpatch%costate%pft(ico))
-   !---------------------------------------------------------------------------------------!
-
+   call init_cohort_vars_phen(cpatch%cophen, ico, cpatch%costate%pft(ico))
+   call init_cohort_vars_mort(cpatch%comort, ico)
+   call init_cohort_vars_resp(cpatch%coresp, ico)
+   call init_cohort_vars_photo(cpatch%cophoto, ico)
+   call init_cohort_vars_rad(cpatch%corad, ico)
+   call init_cohort_vars_therm(cpatch%cotherm, ico)
 
    return
 end subroutine init_ed_cohort_vars

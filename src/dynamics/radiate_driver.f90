@@ -346,34 +346,25 @@ subroutine sfcrad_ed(cosz,cosaoi,csite,mzg,mzs,ntext_soil,maxcohort,tuco        
       do ico = cpatch%ncohorts,1,-1
          
          !----- Initialize values. --------------------------------------------------------!
-         cpatch%par_l(ico)                 = 0.0
-         cpatch%par_l_beam(ico)            = 0.0
-         cpatch%par_l_diffuse(ico)         = 0.0
+         cpatch%corad%par_l(ico)                 = 0.0
+         cpatch%corad%par_l_beam(ico)            = 0.0
+         cpatch%corad%par_l_diffuse(ico)         = 0.0
          
-         cpatch%rshort_l(ico)              = 0.0
-         cpatch%rshort_l_beam(ico)         = 0.0
-         cpatch%rshort_l_diffuse(ico)      = 0.0
+         cpatch%corad%rshort_l(ico)              = 0.0
+         cpatch%corad%rshort_l_beam(ico)         = 0.0
+         cpatch%corad%rshort_l_diffuse(ico)      = 0.0
          
-         cpatch%rlong_l(ico)               = 0.0
-         cpatch%rlong_l_incid(ico)         = 0.0
-         cpatch%rlong_l_surf(ico)          = 0.0
+         cpatch%corad%rlong_l(ico)               = 0.0
+         cpatch%corad%rlong_l_incid(ico)         = 0.0
+         cpatch%corad%rlong_l_surf(ico)          = 0.0
          
-         cpatch%rshort_w(ico)              = 0.0
-         cpatch%rshort_w_beam(ico)         = 0.0
-         cpatch%rshort_w_diffuse(ico)      = 0.0
+         cpatch%corad%rshort_w(ico)              = 0.0
+         cpatch%corad%rshort_w_beam(ico)         = 0.0
+         cpatch%corad%rshort_w_diffuse(ico)      = 0.0
          
-         cpatch%rlong_w(ico)               = 0.0
-         cpatch%rlong_w_incid(ico)         = 0.0
-         cpatch%rlong_w_surf(ico)          = 0.0
-
-         cpatch%old_stoma_data(ico)%recalc = 1
-         
-         cpatch%light_level     (ico)      = 0.0
-         cpatch%light_level_beam(ico)      = 0.0
-         cpatch%light_level_diff(ico)      = 0.0
-         cpatch%lambda_light    (ico)      = 0.0
-         cpatch%beamext_level   (ico)      = 0.0
-         cpatch%diffext_level   (ico)      = 0.0
+         cpatch%corad%rlong_w(ico)               = 0.0
+         cpatch%corad%rlong_w_incid(ico)         = 0.0
+         cpatch%corad%rlong_w_surf(ico)          = 0.0
 
          !------ Transfer information from linked lists to arrays. ------------------------!
          
@@ -398,8 +389,8 @@ subroutine sfcrad_ed(cosz,cosaoi,csite,mzg,mzs,ntext_soil,maxcohort,tuco        
                wai_array              (cohort_count) = 0.d0
             end if
 
-            leaf_temp_array        (cohort_count) = dble(cpatch%leaf_temp(ico))
-            wood_temp_array        (cohort_count) = dble(cpatch%wood_temp(ico))
+            leaf_temp_array        (cohort_count) = dble(cpatch%cotherm%leaf_temp(ico))
+            wood_temp_array        (cohort_count) = dble(cpatch%cotherm%wood_temp(ico))
             rshort_v_beam_array    (cohort_count) = 0.0
             par_v_beam_array       (cohort_count) = 0.0
             rshort_v_diffuse_array (cohort_count) = 0.0
@@ -813,40 +804,27 @@ subroutine sfcrad_ed(cosz,cosaoi,csite,mzg,mzs,ntext_soil,maxcohort,tuco        
                                     , tiny_offset)
                weight_wood = 1. - weight_leaf
 
-               cpatch%par_l_beam       (ico) = par_v_beam_array              (il)          &
+               cpatch%corad%par_l_beam       (ico) = par_v_beam_array              (il)          &
                                              * weight_leaf
-               cpatch%par_l_diffuse    (ico) = par_v_diffuse_array           (il)          &
+               cpatch%corad%par_l_diffuse    (ico) = par_v_diffuse_array           (il)          &
                                              * weight_leaf
-               cpatch%rshort_l_beam    (ico) = rshort_v_beam_array           (il)          &
+               cpatch%corad%rshort_l_beam    (ico) = rshort_v_beam_array           (il)          &
                                              * weight_leaf
-               cpatch%rshort_l_diffuse (ico) = rshort_v_diffuse_array        (il)          &
+               cpatch%corad%rshort_l_diffuse (ico) = rshort_v_diffuse_array        (il)          &
                                              * weight_leaf
-               cpatch%rlong_l_surf     (ico) = lw_v_surf_array               (il)          &
+               cpatch%corad%rlong_l_surf     (ico) = lw_v_surf_array               (il)          &
                                              * weight_leaf
-               cpatch%rlong_l_incid    (ico) = lw_v_incid_array              (il)          &
+               cpatch%corad%rlong_l_incid    (ico) = lw_v_incid_array              (il)          &
                                              * weight_leaf
-               cpatch%rshort_w_beam    (ico) = rshort_v_beam_array           (il)          &
+               cpatch%corad%rshort_w_beam    (ico) = rshort_v_beam_array           (il)          &
                                              * weight_wood
-               cpatch%rshort_w_diffuse (ico) = rshort_v_diffuse_array        (il)          &
+               cpatch%corad%rshort_w_diffuse (ico) = rshort_v_diffuse_array        (il)          &
                                              * weight_wood
-               cpatch%rlong_w_surf     (ico) = lw_v_surf_array               (il)          &
+               cpatch%corad%rlong_w_surf     (ico) = lw_v_surf_array               (il)          &
                                              * weight_wood
-               cpatch%rlong_w_incid    (ico) = lw_v_incid_array              (il)          &
+               cpatch%corad%rlong_w_incid    (ico) = lw_v_incid_array              (il)          &
                                              * weight_wood
 
-
-               cpatch%lambda_light     (ico) = sngloff(lambda_array          (il)          &
-                                                      ,tiny_offset )
-               cpatch%beamext_level    (ico) = sngloff(beam_level_array      (il)          &
-                                                      ,tiny_offset )
-               cpatch%diffext_level    (ico) = sngloff(diff_level_array      (il)          &
-                                                      ,tiny_offset )
-               cpatch%light_level      (ico) = sngloff(light_level_array     (il)          &
-                                                      ,tiny_offset )
-               cpatch%light_level_beam (ico) = sngloff(light_beam_level_array(il)          &
-                                                      ,tiny_offset )
-               cpatch%light_level_diff (ico) = sngloff(light_diff_level_array(il)          &
-                                                      ,tiny_offset )
             end if
          end do
 
@@ -1119,24 +1097,21 @@ subroutine scale_ed_radiation(tuco,rshort,rshort_diffuse,rlong,csite)
          cpatch => csite%patch(ipa)
          do ico = 1, cpatch%ncohorts
             if (cpatch%costate%leaf_resolvable(ico) .or. cpatch%costate%wood_resolvable(ico)) then
-               cpatch%par_l_beam       (ico) = 0.0
-               cpatch%par_l_diffuse    (ico) = 0.0
-               cpatch%par_l            (ico) = 0.0
-               cpatch%rshort_l_beam    (ico) = 0.0
-               cpatch%rshort_l_diffuse (ico) = 0.0
-               cpatch%rshort_l         (ico) = 0.0
-               cpatch%rlong_l_incid    (ico) = 0.0
-               cpatch%rlong_l_surf     (ico) = 0.0
-               cpatch%rlong_l          (ico) = 0.0
-               cpatch%rshort_w_beam    (ico) = 0.0
-               cpatch%rshort_w_diffuse (ico) = 0.0
-               cpatch%rshort_w         (ico) = 0.0
-               cpatch%rlong_w_incid    (ico) = 0.0
-               cpatch%rlong_w_surf     (ico) = 0.0
-               cpatch%rlong_w          (ico) = 0.0
-               cpatch%light_level      (ico) = 0.0
-               cpatch%light_level_diff (ico) = 0.0
-               cpatch%light_level_beam (ico) = 0.0
+               cpatch%corad%par_l_beam       (ico) = 0.0
+               cpatch%corad%par_l_diffuse    (ico) = 0.0
+               cpatch%corad%par_l            (ico) = 0.0
+               cpatch%corad%rshort_l_beam    (ico) = 0.0
+               cpatch%corad%rshort_l_diffuse (ico) = 0.0
+               cpatch%corad%rshort_l         (ico) = 0.0
+               cpatch%corad%rlong_l_incid    (ico) = 0.0
+               cpatch%corad%rlong_l_surf     (ico) = 0.0
+               cpatch%corad%rlong_l          (ico) = 0.0
+               cpatch%corad%rshort_w_beam    (ico) = 0.0
+               cpatch%corad%rshort_w_diffuse (ico) = 0.0
+               cpatch%corad%rshort_w         (ico) = 0.0
+               cpatch%corad%rlong_w_incid    (ico) = 0.0
+               cpatch%corad%rlong_w_surf     (ico) = 0.0
+               cpatch%corad%rlong_w          (ico) = 0.0
             end if
          end do
          
@@ -1169,27 +1144,27 @@ subroutine scale_ed_radiation(tuco,rshort,rshort_diffuse,rlong,csite)
          
          if (cpatch%costate%leaf_resolvable(ico) .or. cpatch%costate%wood_resolvable(ico)) then
 
-            cpatch%par_l_beam(ico)       = cpatch%par_l_beam(ico)    * rshort
-            cpatch%par_l_diffuse(ico)    = cpatch%par_l_diffuse(ico) * rshort
-            cpatch%par_l(ico)            = cpatch%par_l_beam(ico)                          &
-                                         + cpatch%par_l_diffuse(ico)
+            cpatch%corad%par_l_beam(ico)       = cpatch%corad%par_l_beam(ico)    * rshort
+            cpatch%corad%par_l_diffuse(ico)    = cpatch%corad%par_l_diffuse(ico) * rshort
+            cpatch%corad%par_l(ico)            = cpatch%corad%par_l_beam(ico)                          &
+                                         + cpatch%corad%par_l_diffuse(ico)
 
-            cpatch%rshort_l_beam(ico)    = cpatch%rshort_l_beam(ico)    * rshort
-            cpatch%rshort_l_diffuse(ico) = cpatch%rshort_l_diffuse(ico) * rshort
-            cpatch%rshort_l(ico)         = cpatch%rshort_l_beam(ico)                       &
-                                         + cpatch%rshort_l_diffuse(ico)
+            cpatch%corad%rshort_l_beam(ico)    = cpatch%corad%rshort_l_beam(ico)    * rshort
+            cpatch%corad%rshort_l_diffuse(ico) = cpatch%corad%rshort_l_diffuse(ico) * rshort
+            cpatch%corad%rshort_l(ico)         = cpatch%corad%rshort_l_beam(ico)                       &
+                                         + cpatch%corad%rshort_l_diffuse(ico)
 
-            cpatch%rlong_l_incid(ico)    = cpatch%rlong_l_incid(ico) * rlong
-            cpatch%rlong_l(ico)          = cpatch%rlong_l_incid(ico)                       &
-                                         + cpatch%rlong_l_surf(ico)
+            cpatch%corad%rlong_l_incid(ico)    = cpatch%corad%rlong_l_incid(ico) * rlong
+            cpatch%corad%rlong_l(ico)          = cpatch%corad%rlong_l_incid(ico)                       &
+                                         + cpatch%corad%rlong_l_surf(ico)
 
-            cpatch%rshort_w_beam(ico)    = cpatch%rshort_w_beam(ico)    * rshort
-            cpatch%rshort_w_diffuse(ico) = cpatch%rshort_w_diffuse(ico) * rshort
-            cpatch%rshort_w(ico)         = cpatch%rshort_w_beam(ico)                       &
-                                         + cpatch%rshort_w_diffuse(ico)
-            cpatch%rlong_w_incid(ico)    = cpatch%rlong_w_incid(ico) * rlong
-            cpatch%rlong_w(ico)          = cpatch%rlong_w_incid(ico)                       &
-                                         + cpatch%rlong_w_surf(ico)
+            cpatch%corad%rshort_w_beam(ico)    = cpatch%corad%rshort_w_beam(ico)    * rshort
+            cpatch%corad%rshort_w_diffuse(ico) = cpatch%corad%rshort_w_diffuse(ico) * rshort
+            cpatch%corad%rshort_w(ico)         = cpatch%corad%rshort_w_beam(ico)                       &
+                                         + cpatch%corad%rshort_w_diffuse(ico)
+            cpatch%corad%rlong_w_incid(ico)    = cpatch%corad%rlong_w_incid(ico) * rlong
+            cpatch%corad%rlong_w(ico)          = cpatch%corad%rlong_w_incid(ico)                       &
+                                         + cpatch%corad%rlong_w_surf(ico)
          end if
       end do
       csite%par_l_beam_max(ipa)    = csite%par_l_beam_max(ipa)    * rshort
