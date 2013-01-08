@@ -281,7 +281,7 @@ subroutine update_C_and_N_pools(cgrid)
    real :: struct_N_loss, slow_N_input
    real :: miner2slow_P_xfer, miner_P_input
    real, parameter :: miner2slow_P_rate = 1./365.  ! Units: 1/day
-   real, parameter :: miner2slow_P_eq = 10.  ! 10x as much mineralized P as slow P in equilibrium.
+   real, parameter :: miner2slow_P_eq = 5.  ! 5x as much mineralized P as slow P in equilibrium.
    !---------------------------------------------------------------------------------------!
 
    polygonloop: do ipy = 1,cgrid%npolygons

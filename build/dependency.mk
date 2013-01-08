@@ -159,13 +159,6 @@ h5_output.o: fusion_fission_coms.mod grid_coms.mod  hdf5_coms.mod
 leaf_database.o: grid_coms.mod hdf5_utils.mod soil_coms.mod
 canopy_air_coms.o: consts_coms.mod therm_lib.mod therm_lib8.mod
 canopy_radiation_coms.o: ed_max_dims.mod
-cohort_mort.o: ed_var_tables.mod hdf5_coms.mod
-cohort_phen.o: ed_var_tables.mod hdf5_coms.mod pft_coms.mod phenology_coms.mod
-cohort_photo.o: ed_var_tables.mod hdf5_coms.mod
-cohort_rad.o: ed_var_tables.mod hdf5_coms.mod
-cohort_resp.o: ed_var_tables.mod hdf5_coms.mod
-cohort_state.o: allometry.mod ed_var_tables.mod hdf5_coms.mod
-cohort_therm.o: ed_var_tables.mod hdf5_coms.mod therm_lib.mod
 consts_coms.o: 
 decomp_coms.o: ed_max_dims.mod
 disturb_coms.o: ed_max_dims.mod
@@ -252,13 +245,6 @@ canopy_air_coms.mod: canopy_air_coms.o
 canopy_layer_coms.mod: canopy_layer_coms.o
 canopy_radiation_coms.mod: canopy_radiation_coms.o
 canopy_struct_dynamics.mod: canopy_struct_dynamics.o
-cohort_mort.mod: cohort_mort.o
-cohort_phen.mod: cohort_phen.o
-cohort_photo.mod: cohort_photo.o
-cohort_rad.mod: cohort_rad.o
-cohort_resp.mod: cohort_resp.o
-cohort_state.mod: cohort_state.o
-cohort_therm.mod: cohort_therm.o
 consts_coms.mod: consts_coms.o
 damm_model.mod: damm.o
 decomp_coms.mod: decomp_coms.o
